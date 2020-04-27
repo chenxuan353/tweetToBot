@@ -116,6 +116,8 @@ class PushList:
                         des:str,
                         nick:str='',**config):
         Pushunit = {}
+        if not config:
+            config = {}
         #固有属性
         Pushunit['bindCQID'] = bindCQID #绑定的酷Q帐号(正式上线时将使用此帐户进行发送，用于适配多酷Q账号)
         Pushunit['type'] = pushtype #group/private
@@ -143,7 +145,7 @@ class PushList:
         #同步监测关联（内部同步了监测列表）
         if Pushunit['tweet_user_id'] not in self.__spy_relate:
             self.__spy_relate[Pushunit['tweet_user_id']] = []
-            self.spylist.append(Pushunit['tweet_user_id'])
+            self.spylist.append(str(Pushunit['tweet_user_id']))
         self.__spy_relate[Pushunit['tweet_user_id']].append(Pushunit)
         return ( True, '添加成功！' )
     #删除一个推送单元，没有返回值
@@ -155,7 +157,7 @@ class PushList:
         #检查监测对象的推送单元是否为空，为空则移出监测列表
         if self.__spy_relate[Pushunit['tweet_user_id']] == []:
             del self.__spy_relate[Pushunit['tweet_user_id']]
-            self.spylist.remove(Pushunit['tweet_user_id'])
+            self.spylist.remove(str(Pushunit['tweet_user_id']))
         #鲨掉自己
         del Pushunit
 
@@ -190,7 +192,7 @@ class PushList:
 
     #移除某个监测对象关联的所有推送单元,参数-推特用户ID 返回值-(布尔型-是否成功,字符串-消息)
     def delPushunitFromTweeUserID(self,tweet_user_id:int) -> tuple:
-        if tweet_user_id not in self.spylist:
+        if tweet_user_id not in self.__spy_relate:
             return (False,'此用户不在监测列表中！')
         table = self.getLitsFromTweeUserID(tweet_user_id)
         if table == []:
@@ -231,7 +233,7 @@ class PushList:
         self.__push_list[message_type][pushTo]['Pushunitattr'][key][value]
         return (True,'属性已更新')
     #设置指定推送单元的特定属性
-    def Pushunit(self,message_type:str,pushTo:int,tweet_user_id:int,key:str,value):
+    def setPushunitAttr(self,message_type:str,pushTo:int,tweet_user_id:int,key:str,value):
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         if key not in self.Pushunit_allowEdit:
@@ -243,18 +245,6 @@ class PushList:
         self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id][key][value]
         return (True,'属性已更新')
 
-    #获取指定推送对象的推送列表（推送标识，推送对象ID）
-    def get_pushTo_spylist(self,message_type:str,pushTo:int):
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        table = self.getLitsFromPushTo(message_type,pushTo)
-        s = ''
-        unit_cout = 0
-        for key in table:
-            unit_cout = unit_cout + 1
-            s = s + key + ',' + table[key]['nick'] if table[key]['nick'] == '' else "未定义昵称"
-        s = s + '总监测数：' + str(unit_cout)
-        return s
 
 #字符串模版
 class tweetToStrTemplate(string.Template):
@@ -280,28 +270,32 @@ class MyStreamListener(tweepy.StreamListener):
         log_print(4,"推送流已断开链接")
         self.isrun = False
     
+    def tryGetNick(self, tweet_user_id,nick):
+        if tweet_user_id in self.userinfolist:
+            return self.userinfolist[tweet_user_id]['name']
+        return nick
     #图片保存（待优化）
     def seve_image(self, name, url, file_path='img'):
         #保存图片到磁盘文件夹 cache/file_path中，默认为当前脚本运行目录下的 cache/img 文件夹
             base_path = 'cache/' #基准路径
             try:
                 if not os.path.exists(base_path + file_path):
-                    print('文件夹',file_path,'不存在，重新建立')
+                    log_print(4,'文件夹' + base_path + file_path + '不存在，重新建立')
                     #os.mkdir(file_path)
-                    os.makedirs(file_path)
+                    os.makedirs(base_path + file_path)
                 #获得图片后缀
-                file_suffix = os.path.splitext()[1]
+                file_suffix = os.path.splitext(url)[1]
                 #拼接图片名（包含路径）
-                filename = '{}{}{}{}'.format(file_path,os.sep,name,file_suffix)
+                filename = '{}{}{}{}'.format(base_path + file_path,os.sep,name,file_suffix)
                 #下载图片，并保存到文件夹中
                 if not os.path.isfile(filename):
                     urllib.request.urlretrieve(url,filename=filename)
             except IOError as e:
-                str = traceback.format_exc(limit=5)
-                log_print(2,'文件操作失败'+str)
+                s = traceback.format_exc(limit=5)
+                log_print(2,'文件操作失败'+s)
             except Exception as e:
-                str = traceback.format_exc(limit=5)
-                log_print(2,str)
+                s = traceback.format_exc(limit=5)
+                log_print(2,s)
     #媒体保存-保存推特中携带的媒体(目前仅支持图片-考虑带宽，后期可能不会增加支持)
     def save_media(self, tweetinfo):
         if 'extended_entities' not in tweetinfo:
@@ -317,7 +311,7 @@ class MyStreamListener(tweepy.StreamListener):
         tweetinfo['extended_entities'].append(media_obj)
         """
         for media_unit in tweetinfo['extended_entities']:
-            self.seve_image(media_unit['id_str'],media_unit['media_url'])
+            self.seve_image(media_unit['id_str'],media_unit['media_url'],'tweet')
 
     #消息发送(消息类型，消息发送到，消息内容)
     def send_msg(self, message_type:str, send_id:int, message:str,bindCQID:int = config.default_bot_QQ):
@@ -460,21 +454,19 @@ class MyStreamListener(tweepy.StreamListener):
     def deal_event_unit(self,event,Pushunit):
         #事件处理单元-发送
         data = event['data']
-        #当推送开关打开时进行处理
-        if Pushunit[event['type']] == 1:
-            #额外处理
-            if event['type'] == 'none' and push_list.getPuslunitAttr(data,'upimg') == 1:
-                self.save_media(data)
-            #识别事件类型
-            if event['type'] in ['retweet','quoted','reply_to_status','reply_to_user','none']:
-                str = self.tweetToStr(
-                        data,Pushunit['nick'],
-                        Pushunit['upimg'],
-                        Pushunit[event['type']+'_template']
-                    )
-                self.send_msg(Pushunit['type'],Pushunit['pushTo'],str)
-            elif event['type'] in ['change_name','change_description','change_headimgchange']:
-                self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'])
+        #额外处理
+        if event['type'] == 'none' and push_list.getPuslunitAttr(Pushunit,'upimg') == 1:
+            self.save_media(data)
+        #识别事件类型
+        if event['type'] in ['retweet','quoted','reply_to_status','reply_to_user','none']:
+            str = self.tweetToStr(
+                    data,Pushunit['nick'],
+                    push_list.getPuslunitAttr(Pushunit,'upimg')[1],
+                    push_list.getPuslunitAttr(Pushunit,event['type']+'_template')[1]
+                )
+            self.send_msg(Pushunit['type'],Pushunit['pushTo'],str)
+        elif event['type'] in ['change_name','change_description','change_headimgchange']:
+            self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'])
 
     #将推特数据应用到模版
     def tweetToStr(self, tweetinfo, nick, upimg=config.pushunit_default_config['upimg'], template_text=''):
@@ -588,7 +580,7 @@ class MyStreamListener(tweepy.StreamListener):
                 #事件测试发送
                 requests.post('http://127.0.0.1:5700/send_msg_rate_limited',data={'user_id': '3309003591', 'message': str})
         else:
-            if user.id_str in PushList.spylist:
+            if user.id_str in push_list.spylist:
                 userinfo = {}
                 userinfo['id'] = user.id
                 userinfo['id_str'] = user.id_str
@@ -604,33 +596,33 @@ class MyStreamListener(tweepy.StreamListener):
 def test_install_push_list():
     #923712088 アリア字幕组 => 1128877708530790400
     spylist = [
-        "997786053124616192",
-        "1154304634569150464",
-        "1200396304360206337",
-        "996645451045617664",
-        "1024528894940987392",
-        "1109751762733301760",
-        "979891380616019968",
-        "805435112259096576",#我的推特
-        "1131691820902100992",#another_test
-        "1128877708530790400",#another_test
-        "1104692320291549186",#another_test
-        "1068883575292944384"#another_test
+        997786053124616192,
+        1154304634569150464,
+        1200396304360206337,
+        996645451045617664,
+        1024528894940987392,
+        1109751762733301760,
+        979891380616019968,
+        805435112259096576,#我的推特
+        1131691820902100992,#another_test
+        1128877708530790400,#another_test
+        1104692320291549186,#another_test
+        1068883575292944384 #another_test
     ]
     okayu_test = [
-        #"997786053124616192",
-        "1154304634569150464",
-        "1200396304360206337",
-        "996645451045617664",
-        "1024528894940987392",
-        "1109751762733301760",
-        "979891380616019968"
+        #997786053124616192,
+        1154304634569150464,
+        1200396304360206337,
+        996645451045617664,
+        1024528894940987392,
+        1109751762733301760,
+        979891380616019968,
     ]
     another_test = [
-        "1131691820902100992",
-        "1128877708530790400",
-        "1104692320291549186",
-        "1068883575292944384"
+        1131691820902100992,#another_test
+        1128877708530790400,#another_test
+        1104692320291549186,#another_test
+        1068883575292944384 #another_test
     ]
     for user_id in spylist:
         push_list.addPushunit(push_list.baleToPushUnit(1837730674,'private',3309003591,user_id,'推送测试',upimg=1))
@@ -654,10 +646,9 @@ auth.set_access_token(config.access_token, config.access_token_secret)
 api = tweepy.API(auth, proxy=config.api_proxy)
 #注册推送列表
 push_list = PushList()
+#test_install_push_list()
 #创建监听对象
 myStreamListener = MyStreamListener()
-def get_pushList() -> PushList:
-    return push_list
 def Run():
     #安装测试列表
     test_install_push_list()
