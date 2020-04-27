@@ -19,7 +19,7 @@ async def addtest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    unit = push_list.baleToPushunit(message_type,sent_id,'805435112259096576','增删测试',none_template="$tweet_nick这个人发推了,爪巴")
+    unit = push_list.baleToPushUnit(1837730674,message_type,sent_id,805435112259096576,nick='底层轴man','增删测试',none_template="$tweet_nick这个人发推了,爪巴")
     push_list.addPushunit(unit)
     await session.send('done!')
 @on_command('deltest', permission=permission.SUPERUSER,only_to_me = False)
@@ -34,7 +34,7 @@ async def deltest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    s = push_list.delPushunit('805435112259096576',message_type,sent_id)
+    s = push_list.delPushunitFromPushToAndTweetUserID(message_type,sent_id,805435112259096576)
     await session.send(s)
 
 @on_command('delalltest', permission=permission.SUPERUSER,only_to_me = False)
@@ -49,7 +49,7 @@ async def delalltest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    push_list.push_list_del(message_type,sent_id)
+    push_list.delPushunitFromPushTo(message_type,sent_id)
     await session.send('done!')
 
 @on_command('getpushlist',only_to_me = False)
@@ -63,9 +63,9 @@ async def getpushlist(session: CommandSession):
     else:
         await session.send('未收录的消息类型:'+message_type)
         return
-    sent_id = str(sent_id)
-    s = push_list.get_pushlist(message_type,sent_id)
+    s = push_list.get_pushTo_spylist(message_type,sent_id)
     await session.send(s)
+
 
 #推特ID编码解码
 #解码成功返回推特ID，失败返回-1

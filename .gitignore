@@ -1,4 +1,5 @@
 .vscode/
+cache/
 config.py
 img/
 # Byte-compiled / optimized / DLL files
