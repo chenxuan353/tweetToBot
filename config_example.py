@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from nonebot.default_config import *
-#全局管理员
-SUPERUSERS.add(3309003591)
+#添加超级管理员 Q号-数值 例:SUPERUSERS.add(12345678)
+SUPERUSERS.add()
 #命令起始标识
 COMMAND_START = {'!','！'}
 #bot称呼-暂无作用

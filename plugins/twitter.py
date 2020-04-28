@@ -45,7 +45,7 @@ async def deltest(session: CommandSession):
     s = push_list.delPushunitFromPushToAndTweetUserID(message_type,sent_id,805435112259096576)
     await session.send(s)
 
-@on_command('delalltest',aliases=['这里单推bot'], permission=permission.SUPERUSER,only_to_me = False)
+@on_command('delall',aliases=['这里单推bot'], permission=permission.SUPERUSER,only_to_me = True)
 async def delalltest(session: CommandSession):
     message_type = session.event['message_type']
     sent_id = 0
@@ -58,7 +58,7 @@ async def delalltest(session: CommandSession):
         return
     sent_id = str(sent_id)
     push_list.delPushunitFromPushTo(message_type,sent_id)
-    await session.send('已移除此群所有监测')
+    await session.send('已移除此地所有监测')
 
 
 #获取指定推送对象的推送列表（推送标识，推送对象ID）
@@ -76,7 +76,7 @@ def get_pushTo_spylist(message_type:str,pushTo:int):
     if unit_cout == 0:
         s = s + '\n' + '单 推 b o t'
     return s
-@on_command('getpushlist',aliases=['这里的DD列表'],only_to_me = False)
+@on_command('getpushlist',aliases=['DD列表'],only_to_me = False)
 async def getpushlist(session: CommandSession):
     message_type = session.event['message_type']
     sent_id = 0
