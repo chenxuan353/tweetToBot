@@ -57,8 +57,8 @@ async def delalltest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    push_list.delPushunitFromPushTo(message_type,sent_id)
-    await session.send('已移除此地所有监测')
+    res = push_list.delPushunitFromPushTo(message_type,sent_id)
+    await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
 
 #获取指定推送对象的推送列表（推送标识，推送对象ID）
@@ -197,7 +197,7 @@ async def addOne(session: CommandSession):
 
 #推送对象总属性设置
 @on_command('setGroupAttr',aliases=['全局设置'],permission=permission.SUPERUSER,only_to_me = True)
-async def setNone(session: CommandSession):
+async def setGroupAttr(session: CommandSession):
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -263,10 +263,96 @@ async def setNone(session: CommandSession):
             0
         )
     else:
-        res = (False,'设置值错误')
+        res = (False,'属性的值不合法！')
     await session.send(res[1])
+#推送对象的监测对象属性设置
+@on_command('setAttr',aliases=['对象设置'],permission=permission.SUPERUSER,only_to_me = True)
+async def setAttr(session: CommandSession):
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg == '':
+        await session.send("缺少参数")
+        return
+    cs = commandHeadtail(stripped_arg)
+    cs = {
+        0:cs[0],
+        1:cs[1],
+        2:cs[2].strip()
+    }
+    #处理用户ID
+    tweet_user_id : int = -1
+    if cs[0].isdecimal():
+        tweet_user_id = int(cs[0])
+    if cs[2].strip() == '':
+        await session.send("缺少参数")
+        return
+    tcs = commandHeadtail(cs[2])
+    cs[2] = tcs[0]
+    cs[3] = tcs[1]
+    cs[4] = tcs[2].strip()
 
-
+    Pushunit_allowEdit = {
+        #携带图片发送
+        'upimg':'upimg','图片':'upimg','img':'upimg',
+        #昵称设置
+        #'nick':'nick','昵称':'nick',
+        #消息模版
+        'retweet_template':'retweet_template','转推模版':'retweet_template',
+        'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
+        'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
+        'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
+        'none_template':'none_template','发推模版':'none_template',
+        #推特转发各类型开关
+        'retweet':'retweet','转推':'retweet',
+        'quoted':'quoted','转推并评论':'quoted',
+        'reply_to_status':'reply_to_status','回复':'reply_to_status',
+        'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+        'none':'none','发推':'none',
+        #推特个人信息变动推送开关
+        'change_id':'change_ID','ID改变':'change_ID',
+        'change_name':'change_name','名称改变':'change_name',
+        'change_description':'change_description','描述改变':'change_description',
+        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange'
+        }
+    template_attr = (
+        'retweet_template',
+        'quoted_template',
+        'reply_to_status_template',
+        'reply_to_user_template',
+        'none_template'
+    )
+    if str(tweet_user_id) not in push_list.spylist:
+        await session.send("用户不在监测列表内！")
+        return
+    if cs[2] not in Pushunit_allowEdit:
+        await session.send('属性值不存在！')
+        return
+    if cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
+        res = push_list.setPushunitAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            tweet_user_id,
+            Pushunit_allowEdit[cs[2]],
+            cs[4]
+        )
+    elif cs[4] in ('true','开','打开','开启','1'):
+        res = push_list.setPushunitAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            tweet_user_id,
+            Pushunit_allowEdit[cs[2]],
+            1
+        )
+    elif cs[4] in ('false','关','关闭','0'):
+        res = push_list.setPushunitAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            tweet_user_id,
+            Pushunit_allowEdit[cs[2]],
+            0
+        )
+    else:
+        res = (False,'属性的值不合法！')
+    await session.send(res[1])
 
 #推特ID编码解码
 #解码成功返回推特ID，失败返回-1

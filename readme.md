@@ -199,3 +199,17 @@ pip安装nonebot,tweepy
 ​      $related_tweet_id_min 关联推特ID的压缩(被评论/被转发)
 
 ​      $related_tweet_text 关联推特内容(被转发或被转发并评论时存在)
+
+
+
+### setAttr 监测用户UID 属性 值
+
+别名：对象设置
+
+权限：超级管理员,@bot
+
+功能：移除一个本群监测的用户
+
+例：setGroupAttr 997786053124616192 转推 关
+
+注：UID可以通过命令getpushlist查看
