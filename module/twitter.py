@@ -9,14 +9,16 @@ import time
 import string
 import urllib.request
 import os
+import start
 #引入配置
 import config
 #日志输出
-from helper import log_print
+from helper import log_print,data_read,data_save
 '''
 推特API载入测试
 '''
-
+twitter_config_name = 'twitterdata.json'
+base_tweet_id = config.base_tweet_id
 #test_print
 #处理twitter里所有日志输出
 """def log_print(level,str):
@@ -72,7 +74,7 @@ class PushList:
         'group':{}
     } 
     __spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
-    spylist = [] #流监测列表
+    spylist = [base_tweet_id] #流监测列表
     
     #支持的消息类型
     message_type_list = ('private','group') 
@@ -110,6 +112,33 @@ class PushList:
         'group':{}
     } 
     """
+    #清空推送设置
+    def clear(self):
+        self.__push_list = {
+            'private':{},
+            'group':{}
+        } 
+        self.__spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
+        self.spylist = [base_tweet_id] #流监测列表
+    #推送单元解包
+    def getAllPushUnit(self) -> list:
+        sourcedata = self.__spy_relate.copy()
+        PushUnits = []
+        for PushUnitList in sourcedata.values():
+            for PushUnit in PushUnitList:
+                PushUnits.append(PushUnit)
+        return PushUnits
+    def savePushList(self) -> tuple:
+        PushUnits = self.getAllPushUnit()
+        return data_save(twitter_config_name,PushUnits)
+    def readPushList(self) -> tuple:
+        data = data_read(twitter_config_name)
+        if data[0] != False:
+            self.clear()
+            for PushUnit in data[2]:
+                self.addPushunit(PushUnit)
+            return (True,data[1])
+        return data
     #打包成推送单元中(推送类型-群/私聊，推送对象-群号/Q号,绑定的推特用户ID,单元描述,绑定的酷Q账号,推送模版,各推送开关)
     def baleToPushUnit(self,bindCQID:int,
                         pushtype:str,
@@ -147,7 +176,8 @@ class PushList:
         #同步监测关联（内部同步了监测列表）
         if Pushunit['tweet_user_id'] not in self.__spy_relate:
             self.__spy_relate[Pushunit['tweet_user_id']] = []
-            self.spylist.append(str(Pushunit['tweet_user_id']))
+            if str(Pushunit['tweet_user_id']) != base_tweet_id:
+                self.spylist.append(str(Pushunit['tweet_user_id']))
         self.__spy_relate[Pushunit['tweet_user_id']].append(Pushunit)
         return ( True, '添加成功！' )
     #删除一个推送单元，没有返回值
@@ -159,7 +189,8 @@ class PushList:
         #检查监测对象的推送单元是否为空，为空则移出监测列表
         if self.__spy_relate[Pushunit['tweet_user_id']] == []:
             del self.__spy_relate[Pushunit['tweet_user_id']]
-            self.spylist.remove(str(Pushunit['tweet_user_id']))
+            if str(Pushunit['tweet_user_id']) != base_tweet_id:
+                self.spylist.remove(str(Pushunit['tweet_user_id']))
         #鲨掉自己
         del Pushunit
     #获取一个推送单元，返回状态列表(布尔型-是否成功,字符串-消息/Pushunit)
@@ -284,12 +315,14 @@ class MyStreamListener(tweepy.StreamListener):
         return False
     #开始链接监听
     def on_connect(self):
-        log_print(4,"推送流链接已就绪")
+        log_print(6,"推送流链接已就绪")
+        start.reboot_tweetListener_cout = 0
         self.isrun = True
     #断开链接监听
     def on_disconnect(self, notice):
-        log_print(4,"推送流已断开链接")
+        log_print(6,"推送流已断开链接")
         self.isrun = False
+        raise Exception
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):
         if tweet_user_id in self.userinfolist:
@@ -637,12 +670,7 @@ def test_install_push_list():
     ]
     okayu_test = [
         #997786053124616192,
-        1154304634569150464,
-        1200396304360206337,
-        996645451045617664,
-        1024528894940987392,
-        1109751762733301760,
-        979891380616019968,
+        1109751762733301760
     ]
     another_test = [
         1131691820902100992,#another_test
@@ -674,11 +702,12 @@ api = tweepy.API(auth, proxy=config.api_proxy)
 #注册推送列表
 push_list = PushList()
 #安装测试列表
-test_install_push_list()
+#test_install_push_list()
 #创建监听对象
 myStreamListener = MyStreamListener()
 def Run():
     #创建监听流
+    push_list.readPushList()
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
     myStream.filter(follow=push_list.spylist,is_async=False)
 

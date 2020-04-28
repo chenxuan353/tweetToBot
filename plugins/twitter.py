@@ -150,6 +150,7 @@ async def delOne(session: CommandSession):
         '用户昵称:' + userinfo.name + "\n" + \
         '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
+    push_list.savePushList()
     await session.send(s)
 
 @on_command('addone',aliases=['给俺D一个'],permission=permission.SUPERUSER,only_to_me = True)
@@ -192,6 +193,7 @@ async def addOne(session: CommandSession):
         '用户昵称:' + userinfo.name + "\n" + \
         '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
+    push_list.savePushList()
     await session.send(s)
 
 #获取推送对象总属性设置
@@ -361,6 +363,7 @@ async def setGroupAttr(session: CommandSession):
         await session.send('属性值不存在！')
         return
     if cs[2] != '' and Pushunit_allowEdit[cs[0]] in template_attr:
+        cs[2] = cs[2].replace("\\n","\n")
         res = push_list.PushTo_setAttr(
             session.event['self_id'],
             session.event['message_type'],
@@ -383,6 +386,7 @@ async def setGroupAttr(session: CommandSession):
         )
     else:
         res = (False,'属性的值不合法！')
+    push_list.savePushList()
     await session.send(res[1])
 #推送对象的监测对象属性设置
 @on_command('setAttr',aliases=['对象设置'],permission=permission.SUPERUSER,only_to_me = True)
@@ -449,6 +453,7 @@ async def setAttr(session: CommandSession):
         await session.send('属性值不存在！')
         return
     if cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
+        cs[4] = cs[4].replace("\\n","\n")
         res = push_list.setPushunitAttr(
             session.event['self_id'],
             session.event['message_type'],
@@ -474,6 +479,7 @@ async def setAttr(session: CommandSession):
         )
     else:
         res = (False,'属性的值不合法！')
+    push_list.savePushList()
     await session.send(res[1])
 
 #推特ID编码解码
