@@ -79,7 +79,7 @@ class PushList:
     #推送单元允许编辑的配置_布尔类型
     Pushunit_allowEdit = (
         #携带图片发送
-        'upimg','nick',
+        'upimg',
         #消息模版
         'retweet_template','quoted_template','reply_to_status_template',
         'reply_to_user_template','none_template',
@@ -162,6 +162,15 @@ class PushList:
             self.spylist.remove(str(Pushunit['tweet_user_id']))
         #鲨掉自己
         del Pushunit
+    #获取一个推送单元，返回状态列表(布尔型-是否成功,字符串-消息/Pushunit)
+    def getPushunit(self,message_type:str,pushTo:int,tweet_user_id:int) -> list:
+        if message_type not in self.message_type_list:
+            raise Exception("无效的消息类型！",message_type)
+        if pushTo not in self.__push_list[message_type]:
+            return (False,'推送对象不存在！')
+        if tweet_user_id not in self.__push_list[message_type][pushTo]['pushunits']:
+            return (False,'推送单元不存在！')
+        return (True,self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id])
 
     #获取推送单元某个属性的值 返回值-(布尔型-是否成功,字符串-消息/属性内容)
     def getPuslunitAttr(self,Pushunit,key) -> tuple:
@@ -173,19 +182,30 @@ class PushList:
         return (True,res)
     
     #返回监测对象关联的推送单元组,监测对象不存在时返回空列表[]
-    def getLitsFromTweeUserID(self,tweet_user_id:int):
+    def getLitsFromTweeUserID(self,tweet_user_id:int) -> list:
         if tweet_user_id not in self.__spy_relate:
             return []
-        return self.__spy_relate[tweet_user_id]
+        return self.__spy_relate[tweet_user_id].copy()
     #返回推送对象关联的推送单元组,推送对象不存在时返回空列表[]
-    def getLitsFromPushTo(self,message_type:str,pushTo:int):
+    def getLitsFromPushTo(self,message_type:str,pushTo:int) -> list:
+        if message_type not in self.message_type_list:
+            raise Exception("无效的消息类型！",message_type)
+        if pushTo not in self.__push_list[message_type]:
+            return []
+        dict_ = self.__push_list[message_type][pushTo]['pushunits']
+        res = []
+        for v in dict_.values():
+            res.append(v)
+        return res
+    #返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表[]
+    def getLitsFromPushToAndID(self,message_type:str,pushTo:int) -> dict:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         if pushTo not in self.__push_list[message_type]:
             return []
         return self.__push_list[message_type][pushTo]['pushunits']
     #返回推送对象关联的推送属性组,推送对象不存在时返回空字典{}
-    def getAttrLitsFromPushTo(self,message_type:str,pushTo:int):
+    def getAttrLitsFromPushTo(self,message_type:str,pushTo:int) -> dict:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         if pushTo not in self.__push_list[message_type]:
@@ -210,10 +230,9 @@ class PushList:
         if table == []:
             return (True,'移除成功！')
         for Pushunit in table:
-            if True not in self.delPushunit(Pushunit):
-                raise Exception("推送单元不存在",message_type,pushTo)
+            self.delPushunit(Pushunit)
         return (True,'移除成功！')
-    #移除某个推送对象关联的某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
+    #移除某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
     def delPushunitFromPushToAndTweetUserID(self,message_type:str,pushTo:int,tweet_user_id:int) -> tuple:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
@@ -271,11 +290,16 @@ class MyStreamListener(tweepy.StreamListener):
     def on_disconnect(self, notice):
         log_print(4,"推送流已断开链接")
         self.isrun = False
-    
+    #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):
         if tweet_user_id in self.userinfolist:
             return self.userinfolist[tweet_user_id]['name']
         return nick
+    #尝试从缓存中获取用户信息,返回用户信息表
+    def tryGetUserInfo(self, tweet_user_id) -> list:
+        if tweet_user_id in self.userinfolist:
+            return self.userinfolist[tweet_user_id]['name']
+        return {}
     #图片保存（待优化）
     def seve_image(self, name, url, file_path='img'):
         #保存图片到磁盘文件夹 cache/file_path中，默认为当前脚本运行目录下的 cache/img 文件夹
@@ -649,12 +673,11 @@ auth.set_access_token(config.access_token, config.access_token_secret)
 api = tweepy.API(auth, proxy=config.api_proxy)
 #注册推送列表
 push_list = PushList()
-#test_install_push_list()
+#安装测试列表
+test_install_push_list()
 #创建监听对象
 myStreamListener = MyStreamListener()
 def Run():
-    #安装测试列表
-    test_install_push_list()
     #创建监听流
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
     myStream.filter(follow=push_list.spylist,is_async=False)

@@ -80,6 +80,26 @@ pip安装nonebot,tweepy
 
 
 
+### getGroupSetting
+
+别名：全局设置列表
+
+权限：无限制
+
+功能：显示当前私聊/群的全局推送设置
+
+
+
+### getSetting 推特用户ID
+
+别名：对象设置列表
+
+权限：无限制
+
+功能：显示当前私聊/群的某个监测对象的推送设置
+
+
+
 ### setGroupAttr 属性 值
 
 别名：全局设置
@@ -213,3 +233,6 @@ pip安装nonebot,tweepy
 例：setGroupAttr 997786053124616192 转推 关
 
 注：UID可以通过命令getpushlist查看
+
+
+

@@ -57,7 +57,7 @@ async def delalltest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    res = push_list.delPushunitFromPushTo(message_type,sent_id)
+    res = push_list.delPushunitFromPushTo(message_type,int(sent_id))
     await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
 
@@ -65,7 +65,7 @@ async def delalltest(session: CommandSession):
 def get_pushTo_spylist(message_type:str,pushTo:int):
     if message_type not in push_list.message_type_list:
         raise Exception("无效的消息类型！",message_type)
-    table = push_list.getLitsFromPushTo(message_type,pushTo)
+    table = push_list.getLitsFromPushToAndID(message_type,pushTo)
     s = ''
     unit_cout = 0
     for key in table:
@@ -194,7 +194,126 @@ async def addOne(session: CommandSession):
         ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
     await session.send(s)
 
+#获取推送对象总属性设置
+def getPushToSetting(message_type:str,pushTo:int) -> str:
+    attrlist = {    
+        'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+        #推特推送模版
+        'retweet_template':'转推模版',
+        'quoted_template':'转推并评论模版',
+        'reply_to_status_template':'回复模版',
+        'reply_to_user_template':'提及模版', 
+        'none_template':'发推模版',
+        
+        #推特推送开关
+        'retweet':'转推',#转推(默认不开启)
+        'quoted':'转推并评论',#带评论转推(默认开启)
+        'reply_to_status':'回复',#回复(默认开启)
+        'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+        'none':'发推',#发推(默认开启)
 
+        #个人信息变化推送(非实时)
+        'change_ID':'ID修改', #ID修改(默认关闭)
+        'change_name':'昵称修改', #昵称修改(默认开启)
+        'change_description':'描述修改', #描述修改(默认关闭)
+        'change_headimgchange':'头像修改', #头像更改(默认开启)
+    }
+    res = ''
+    attrs = push_list.getAttrLitsFromPushTo(message_type,pushTo)
+    if attrs == {}:
+        return '全局设置未初始化，至少添加一个监测来初始化设置。'
+    for key,value in attrs.items():
+        res = res + attrlist[key] + ':'  + \
+            (value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]) + '\n'
+    return res
+@on_command('getGroupSetting',aliases=['全局设置列表'],permission=permission.SUPERUSER,only_to_me = True)
+async def setGroupSetting(session: CommandSession):
+    res = getPushToSetting(
+        session.event['message_type'],
+        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')]
+    )
+    await session.send(res)
+#获取某个单元的推送设置列表
+def userinfoToStr(userinfo):
+    if userinfo:
+        res = "\n" + '用户名：' + userinfo['name'] + \
+            '用户昵称：' + userinfo['screen_name'] + "\n"
+        return res
+    return ''
+def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
+    attrlist = {    
+        'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+        #推特推送模版
+        'retweet_template':'转推模版',
+        'quoted_template':'转推并评论模版',
+        'reply_to_status_template':'回复模版',
+        'reply_to_user_template':'提及模版', 
+        'none_template':'发推模版',
+        
+        #推特推送开关
+        'retweet':'转推',#转推(默认不开启)
+        'quoted':'转推并评论',#带评论转推(默认开启)
+        'reply_to_status':'回复',#回复(默认开启)
+        'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+        'none':'发推',#发推(默认开启)
+
+        #个人信息变化推送(非实时)
+        'change_ID':'ID修改', #ID修改(默认关闭)
+        'change_name':'昵称修改', #昵称修改(默认开启)
+        'change_description':'描述修改', #描述修改(默认关闭)
+        'change_headimgchange':'头像修改', #头像更改(默认开启)
+    }
+    res = push_list.getPushunit(message_type,pushTo,tweet_user_id)
+    if res[0]:
+        Pushunit = res[1]
+    else:
+        return res
+    """
+        #固有属性
+        Pushunit['bindCQID'] = bindCQID #绑定的酷Q帐号(正式上线时将使用此帐户进行发送，用于适配多酷Q账号)
+        Pushunit['type'] = pushtype #group/private
+        Pushunit['pushTo'] = pushID #QQ号或者群号
+        Pushunit['tweet_user_id'] = tweet_user_id #监测ID
+        Pushunit['nick'] = nick #推送昵称(默认推送昵称为推特screen_name)
+        Pushunit['des'] = des #单元描述
+        userinfo['id'] = user.id
+        userinfo['id_str'] = user.id_str
+        userinfo['name'] = user.name
+        userinfo['description'] = user.description
+        userinfo['screen_name'] = user.screen_name
+        userinfo['profile_image_url'] = user.profile_image_url
+        userinfo['profile_image_url_https'] = user.profile_image_url_https
+    """
+    userinfo = tweetListener.myStreamListener.tryGetUserInfo(tweet_user_id)
+    res = '用户ID:' + str(tweet_user_id) + "\n" + \
+        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义昵称') + \
+        userinfoToStr(userinfo)
+    for attrname,attrdisplayname in attrlist.items():
+        value = push_list.getPuslunitAttr(Pushunit,attrname)
+        res = res + '\n' + attrdisplayname + ':' + \
+            (value[1] if value[1] not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value[1]])
+    return (True,res)
+@on_command('getSetting',aliases=['对象设置列表'],permission=permission.SUPERUSER,only_to_me = True)
+async def getSetting(session: CommandSession):
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg == '':
+        await session.send("缺少参数")
+        return
+    #处理用户ID
+    tweet_user_id : int = -1
+    if stripped_arg.isdecimal():
+        tweet_user_id = int(stripped_arg)
+    else:
+        await session.send("用户ID错误")
+        return
+    res = getPushUnitSetting(
+        session.event['message_type'],
+        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
+        tweet_user_id
+    )
+    await session.send(res[1])
+
+        
 #推送对象总属性设置
 @on_command('setGroupAttr',aliases=['全局设置'],permission=permission.SUPERUSER,only_to_me = True)
 async def setGroupAttr(session: CommandSession):
@@ -282,6 +401,9 @@ async def setAttr(session: CommandSession):
     tweet_user_id : int = -1
     if cs[0].isdecimal():
         tweet_user_id = int(cs[0])
+    else:
+        await session.send("用户ID错误")
+        return
     if cs[2].strip() == '':
         await session.send("缺少参数")
         return
