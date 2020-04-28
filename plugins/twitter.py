@@ -195,6 +195,79 @@ async def addOne(session: CommandSession):
     await session.send(s)
 
 
+#推送对象总属性设置
+@on_command('setGroupAttr',aliases=['全局设置'],permission=permission.SUPERUSER,only_to_me = True)
+async def setNone(session: CommandSession):
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg == '':
+        await session.send("缺少参数")
+        return
+    Pushunit_allowEdit = {
+        #携带图片发送
+        'upimg':'upimg','图片':'upimg','img':'upimg',
+        #昵称设置
+        #'nick':'nick','昵称':'nick',
+        #消息模版
+        'retweet_template':'retweet_template','转推模版':'retweet_template',
+        'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
+        'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
+        'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
+        'none_template':'none_template','发推模版':'none_template',
+        #推特转发各类型开关
+        'retweet':'retweet','转推':'retweet',
+        'quoted':'quoted','转推并评论':'quoted',
+        'reply_to_status':'reply_to_status','回复':'reply_to_status',
+        'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+        'none':'none','发推':'none',
+        #推特个人信息变动推送开关
+        'change_id':'change_ID','ID改变':'change_ID',
+        'change_name':'change_name','名称改变':'change_name',
+        'change_description':'change_description','描述改变':'change_description',
+        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange'
+        }
+    template_attr = (
+        'retweet_template',
+        'quoted_template',
+        'reply_to_status_template',
+        'reply_to_user_template',
+        'none_template'
+    )
+    cs = commandHeadtail(stripped_arg)
+    cs = {
+        0:cs[0],
+        1:cs[1],
+        2:cs[2].strip()
+    }
+    if cs[0] not in Pushunit_allowEdit:
+        await session.send('属性值不存在！')
+        return
+    if cs[2] != '' and Pushunit_allowEdit[cs[0]] in template_attr:
+        res = push_list.PushTo_setAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            Pushunit_allowEdit[cs[0]],
+            cs[2]
+        )
+    elif cs[2] in ('true','开','打开','开启','1'):
+        res = push_list.PushTo_setAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            Pushunit_allowEdit[cs[0]],
+            1
+        )
+    elif cs[2] in ('false','关','关闭','0'):
+        res = push_list.PushTo_setAttr(
+            session.event['self_id'],
+            session.event['message_type'],
+            Pushunit_allowEdit[cs[0]],
+            0
+        )
+    else:
+        res = (False,'设置值错误')
+    await session.send(res[1])
+
+
+
 #推特ID编码解码
 #解码成功返回推特ID，失败返回-1
 def decode_b64(str) -> int:

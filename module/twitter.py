@@ -225,7 +225,7 @@ class PushList:
         return (True,'移除成功！')
 
     #设置指定推送对象的全局属性
-    def PushTo_setAttr(self,message_type:str,pushTo:int,key:str,value):
+    def PushTo_setAttr(self,message_type:str,pushTo:int,key:str,value) -> tuple:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         if key not in self.Pushunit_allowEdit:
@@ -457,7 +457,7 @@ class MyStreamListener(tweepy.StreamListener):
         #事件处理单元-发送
         data = event['data']
         #额外处理
-        if event['type'] == 'none' and push_list.getPuslunitAttr(Pushunit,'upimg') == 1:
+        if event['type'] == 'none' and push_list.getPuslunitAttr(Pushunit,'upimg')[1] == 1:
             self.save_media(data)
         #识别事件类型
         if event['type'] in ['retweet','quoted','reply_to_status','reply_to_user','none']:
@@ -632,6 +632,7 @@ def test_install_push_list():
         push_list.addPushunit(push_list.baleToPushUnit(1837730674,'group',1094163087,user_id,'推送测试',reply_to_status=0,reply_to_user=0))
     for user_id in another_test:
         push_list.addPushunit(push_list.baleToPushUnit(1837730674,'private',554738125,user_id,'推送测试',
+            upimg=1,
             retweet_template='【$tweet_nick】转发了【$related_user_name】的推特：\n$tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',
             quoted_template='【$tweet_nick】转发评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',
             reply_to_status_template='【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',

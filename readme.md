@@ -22,6 +22,8 @@ pip安装nonebot,tweepy
 
 注:命令前注意添加前缀，以及注意命令权限要求
 
+注:命令对空格要求严格，参数间必须只空一个空格
+
 ### delall
 
 别名：这里单推bot
@@ -62,6 +64,10 @@ pip安装nonebot,tweepy
 
 例如：给俺D一个 shirakamifubuki 吹雪 我永远喜欢小狐狸
 
+不需要设置昵称：给俺D一个 shirakamifubuki  我永远喜欢小狐狸
+
+注意：不需要设置昵称的情况下空格不能省略
+
 ![image-20200428113806819](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428113806819.png)
 
 ### delone 推特用户ID/用户名(非昵称)
@@ -71,3 +77,125 @@ pip安装nonebot,tweepy
 权限：超级管理员,@bot
 
 功能：移除一个本群监测的用户
+
+
+
+### setGroupAttr 属性 值
+
+别名：全局设置
+
+权限：超级管理员,@bot
+
+功能：移除一个本群监测的用户
+
+例：setGroupAttr 转推 关
+
+#### 支持的属性列表(大小写不敏感)：
+
+注：属性名称，别名1，...，别名n
+
+##### 	携带图片发送
+
+​	upimg，图片，img
+
+#####     消息模版(参数为模版字符串)
+
+​    retweet_template,转推模版
+
+​    quoted_template,转推并评论模版
+
+​    reply_to_status_template,回复模版
+
+​    reply_to_user_template,被提及模版
+
+​    none_template,发推模版
+
+#####     推特转发各类型开关
+
+###### 	属性
+
+​    retweet,转推
+
+​    quoted,转推并评论
+
+​    reply_to_status,回复
+
+​    reply_to_user,被提及
+
+​    none,发推
+
+###### 	支持的值
+
+​	true,开,打开,开启,1
+
+​	false,关,关闭,0
+
+#####     推特个人信息变动推送开关
+
+###### 	属性
+
+​    change_id,ID改变
+
+​    change_name,名称改变
+
+​    change_description,描述改变
+
+​    change_headimgchange,头像改变
+
+###### 	支持的值
+
+​	true,开,打开,开启,1
+
+​	false,关,关闭,0
+
+#### 模版字符串说明
+
+##### 默认模版
+
+###### 	发推
+
+```
+推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text
+```
+
+###### 	转推
+
+```
+推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text
+```
+
+###### 	转发并评论
+
+```
+推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text
+```
+
+###### 	回复与被提及
+
+```
+推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text
+```
+
+##### 模版支持的变量
+
+​	注：使用\n替代换行符，理论上直接换行也可以但是十分不推荐(
+
+​      $tweet_id 推特ID
+
+​      $tweet_id_min 压缩推特id
+
+​      $tweet_nick 操作人昵称
+
+​      $tweet_user_id 操作人ID
+
+​      $tweet_text 发送推特的完整内容
+
+​      $related_user_id 关联用户ID
+
+​      $related_user_name 关联用户昵称-昵称-昵称查询不到时为ID(被评论/被转发/被提及)
+
+​      $related_tweet_id 关联推特ID(被评论/被转发)
+
+​      $related_tweet_id_min 关联推特ID的压缩(被评论/被转发)
+
+​      $related_tweet_text 关联推特内容(被转发或被转发并评论时存在)
