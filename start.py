@@ -47,8 +47,7 @@ if __name__ == "__main__":
     log_print(4,'启动nonebot...')
     new_loop = asyncio.new_event_loop()
     Future = threads.submit(run_nonebot,new_loop)
-
-    #Future.
+    
     time.sleep(2)
     log_print(4,'启动推特流...')
     new_loop = asyncio.new_event_loop()
