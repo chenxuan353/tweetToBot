@@ -11,13 +11,15 @@ import urllib.request
 import os
 #引入配置
 import config
+#日志输出
+from helper import log_print
 '''
 推特API载入测试
 '''
 
 #test_print
 #处理twitter里所有日志输出
-def log_print(level,str):
+"""def log_print(level,str):
     time_str = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
     if level == 0:
         print('[致命错误]['+ time_str + ']' +str)
@@ -32,7 +34,7 @@ def log_print(level,str):
     elif level == 4:
         print('[信息]['+ time_str + ']'+str)
     elif level == 5:
-        print('[值得注意]['+ time_str + ']'+str)
+        print('[值得注意]['+ time_str + ']'+str)"""
 #10进制转64进制
 def encode_b64(n:int) -> str:
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_'
@@ -654,5 +656,5 @@ def Run():
     test_install_push_list()
     #创建监听流
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
-    myStream.filter(follow=push_list.spylist,is_async=True)
+    myStream.filter(follow=push_list.spylist,is_async=False)
 

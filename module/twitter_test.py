@@ -73,7 +73,7 @@ class MyStreamListener(tweepy.StreamListener):
     isrun = False
     #开始链接监听
     def on_connect(self):
-        log_print(4,"推送流链接已就绪")
+        log_print(4,"推送流已就绪")
         self.isrun = True
     #断开链接监听
     def on_disconnect(self, notice):
