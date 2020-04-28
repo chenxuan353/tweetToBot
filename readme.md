@@ -36,7 +36,7 @@ pip安装nonebot
 
 功能：获取当前私聊/群的监测列表
 
-![image-20200428114040218](readme\image-20200428114040218.png)
+![image-20200428114040218](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428114040218.png)
 
 ### getuserinfo 推特用户ID/用户名(非昵称)
 
@@ -48,7 +48,7 @@ pip安装nonebot
 
 例：getuserinfo shiranuiflare
 
-![image-20200428113938381](readme\image-20200428113938381.png)
+![image-20200428113938381](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428113938381.png)
 
 ### addone 推特用户ID/用户名(非昵称) 昵称 描述
 
@@ -60,7 +60,7 @@ pip安装nonebot
 
 例如：给俺D一个 shirakamifubuki 吹雪 我永远喜欢小狐狸
 
-![image-20200428113806819](readme\image-20200428113806819.png)
+![image-20200428113806819](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428113806819.png)
 
 ### delone 推特用户ID/用户名(非昵称)
 
