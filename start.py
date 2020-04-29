@@ -7,15 +7,11 @@ import asyncio
 import os
 import threading
 from os import path
-from concurrent.futures import ThreadPoolExecutor
-#import module.twitter_test as tweetListener_test
+
 #配置
 import config
 #日志输出
 from helper import log_print,keepalive
-#线程池
-#threads = ThreadPoolExecutor(max_workers=10,thread_name_prefix='MAIN')
-#线程
 
 '''
 nonebot封装的CQHTTP插件
@@ -44,7 +40,6 @@ def reboot_tewwtlistener():
         daemon=True
     )
     keepalive['tweetListener_threads'].start()
-    
 
 def run_tewwtlistener():
     keepalive['tewwtlistener_alive'] = True

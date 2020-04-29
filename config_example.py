@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
 from nonebot.default_config import *
+#也可以在此处对nonebot进行设置
+
 #添加超级管理员 Q号-数值 例:SUPERUSERS.add(12345678)
 SUPERUSERS.add()
 #命令起始标识
@@ -9,16 +11,17 @@ NICKNAME = {'bot', 'bot哥', '工具人', '最菜群友'}
 
 #图片发送目录默认在酷Q 图片文件夹的tweet文件夹内,图片下载文件夹在脚本运行目录的cache文件夹内的tweet文件夹
 #可以使用符号链接链接两个目录
-#推特基本检测ID，用于维持推特流正常运行(流中至少包括一个监测对象,不影响事件推送)
+#使用推特API必填，用于维持推特流正常运行(至少包括一个监测对象,不影响事件推送)
+#不使用推特API时请设置为None或为空 例:base_tweet_id = None 或者 base_tweet_id = ''
 #2006101 这是yagoo(tanigox)的UID
 base_tweet_id = '2006101' 
 #推特API代理(127.0.0.1:8080)
 api_proxy = ""
 
 #默认botQQ 重要信息及未分类信息将推送至此QQ，为空可能导致错误。请务必保持此账号能连接到nonebot
-default_bot_QQ : int = 
+default_bot_QQ : int = 123456
 #bot错误信息推送到的Q号，为空时不进行推送
-bot_error_printID : int =  
+bot_error_printID : int = 123456
 #填写twitter提供的开发Key和secret
 consumer_key = '********************'
 consumer_secret = '********************'

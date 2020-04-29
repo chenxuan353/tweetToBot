@@ -1,42 +1,25 @@
 # -*- coding: UTF-8 -*-
 import nonebot
-import asyncio
 import tweepy
-import requests
-import sys
 import traceback
-import time
-import string
-import urllib.request
 import os
 import start
+import urllib
 #引入配置
 import config
 #日志输出
 from helper import log_print,data_read,data_save
+#引入推送列表
+from module.PushList import push_list,tweetToStrTemplate
+
+#引入测试方法
+try:
+    import test
+except:
+    pass
 '''
 推特API载入测试
 '''
-twitter_config_name = 'twitterdata.json'
-base_tweet_id = config.base_tweet_id
-#test_print
-#处理twitter里所有日志输出
-"""def log_print(level,str):
-    time_str = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    if level == 0:
-        print('[致命错误]['+ time_str + ']' +str)
-        if bot_error_printID != '':
-            requests.post('http://127.0.0.1:5700/send_msg_rate_limited',data={'user_id': bot_error_printID, 'message': time_str})
-    elif level == 1:
-        print('[!!错误!!]['+ time_str + ']' +str)
-    elif level == 2:
-        print('[!警告!]['+ time_str + ']'+str)
-    elif level == 3:
-        print('[调试]['+ time_str + ']'+str)
-    elif level == 4:
-        print('[信息]['+ time_str + ']'+str)
-    elif level == 5:
-        print('[值得注意]['+ time_str + ']'+str)"""
 #10进制转64进制
 def encode_b64(n:int) -> str:
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_'
@@ -66,243 +49,6 @@ def decode_b64(str):
         result *= 64
         result += table[str[i]]
     return result + 1253881609540800000
-#推送列表
-class PushList:
-    #映射推送关联(推送对象(type:str,ID:int)->推送单元)
-    __push_list = {
-        'private':{},
-        'group':{}
-    } 
-    __spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
-    spylist = [base_tweet_id] #流监测列表
-    
-    #支持的消息类型
-    message_type_list = ('private','group') 
-    #推送单元允许编辑的配置_布尔类型
-    Pushunit_allowEdit = (
-        #携带图片发送
-        'upimg',
-        #消息模版
-        'retweet_template','quoted_template','reply_to_status_template',
-        'reply_to_user_template','none_template',
-        #推特转发各类型开关
-        'retweet','quoted','reply_to_status',
-        'reply_to_user','none',
-        #推特个人信息变动推送开关
-        'change_ID','change_name','change_description',
-        'change_headimgchange'
-        )
-    
-    """
-    推送列表-》推送列表、监测人信息关联表及监测人单的列表-》推送单元
-    注：每个推送单元绑定一个推特用户ID以及一个推送对象(群或QQ)
-    注：推送单元的配置由其推送对象全局配置以及自身DIY设置共同完成
-    """
-    """
-    __push_list={
-        'private':{
-            pushto-int:{
-                #推送对象全局默认属性
-                'Pushunitattr':config.pushunit_default_config,
-                #推送单元组
-                'pushunit':{}
-            }
-            tweet_user_id-int:
-        },
-        'group':{}
-    } 
-    """
-    #清空推送设置
-    def clear(self):
-        self.__push_list = {
-            'private':{},
-            'group':{}
-        } 
-        self.__spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
-        self.spylist = [base_tweet_id] #流监测列表
-    #推送单元解包
-    def getAllPushUnit(self) -> list:
-        sourcedata = self.__spy_relate.copy()
-        PushUnits = []
-        for PushUnitList in sourcedata.values():
-            for PushUnit in PushUnitList:
-                PushUnits.append(PushUnit)
-        return PushUnits
-    def savePushList(self) -> tuple:
-        PushUnits = self.getAllPushUnit()
-        return data_save(twitter_config_name,PushUnits)
-    def readPushList(self) -> tuple:
-        data = data_read(twitter_config_name)
-        if data[0] != False:
-            self.clear()
-            for PushUnit in data[2]:
-                self.addPushunit(PushUnit)
-            return (True,data[1])
-        return data
-    #打包成推送单元中(推送类型-群/私聊，推送对象-群号/Q号,绑定的推特用户ID,单元描述,绑定的酷Q账号,推送模版,各推送开关)
-    def baleToPushUnit(self,bindCQID:int,
-                        pushtype:str,
-                        pushID:int,
-                        tweet_user_id:int,
-                        des:str,
-                        nick:str='',**config):
-        Pushunit = {}
-        if not config:
-            config = {}
-        #固有属性
-        Pushunit['bindCQID'] = bindCQID #绑定的酷Q帐号(正式上线时将使用此帐户进行发送，用于适配多酷Q账号)
-        Pushunit['type'] = pushtype #group/private
-        Pushunit['pushTo'] = pushID #QQ号或者群号
-        Pushunit['tweet_user_id'] = tweet_user_id #监测ID
-        Pushunit['nick'] = nick #推送昵称(默认推送昵称为推特screen_name)
-        Pushunit['des'] = des #单元描述
-        Pushunit['config'] = config
-        return Pushunit
-    #增加一个推送单元，返回状态元组(布尔型-是否成功,字符串-消息)
-    def addPushunit(self,Pushunit) -> tuple:
-        if Pushunit['pushTo'] in self.__push_list[Pushunit['type']]:
-            if Pushunit['tweet_user_id'] in self.__push_list[Pushunit['type']][Pushunit['pushTo']]['pushunits']:
-                return ( False, '推送单元已存在' )
-        else:
-            #初始化推送对象(推送全局属性)
-            self.__push_list[Pushunit['type']][Pushunit['pushTo']] = {
-                #为推送对象设置全局默认属性
-                'Pushunitattr':config.pushunit_default_config.copy(),
-                #推送单元组
-                'pushunits':{}
-            }
-        #添加单元至推送列表
-        self.__push_list[Pushunit['type']][Pushunit['pushTo']]['pushunits'][Pushunit['tweet_user_id']] = Pushunit
-        #同步监测关联（内部同步了监测列表）
-        if Pushunit['tweet_user_id'] not in self.__spy_relate:
-            self.__spy_relate[Pushunit['tweet_user_id']] = []
-            if str(Pushunit['tweet_user_id']) != base_tweet_id:
-                self.spylist.append(str(Pushunit['tweet_user_id']))
-        self.__spy_relate[Pushunit['tweet_user_id']].append(Pushunit)
-        return ( True, '添加成功！' )
-    #删除一个推送单元，没有返回值
-    def delPushunit(self,Pushunit):
-        #从推送列表中移除推送单元
-        del self.__push_list[Pushunit['type']][Pushunit['pushTo']]['pushunits'][Pushunit['tweet_user_id']]
-        #从监测列表中移除推送单元
-        self.__spy_relate[Pushunit['tweet_user_id']].remove(Pushunit)
-        #检查监测对象的推送单元是否为空，为空则移出监测列表
-        if self.__spy_relate[Pushunit['tweet_user_id']] == []:
-            del self.__spy_relate[Pushunit['tweet_user_id']]
-            if str(Pushunit['tweet_user_id']) != base_tweet_id:
-                self.spylist.remove(str(Pushunit['tweet_user_id']))
-        #鲨掉自己
-        del Pushunit
-    #获取一个推送单元，返回状态列表(布尔型-是否成功,字符串-消息/Pushunit)
-    def getPushunit(self,message_type:str,pushTo:int,tweet_user_id:int) -> list:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if pushTo not in self.__push_list[message_type]:
-            return (False,'推送对象不存在！')
-        if tweet_user_id not in self.__push_list[message_type][pushTo]['pushunits']:
-            return (False,'推送单元不存在！')
-        return (True,self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id])
-
-    #获取推送单元某个属性的值 返回值-(布尔型-是否成功,字符串-消息/属性内容)
-    def getPuslunitAttr(self,Pushunit,key) -> tuple:
-        if key in Pushunit['config']:
-            return (True,Pushunit['config'][key])
-        if key not in self.__push_list[Pushunit['type']][Pushunit['pushTo']]['Pushunitattr']:
-            return (False,'不存在此属性')
-        res = self.__push_list[Pushunit['type']][Pushunit['pushTo']]['Pushunitattr'][key]
-        return (True,res)
-    
-    #返回监测对象关联的推送单元组,监测对象不存在时返回空列表[]
-    def getLitsFromTweeUserID(self,tweet_user_id:int) -> list:
-        if tweet_user_id not in self.__spy_relate:
-            return []
-        return self.__spy_relate[tweet_user_id].copy()
-    #返回推送对象关联的推送单元组,推送对象不存在时返回空列表[]
-    def getLitsFromPushTo(self,message_type:str,pushTo:int) -> list:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if pushTo not in self.__push_list[message_type]:
-            return []
-        dict_ = self.__push_list[message_type][pushTo]['pushunits']
-        res = []
-        for v in dict_.values():
-            res.append(v)
-        return res
-    #返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表[]
-    def getLitsFromPushToAndID(self,message_type:str,pushTo:int) -> dict:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if pushTo not in self.__push_list[message_type]:
-            return []
-        return self.__push_list[message_type][pushTo]['pushunits']
-    #返回推送对象关联的推送属性组,推送对象不存在时返回空字典{}
-    def getAttrLitsFromPushTo(self,message_type:str,pushTo:int) -> dict:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if pushTo not in self.__push_list[message_type]:
-            return {}
-        return self.__push_list[message_type][pushTo]['Pushunitattr']
-
-    #移除某个监测对象关联的所有推送单元,参数-推特用户ID 返回值-(布尔型-是否成功,字符串-消息)
-    def delPushunitFromTweeUserID(self,tweet_user_id:int) -> tuple:
-        if tweet_user_id not in self.__spy_relate:
-            return (False,'此用户不在监测列表中！')
-        table = self.getLitsFromTweeUserID(tweet_user_id)
-        if table == []:
-            return (True,'移除成功！')
-        for Pushunit in table:
-            self.delPushunit(Pushunit)
-        return (True,'移除成功！')
-    #移除某个推送对象关联的所有推送单元,参数-消息类型，对象ID，CQID 返回值-(布尔型-是否成功,字符串-消息)
-    def delPushunitFromPushTo(self,message_type:str,pushTo:int,self_id:int = 0) -> tuple:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        table = self.getLitsFromPushTo(message_type,pushTo)
-        if table == []:
-            return (True,'移除成功！')
-        for Pushunit in table:
-            if self_id == 0 or self_id == Pushunit['bindCQID']:
-                self.delPushunit(Pushunit)
-        return (True,'移除成功！')
-    #移除某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
-    def delPushunitFromPushToAndTweetUserID(self,message_type:str,pushTo:int,tweet_user_id:int) -> tuple:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if pushTo not in self.__push_list[message_type]:
-            return (False,'推送对象不存在！')
-        if tweet_user_id not in self.__push_list[message_type][pushTo]['pushunits']:
-            return (False,'推送单元不存在！')
-        self.delPushunit(self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id])
-        return (True,'移除成功！')
-
-    #设置指定推送对象的全局属性
-    def PushTo_setAttr(self,message_type:str,pushTo:int,key:str,value) -> tuple:
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if key not in self.Pushunit_allowEdit:
-            return (False,'指定属性不存在！')
-        if pushTo not in self.__push_list[message_type]:
-            return (False,'推送对象不存在！')
-        self.__push_list[message_type][pushTo]['Pushunitattr'][key][value]
-        return (True,'属性已更新')
-    #设置指定推送单元的特定属性
-    def setPushunitAttr(self,message_type:str,pushTo:int,tweet_user_id:int,key:str,value):
-        if message_type not in self.message_type_list:
-            raise Exception("无效的消息类型！",message_type)
-        if key not in self.Pushunit_allowEdit:
-            return (False,'指定属性不存在！')
-        if pushTo not in self.__push_list[message_type]:
-            return (False,'推送对象不存在！')
-        if tweet_user_id not in self.__push_list[message_type][pushTo]['pushunits']:
-            return (False,'推送单元不存在！')
-        self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id][key][value]
-        return (True,'属性已更新')
-    
-
-#字符串模版
-class tweetToStrTemplate(string.Template):
-    delimiter = '$'
-    idpattern = '[a-z]+_[a-z_]+'
 
 #推特监听流
 class MyStreamListener(tweepy.StreamListener):
@@ -379,15 +125,32 @@ class MyStreamListener(tweepy.StreamListener):
         try:
             if message_type == 'private':
                 bot.sync.send_msg_rate_limited(self_id=bindCQID,user_id=send_id,message=message)
-                #requests.post('http://127.0.0.1:5700/send_msg_rate_limited',data={'user_id': send_id_str, 'message': str})
             elif message_type == 'group':
                 bot.sync.send_msg_rate_limited(self_id=bindCQID,group_id=send_id,message=message)
-                #requests.post('http://127.0.0.1:5700/send_msg_rate_limited',data={'group_id': send_id_str, 'message': str})
         except:
             s = traceback.format_exc(limit=5)
             log_print(2,s)
             pass
-    
+    #控制台输出侦听到的消息
+    def statusPrintToLog(self, tweetinfo):
+        if tweetinfo['type'] == 'none':
+            str = '推特ID：' +tweetinfo['id_str']+'，'+ \
+                tweetinfo['user']['screen_name']+"发送了推文:\n"+ \
+                tweetinfo['text']
+            log_print(5,'(！)'+ str)
+        elif tweetinfo['type'] == 'retweet':
+            pass
+        else:
+            str = \
+            '标识 ' + self.type_to_str(tweetinfo['type']) + \
+            '，推特ID：' +tweetinfo['id_str']+'，'+ \
+            tweetinfo['user']['screen_name']+'与'+ \
+            tweetinfo['Related_user']['screen_name']+"的互动:\n"+ \
+            tweetinfo['text']
+            if tweetinfo['user']['id_str'] in push_list.spylist:
+                log_print(5,'(！)'+ str)
+            else:
+                log_print(4,str)
     #推特事件监听
     def on_status(self, status):
         try:
@@ -397,17 +160,7 @@ class MyStreamListener(tweepy.StreamListener):
             eventunit = self.bale_event(tweetinfo['type'],tweetinfo['user']['id'],tweetinfo)
             self.deal_event(eventunit)
             #控制台输出
-            if tweetinfo['type'] == 'none':
-                str = '推特ID：' +tweetinfo['id_str']+'，'+tweetinfo['user']['screen_name']+"发送了推文:\n"+tweetinfo['text']
-                log_print(5,'(！)'+ str)
-            elif tweetinfo['type'] == 'retweet':
-                pass
-            else:
-                str = '标识 ' + self.type_to_str(tweetinfo['type']) +'，推特ID：' +tweetinfo['id_str']+'，'+ tweetinfo['user']['screen_name']+'与'+tweetinfo['Related_user']['screen_name']+"的互动:\n"+tweetinfo['text']
-                if tweetinfo['user']['id_str'] in push_list.spylist:
-                    log_print(5,'(！)'+ str)
-                else:
-                    log_print(4,str)
+            self.statusPrintToLog(tweetinfo)
         except:
             str = traceback.format_exc(limit=5)
             log_print(2,str)
@@ -491,7 +244,57 @@ class MyStreamListener(tweepy.StreamListener):
                     tweetinfo['extended_entities'].append(media_obj)
         return tweetinfo
 
+    #检测个人信息更新
+    def check_userinfo(self, user):
+        """
+            运行数据比较
+            用于监测用户的信息修改
+            用户ID screen_name
+            用户昵称 name
+            描述 description
+            头像 profile_image_url
+        """
+        if user.id in self.userinfolist:
+            userinfo = self.userinfolist[user.id]
+            data = {}
+            str = ''
+            if userinfo['name'] != user.name:
+                data['type'] = 'change_name'
+                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + \
+                ' 的昵称已更新为 ' + user.name + "(" + user.screen_name + ")"
+                userinfo['name'] = user.name
+            if userinfo['description'] != user.description:
+                data['type'] = 'change_description'
+                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + ' 的描述已更新为 ' + user.description
+                userinfo['description'] = user.description
+            if userinfo['screen_name'] != user.screen_name:
+                data['type'] = 'change_ID'
+                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + \
+                    ' 的ID已更新为 ' + user.name + "(" + user.screen_name + ")"
+                userinfo['screen_name'] = user.screen_name
+            if userinfo['profile_image_url_https'] != user.profile_image_url_https:
+                data['type'] = 'change_headimgchange'
+                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + '的头像已更新'
+                userinfo['profile_image_url'] = user.profile_image_url
+                userinfo['profile_image_url_https'] = user.profile_image_url_https
 
+            if str != '':
+                data['user_id'] = user.id
+                data['user_id_str'] = user.id_str
+                data['str'] = str
+                eventunit = self.bale_event(data['type'],data['user_id'],data)
+                self.deal_event(eventunit)
+        else:
+            if user.id_str in push_list.spylist:
+                userinfo = {}
+                userinfo['id'] = user.id
+                userinfo['id_str'] = user.id_str
+                userinfo['name'] = user.name
+                userinfo['description'] = user.description
+                userinfo['screen_name'] = user.screen_name
+                userinfo['profile_image_url'] = user.profile_image_url
+                userinfo['profile_image_url_https'] = user.profile_image_url_https
+                self.userinfolist[user.id] = userinfo
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
         eventunit = {
@@ -503,6 +306,8 @@ class MyStreamListener(tweepy.StreamListener):
     #事件预处理-发送事件
     def deal_event(self, event):
         table = push_list.getLitsFromTweeUserID(event['user_id'])
+        if test:
+            test.event_push(event)
         for Pushunit in table:
             #获取属性判断是否可以触发事件
             res = push_list.getPuslunitAttr(Pushunit,event['type'])
@@ -525,7 +330,7 @@ class MyStreamListener(tweepy.StreamListener):
                     push_list.getPuslunitAttr(Pushunit,event['type']+'_template')[1]
                 )
             self.send_msg(Pushunit['type'],Pushunit['pushTo'],str)
-        elif event['type'] in ['change_name','change_description','change_headimgchange']:
+        elif event['type'] in ['change_ID','change_name','change_description','change_headimgchange']:
             self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'])
 
     #将推特数据应用到模版
@@ -595,113 +400,13 @@ class MyStreamListener(tweepy.StreamListener):
                     file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     s = s + '[CQ:image,file=tweet/' + media_unit['id_str'] + file_suffix + ']'
         return s
-    #检测个人信息更新
-    def check_userinfo(self, user):
-        """
-            运行数据比较
-            用于监测用户的信息修改
-            用户ID screen_name
-            用户昵称 name
-            描述 description
-            头像 profile_image_url
-        """
-        if user.id in self.userinfolist:
-            userinfo = self.userinfolist[user.id]
-            data = {}
-            str = ''
-            if userinfo['name'] != user.name:
-                data['type'] = 'change_name'
-                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + \
-                ' 的昵称已更新为 ' + user.name + "(" + user.screen_name + ")"
-                userinfo['name'] = user.name
 
-            if userinfo['description'] != user.description:
-                data['type'] = 'change_description'
-                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + ' 的描述已更新为 ' + user.description
-                userinfo['description'] = user.description
-
-            if userinfo['screen_name'] != user.screen_name:
-                data['type'] = 'change_ID'
-                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + \
-                    ' 的ID已更新为 ' + user.name + "(" + user.screen_name + ")"
-                userinfo['screen_name'] = user.screen_name
-
-            if userinfo['profile_image_url_https'] != user.profile_image_url_https:
-                data['type'] = 'change_name'
-                str = userinfo['name'] + "(" + userinfo['screen_name'] + ")" + '的头像已更新'
-                userinfo['profile_image_url'] = user.profile_image_url
-                userinfo['profile_image_url_https'] = user.profile_image_url_https
-
-            if str != '':
-                data['user_id_str'] = user.id_str
-                data['str'] = str
-                eventunit = self.bale_event(data['type'],data['user_id_str'],data)
-                self.deal_event(eventunit)
-                #事件测试发送
-                requests.post('http://127.0.0.1:5700/send_msg_rate_limited',data={'user_id': '3309003591', 'message': str})
-        else:
-            if user.id_str in push_list.spylist:
-                userinfo = {}
-                userinfo['id'] = user.id
-                userinfo['id_str'] = user.id_str
-                userinfo['name'] = user.name
-                userinfo['description'] = user.description
-                userinfo['screen_name'] = user.screen_name
-                userinfo['profile_image_url'] = user.profile_image_url
-                userinfo['profile_image_url_https'] = user.profile_image_url_https
-                self.userinfolist[user.id] = userinfo
-
-
-#测试列表安装函数
-def test_install_push_list():
-    #923712088 アリア字幕组 => 1128877708530790400
-    spylist = [
-        997786053124616192,
-        1154304634569150464,
-        1200396304360206337,
-        996645451045617664,
-        1024528894940987392,
-        1109751762733301760,
-        979891380616019968,
-        805435112259096576,#我的推特
-        1131691820902100992,#another_test
-        1128877708530790400,#another_test
-        1104692320291549186,#another_test
-        1068883575292944384 #another_test
-    ]
-    okayu_test = [
-        #997786053124616192,
-        1109751762733301760
-    ]
-    another_test = [
-        1131691820902100992,#another_test
-        1128877708530790400,#another_test
-        1104692320291549186,#another_test
-        1068883575292944384 #another_test
-    ]
-    for user_id in spylist:
-        push_list.addPushunit(push_list.baleToPushUnit(1837730674,'private',3309003591,user_id,'推送测试',upimg=1))
-    for user_id in okayu_test:
-        push_list.addPushunit(push_list.baleToPushUnit(1837730674,'group',1094163087,user_id,'推送测试',reply_to_status=0,reply_to_user=0))
-    for user_id in another_test:
-        push_list.addPushunit(push_list.baleToPushUnit(1837730674,'private',554738125,user_id,'推送测试',
-            upimg=1,
-            retweet_template='【$tweet_nick】转发了【$related_user_name】的推特：\n$tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',
-            quoted_template='【$tweet_nick】转发评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',
-            reply_to_status_template='【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',
-            reply_to_user_template='',
-            none_template='【$tweet_nick】发布了：\n$tweet_text\n\nhttps://twitter.com/$tweet_user_id/status/$tweet_id',))
-    #addPushunit(baleToPushunit('group','923712088','1128877708530790400','推送测试'))
-
-#错误上报
-bot_error_printID = config.bot_error_printID
 #推特认证
 auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
 auth.set_access_token(config.access_token, config.access_token_secret)
 #获取API授权
 api = tweepy.API(auth, proxy=config.api_proxy)
-#注册推送列表
-push_list = PushList()
+
 #安装测试列表
 #test_install_push_list()
 #创建监听对象

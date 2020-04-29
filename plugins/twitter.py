@@ -2,14 +2,14 @@ import module.twitter as tweetListener
 from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
 from helper import commandHeadtail,keepalive,log_print
 from tweepy import TweepError
+from module.PushList import push_list
 import time
 import asyncio
 import os
 import traceback
 import re
-import start
 #推送列表的引用
-push_list : tweetListener.PushList = tweetListener.push_list
+
 
 @on_notice('group_decrease')
 async def group_increase_leave_me(session: NoticeSession):
