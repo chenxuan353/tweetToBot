@@ -11,7 +11,14 @@ import json
 config_file_base_path = 'cache\\config\\'
 bindCQID = config.default_bot_QQ
 bot_error_printID = config.bot_error_printID
-
+#给主线程传递信息
+keepalive = {
+    'reboot_tewwtlistener' : False,
+    'tewwtlistener_alive' : True,
+    'reboot_tweetListener_cout' : 0,
+    'tweetListener_threads' : None,
+    'nonebot_threads' : None
+}
 
 #参数截断
 def commandHeadtail(s:str):

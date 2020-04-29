@@ -12,17 +12,16 @@ from concurrent.futures import ThreadPoolExecutor
 #配置
 import config
 #日志输出
-from helper import log_print
+from helper import log_print,keepalive
 #线程池
 #threads = ThreadPoolExecutor(max_workers=10,thread_name_prefix='MAIN')
 #线程
-reboot_tweetListener_cout : int = 0
-tweetListener_threads : threading.Thread = None
-nonebot_threads : threading.Thread = None
 
 '''
 nonebot封装的CQHTTP插件
 '''
+def get_keepalive():
+    return keepalive
 def init():
     base_path = 'cache/'
     file_path = 'config'
@@ -32,35 +31,37 @@ def init():
         os.makedirs(base_path + file_path)
 
 def reboot_tewwtlistener():
-    global reboot_tweetListener_cout
-    reboot_tweetListener_cout = reboot_tweetListener_cout + 1
-    if reboot_tweetListener_cout > 5:
-        log_print(4,'重试次数过多，停止重试...')
+    keepalive['reboot_tewwtlistener'] = False
+    if keepalive['reboot_tweetListener_cout'] > 0:
+        log_print(6,'重试次数过多，停止重试...')
+        keepalive['tewwtlistener_alive'] = False
         return
-    log_print(4,'尝试重启推特流...')
-    tweetListener_threads = threading.Thread(
+    keepalive['reboot_tweetListener_cout'] = keepalive['reboot_tweetListener_cout'] + 1
+    log_print(6,'尝试重启推特流，'+'进行第 ' + str(keepalive['reboot_tweetListener_cout']) + ' 次尝试...')
+
+    keepalive['tweetListener_threads'] = threading.Thread(
         group=None, 
         target=run_tewwtlistener, 
         name='tweetListener_threads', 
         daemon=True
     )
-    tweetListener_threads.start()
+    keepalive['tweetListener_threads'].start()
+    
+
 def run_tewwtlistener():
+    keepalive['tewwtlistener_alive'] = True
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
     try:
         tweetListener.Run()
-    except (ConnectionError,TimeoutError):
-        log_print(0,"推特监听流连接失败！\n"+errorMsg)
     except:
         log_print(0,'推特监听异常,将在10秒后尝试重启...')
         s = traceback.format_exc(limit=10)
         log_print(2,s)
         time.sleep(10)
-        log_print(0,'尝试重启监听...')
         reboot_tewwtlistener()
         return
-        
+
 def run_nonebot():
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
@@ -76,32 +77,44 @@ def run_nonebot():
         s = traceback.format_exc(limit=10)
         log_print(2,s)
 
-
-#threading.Thread(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None)
-#Future = threads.submit(run_tewwtlistener,new_loop)
-if __name__ == "__main__":
-    #初始化
-    init()
-    #启动线程
-    log_print(4,'启动nonebot...')
-    nonebot_threads = threading.Thread(
+def nonebot_threads_run():
+    keepalive['nonebot_threads'] = threading.Thread(
         group=None, 
         target=run_nonebot, 
         name='nonebot_threads', 
         daemon=True
     )
-    nonebot_threads.start()
-    time.sleep(2)
-    log_print(4,'启动推特流...')
-    tweetListener_threads = threading.Thread(
+    keepalive['nonebot_threads'].start()
+
+def tweetListener_threads_run():
+    keepalive['tweetListener_threads'] = threading.Thread(
         group=None, 
         target=run_tewwtlistener, 
         name='tweetListener_threads', 
         daemon=True
     )
-    tweetListener_threads.start()
+    keepalive['tweetListener_threads'].start()
+
+async def DealAndKeepAlive():
+    while True:
+        await asyncio.sleep(1)
+        if keepalive['reboot_tewwtlistener'] == True:
+            reboot_tewwtlistener()
+
+#threading.Thread(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None)
+#Future = threads.submit(run_tewwtlistener,new_loop)
+
+if __name__ == "__main__":
+    #初始化
+    init()
+    #启动线程
+    log_print(4,'启动nonebot...')
+    nonebot_threads_run()
+    time.sleep(2)
+    log_print(4,'启动推特流...')
+    tweetListener_threads_run()
     loop = asyncio.get_event_loop()
     log_print(4,'维持主线程运行...')
-    loop.run_forever()
+    loop.run_until_complete(DealAndKeepAlive())
 
 

@@ -1,16 +1,25 @@
 import module.twitter as tweetListener
 from nonebot import on_command, CommandSession, permission
-from helper import commandHeadtail
+from helper import commandHeadtail,keepalive
 from tweepy import TweepError
 import time
 import asyncio
 import os
 import traceback
 import re
+import start
 #推送列表的引用
 push_list : tweetListener.PushList = tweetListener.push_list
 
-
+@on_command('runTweetListener',aliases=['启动监听'], permission=permission.SUPERUSER,only_to_me = False)
+async def runTweetListener(session: CommandSession):
+    if keepalive['tewwtlistener_alive'] == True or keepalive['reboot_tewwtlistener'] == True:
+        await session.send('推特监听仍在运行中，无法二次启动！')
+        return
+    keepalive['reboot_tweetListener_cout'] = 0
+    await session.send('尝试启动中...')
+    keepalive['reboot_tewwtlistener'] = True
+    
 # on_command 装饰器将函数声明为一个命令处理器
 @on_command('addtest', permission=permission.SUPERUSER,only_to_me = False)
 async def addtest(session: CommandSession):
