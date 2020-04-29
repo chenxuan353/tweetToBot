@@ -169,7 +169,8 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
     if tweetListener:
         userinfo = tweet_event_deal.tryGetUserInfo(tweet_user_id)
     res = '用户ID:' + str(tweet_user_id) + "\n" + \
-        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义昵称') + \
+        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + \
+        '描述:' + Pushunit['des'] + \
         userinfoToStr(userinfo)
     for attrname,attrdisplayname in attrlist.items():
         value = push_list.getPuslunitAttr(Pushunit,attrname)
@@ -245,25 +246,33 @@ async def setGroupAttr(session: CommandSession):
     if cs[0] not in Pushunit_allowEdit:
         await session.send('属性值不存在！')
         return
+    PushTo : int = 0
+    if session.event['message_type'] == 'group':
+        PushTo = int(session.event['group_id'])
+    elif session.event['message_type'] == 'private':
+        PushTo = int(session.event['user_id'])
+    else:
+        await session.send('不支持的消息类型!')
+        return
     if cs[2] != '' and Pushunit_allowEdit[cs[0]] in template_attr:
         cs[2] = cs[2].replace("\\n","\n")
         res = push_list.PushTo_setAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
             Pushunit_allowEdit[cs[0]],
             cs[2]
         )
     elif cs[2] in ('true','开','打开','开启','1'):
         res = push_list.PushTo_setAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
             Pushunit_allowEdit[cs[0]],
             1
         )
     elif cs[2] in ('false','关','关闭','0'):
         res = push_list.PushTo_setAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
             Pushunit_allowEdit[cs[0]],
             0
         )
@@ -301,12 +310,21 @@ async def setAttr(session: CommandSession):
     cs[2] = tcs[0]
     cs[3] = tcs[1]
     cs[4] = tcs[2].strip()
-
+    PushTo : int = 0
+    if session.event['message_type'] == 'group':
+        PushTo = int(session.event['group_id'])
+    elif session.event['message_type'] == 'private':
+        PushTo = int(session.event['user_id'])
+    else:
+        await session.send('不支持的消息类型!')
+        return
     Pushunit_allowEdit = {
         #携带图片发送
         'upimg':'upimg','图片':'upimg','img':'upimg',
         #昵称设置
-        #'nick':'nick','昵称':'nick',
+        'nick':'nick','昵称':'nick',
+        #描述设置
+        'des':'des','描述':'des',
         #消息模版
         'retweet_template':'retweet_template','转推模版':'retweet_template',
         'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
@@ -338,27 +356,36 @@ async def setAttr(session: CommandSession):
     if cs[2] not in Pushunit_allowEdit:
         await session.send('属性值不存在！')
         return
-    if cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
+    if Pushunit_allowEdit[cs[2]] == 'des' or Pushunit_allowEdit[cs[2]] == 'nick':
         cs[4] = cs[4].replace("\\n","\n")
         res = push_list.setPushunitAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
+            tweet_user_id,
+            Pushunit_allowEdit[cs[2]],
+            cs[4]
+        )
+    elif cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
+        cs[4] = cs[4].replace("\\n","\n")
+        res = push_list.setPushunitAttr(
+            session.event['message_type'],
+            PushTo,
             tweet_user_id,
             Pushunit_allowEdit[cs[2]],
             cs[4]
         )
     elif cs[4] in ('true','开','打开','开启','1'):
         res = push_list.setPushunitAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
             tweet_user_id,
             Pushunit_allowEdit[cs[2]],
             1
         )
     elif cs[4] in ('false','关','关闭','0'):
         res = push_list.setPushunitAttr(
-            session.event['self_id'],
             session.event['message_type'],
+            PushTo,
             tweet_user_id,
             Pushunit_allowEdit[cs[2]],
             0

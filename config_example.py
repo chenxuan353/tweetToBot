@@ -8,7 +8,8 @@ SUPERUSERS.add()
 COMMAND_START = {'!','！'}
 #bot称呼-暂无作用
 NICKNAME = {'bot', 'bot哥', '工具人', '最菜群友'}
-
+#nonebot的debug开关
+DEBUG = True
 #推特更新检测方法(twitter_api-推特API,socket_api-暂未开发,twint-暂未开发)
 UPDATA_METHOD = "twitter_api"
 

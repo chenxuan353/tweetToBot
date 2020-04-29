@@ -58,7 +58,7 @@ async def getuserinfo(session: CommandSession):
 
 
 
-@on_command('delone',aliases=['我不想D了'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('delone',aliases=['我不想D了','俺不想D了'],permission=permission.SUPERUSER,only_to_me = True)
 async def delOne(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -120,6 +120,8 @@ async def addOne(session: CommandSession):
         cs = commandHeadtail(cs[2])
         nick = cs[0]
         des = cs[2]
+    if des == '':
+        des = userinfo.name+'('+userinfo.screen_name+')'
     PushUnit = push_list.baleToPushUnit(
         session.event['self_id'],
         session.event['message_type'],

@@ -252,19 +252,22 @@ class PushList:
             return (False,'指定属性不存在！')
         if pushTo not in self.__push_list[message_type]:
             return (False,'推送对象不存在！')
-        self.__push_list[message_type][pushTo]['Pushunitattr'][key][value]
+        self.__push_list[message_type][pushTo]['Pushunitattr'][key] = value
         return (True,'属性已更新')
     #设置指定推送单元的特定属性
     def setPushunitAttr(self,message_type:str,pushTo:int,tweet_user_id:int,key:str,value):
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
-        if key not in self.Pushunit_allowEdit:
+        if key not in self.Pushunit_allowEdit and key != 'nick' and key != 'des':
             return (False,'指定属性不存在！')
         if pushTo not in self.__push_list[message_type]:
             return (False,'推送对象不存在！')
         if tweet_user_id not in self.__push_list[message_type][pushTo]['pushunits']:
             return (False,'推送单元不存在！')
-        self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id][key][value]
+        if key == 'nick' or key == 'des':
+            self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id][key] = value
+        else:
+            self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id]['config'][key] = value
         return (True,'属性已更新')
 #字符串模版
 class tweetToStrTemplate(string.Template):
