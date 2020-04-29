@@ -1,15 +1,23 @@
-import module.twitterApi as tweetListener
+# -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
 from helper import commandHeadtail,keepalive,log_print
-from tweepy import TweepError
-from module.PushList import push_list
+from module.twitter import push_list
 import time
 import asyncio
 import os
 import traceback
-import re
-#推送列表的引用
+import config
+"""
+通用推特监听指令
+"""
+#推特事件处理对象，由启动调用的更新检测方法有关
+#allow_start_method = ('twitter_api','socket_api','twint')
 
+if config.UPDATA_METHOD == 'twitter_api':
+    import module.twitterApi as tweetListener
+else:
+    raise Exception('暂不支持的更新检测(UPDATA_METHOD)方法：'+config.UPDATA_METHOD)
+tweet_event_deal = tweetListener.tweet_event_deal
 
 @on_notice('group_decrease')
 async def group_increase_leave_me(session: NoticeSession):
@@ -17,49 +25,6 @@ async def group_increase_leave_me(session: NoticeSession):
         push_list.delPushunitFromPushTo("group",int(session.event['group_id']),self_id = int(session.event['self_id']))
         push_list.savePushList()
         log_print(6,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
-
-@on_command('runTweetListener',aliases=['启动监听'], permission=permission.SUPERUSER,only_to_me = False)
-async def runTweetListener(session: CommandSession):
-    if keepalive['tewwtlistener_alive'] == True or keepalive['reboot_tewwtlistener'] == True:
-        await session.send('推特监听仍在运行中，无法二次启动！')
-        return
-    keepalive['reboot_tweetListener_cout'] = 0
-    await session.send('尝试启动中...')
-    keepalive['reboot_tewwtlistener'] = True
-    
-# on_command 装饰器将函数声明为一个命令处理器
-@on_command('addtest', permission=permission.SUPERUSER,only_to_me = False)
-async def addtest(session: CommandSession):
-    message_type = session.event['message_type']
-    sent_id = 0
-    if message_type == 'private':
-        sent_id = session.event['user_id']
-    elif message_type == 'group':
-        sent_id = session.event['group_id']
-    else:
-        await session.send('未收录的消息类型:'+message_type)
-        return
-    sent_id = str(sent_id)
-    unit = push_list.baleToPushUnit(
-        1837730674,
-        message_type,sent_id,805435112259096576,
-        '增删测试',nick='底层轴man',none_template="$tweet_nick这个人发推了,爪巴")
-    push_list.addPushunit(unit)
-    await session.send('done!')
-@on_command('deltest', permission=permission.SUPERUSER,only_to_me = False)
-async def deltest(session: CommandSession):
-    message_type = session.event['message_type']
-    sent_id = 0
-    if message_type == 'private':
-        sent_id = session.event['user_id']
-    elif message_type == 'group':
-        sent_id = session.event['group_id']
-    else:
-        await session.send('未收录的消息类型:'+message_type)
-        return
-    sent_id = str(sent_id)
-    s = push_list.delPushunitFromPushToAndTweetUserID(message_type,sent_id,805435112259096576)
-    await session.send(s)
 
 @on_command('delall',aliases=['这里单推bot'], permission=permission.SUPERUSER,only_to_me = True)
 async def delalltest(session: CommandSession):
@@ -87,7 +52,7 @@ def get_pushTo_spylist(message_type:str,pushTo:int):
     unit_cout = 0
     for key in table:
         unit_cout = unit_cout + 1
-        s = s + (table[key]['nick'] if table[key]['nick'] != '' else tweetListener.myStreamListener.tryGetNick(key,"未定义昵称")) + \
+        s = s + (table[key]['nick'] if table[key]['nick'] != '' else tweet_event_deal.tryGetNick(key,"未定义昵称")) + \
             "," + str(key) + ',' + table[key]['des'] + "\n"
     s = s + '总监测数：' + str(unit_cout)
     if unit_cout == 0:
@@ -105,112 +70,6 @@ async def getpushlist(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     s = get_pushTo_spylist(message_type,sent_id)
-    await session.send(s)
-
-@on_command('getuserinfo',aliases=['查询推特用户'],permission=permission.SUPERUSER,only_to_me = True)
-async def getuserinfo(session: CommandSession):
-    stripped_arg = session.current_arg_text.strip()
-    if stripped_arg == '':
-        return
-    try:
-        if stripped_arg.isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(stripped_arg))
-        else:
-            userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误'+s)
-        await session.send("查询不到信息")
-        return
-    tweetListener.myStreamListener.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
-    s = '用户UID:'+ str(userinfo.id) + "\n" + \
-        '用户ID:' + userinfo.screen_name + "\n" + \
-        '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
-        '描述:' + userinfo.description + "\n" + \
-        '推文受保护:' + str(userinfo.protected) + "\n" + \
-        '被关注数:' + str(userinfo.followers_count) + "\n" + \
-        '关注数:' + str(userinfo.friends_count) + "\n" + \
-        '发推数(包括转发)：' + str(userinfo.statuses_count) + "\n" + \
-        '账户创建时间：' + str(userinfo.created_at)
-    await asyncio.sleep(2.5)
-    await session.send(s)
-@on_command('delone',aliases=['我不想D了'],permission=permission.SUPERUSER,only_to_me = True)
-async def delOne(session: CommandSession):
-    stripped_arg = session.current_arg_text.strip()
-    if stripped_arg == '':
-        await session.send("缺少参数")
-        return
-    if stripped_arg == re.match('[A-Za-z0-9_]+', stripped_arg, flags=0):
-        await session.send("用户名/用户ID 只能包含字母、数字或下划线")
-        return
-    try:
-        if stripped_arg.isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(stripped_arg))
-        else:
-            userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误:'+s)
-        await session.send("查询不到信息,bksn")
-        return
-    tweetListener.myStreamListener.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
-    res = push_list.delPushunitFromPushToAndTweetUserID(
-        session.event['message_type'],
-        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
-        userinfo.id
-        )
-    s = '用户UID:'+ str(userinfo.id) + "\n" + \
-        '用户ID:' + userinfo.screen_name + "\n" + \
-        '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
-        ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
-    push_list.savePushList()
-    await session.send(s)
-
-@on_command('addone',aliases=['给俺D一个'],permission=permission.SUPERUSER,only_to_me = True)
-async def addOne(session: CommandSession):
-    stripped_arg = session.current_arg_text.strip()
-    if stripped_arg == '':
-        await session.send("缺少参数")
-        return
-    if stripped_arg == re.match('[A-Za-z0-9_]+', stripped_arg, flags=0):
-        await session.send("用户名/用户ID 只能包含字母、数字或下划线")
-        return
-    cs = commandHeadtail(stripped_arg)
-    try:
-        if cs[0].isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(cs[0]))
-        else:
-            userinfo = tweetListener.api.get_user(screen_name = cs[0])
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误:'+s)
-        await session.send("查询不到信息,你D都能D歪来")
-        return
-    tweetListener.myStreamListener.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
-    nick = ''
-    des = ''
-    if cs[2] != '':
-        cs = commandHeadtail(cs[2])
-        nick = cs[0]
-        des = cs[2]
-    PushUnit = push_list.baleToPushUnit(
-        session.event['self_id'],
-        session.event['message_type'],
-        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
-        userinfo.id,des,nick = nick
-        )
-    res = push_list.addPushunit(PushUnit)
-    s = '用户UID:'+ str(userinfo.id) + "\n" + \
-        '用户ID:' + userinfo.screen_name + "\n" + \
-        '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
-        ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
-    push_list.savePushList()
     await session.send(s)
 
 #获取推送对象总属性设置
@@ -303,7 +162,8 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
         userinfo['profile_image_url'] = user.profile_image_url
         userinfo['profile_image_url_https'] = user.profile_image_url_https
     """
-    userinfo = tweetListener.myStreamListener.tryGetUserInfo(tweet_user_id)
+    if tweetListener:
+        userinfo = tweet_event_deal.tryGetUserInfo(tweet_user_id)
     res = '用户ID:' + str(tweet_user_id) + "\n" + \
         '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义昵称') + \
         userinfoToStr(userinfo)
@@ -332,7 +192,6 @@ async def getSetting(session: CommandSession):
     )
     await session.send(res[1])
 
-        
 #推送对象总属性设置
 @on_command('setGroupAttr',aliases=['全局设置'],permission=permission.SUPERUSER,only_to_me = True)
 async def setGroupAttr(session: CommandSession):
@@ -543,7 +402,6 @@ async def globalRemove(session: CommandSession):
         return
     pass
 #推特ID编码解码
-#解码成功返回推特ID，失败返回-1
 def decode_b64(str) -> int:
     table = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
                 "6": 6, "7": 7, "8": 8, "9": 9,
@@ -563,7 +421,7 @@ def decode_b64(str) -> int:
             return -1
         result += table[str[i]]
     return result + 1253881609540800000
-@on_command('detweetid',only_to_me = False)
+@on_command('detweetid',aliases=['推特ID解压'],only_to_me = False)
 async def decodetweetid(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -573,8 +431,19 @@ async def decodetweetid(session: CommandSession):
         await session.send("缩写推特ID不正确")
         return
     await session.send("推特ID为："+str(res))
-    #parameter = commandHeadtail(stripped_arg)
-@on_command('entweetid',only_to_me = False)
+
+def encode_b64(n:int) -> str:
+    table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_'
+    result = []
+    temp = n - 1253881609540800000
+    if 0 == temp:
+        result.append('0')
+    else:
+        while 0 < temp:
+            result.append(table[int(temp) % 64])
+            temp = int(temp)/64
+    return ''.join([x for x in reversed(result)])
+@on_command('entweetid',aliases=['推特ID压缩'],only_to_me = False)
 async def encodetweetid(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -582,9 +451,8 @@ async def encodetweetid(session: CommandSession):
     if not stripped_arg.isdecimal():
         await session.send("推特ID不正确")
         return
-    res = tweetListener.encode_b64(int(stripped_arg))
+    res = encode_b64(int(stripped_arg))
     await session.send("推特ID缩写为："+res)
-    #parameter = commandHeadtail(stripped_arg)
 
 """
 	'font': , 

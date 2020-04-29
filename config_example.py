@@ -9,6 +9,9 @@ COMMAND_START = {'!','！'}
 #bot称呼-暂无作用
 NICKNAME = {'bot', 'bot哥', '工具人', '最菜群友'}
 
+#推特更新检测方法(twitter_api-推特API,socket_api-暂未开发,twint-暂未开发)
+UPDATA_METHOD = "twitter_api"
+
 #图片发送目录默认在酷Q 图片文件夹的tweet文件夹内,图片下载文件夹在脚本运行目录的cache文件夹内的tweet文件夹
 #可以使用符号链接链接两个目录
 #使用推特API必填，用于维持推特流正常运行(至少包括一个监测对象,不影响事件推送)

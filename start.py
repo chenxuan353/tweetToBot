@@ -16,7 +16,11 @@ from helper import log_print,keepalive
 '''
 nonebot封装的CQHTTP插件
 '''
+
 def init():
+    allow_start_method = ('twitter_api','socket_api','twint')
+    if config.UPDATA_METHOD not in allow_start_method:
+        raise Exception('配置的更新检测(UPDATA_METHOD)方法不合法：'+config.UPDATA_METHOD)
     base_path = 'cache/'
     file_path = 'config'
     if not os.path.exists(base_path + file_path):
