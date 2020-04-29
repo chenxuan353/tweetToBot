@@ -32,7 +32,7 @@ def init():
 
 def reboot_tewwtlistener():
     keepalive['reboot_tewwtlistener'] = False
-    if keepalive['reboot_tweetListener_cout'] > 0:
+    if keepalive['reboot_tweetListener_cout'] > 5:
         log_print(6,'重试次数过多，停止重试...')
         keepalive['tewwtlistener_alive'] = False
         return
