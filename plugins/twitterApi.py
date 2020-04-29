@@ -11,6 +11,12 @@ import os
 """
 包含了推特API特有命令
 """
+__plugin_name__ = '推特API特有命令'
+__plugin_usage__ = r"""
+用于配置推特监听及调用推特API
+详见：
+https://github.com/chenxuan353/tweetToQQbot
+"""
 @on_command('runTweetListener',aliases=['启动监听'], permission=permission.SUPERUSER,only_to_me = False)
 async def runTweetListener(session: CommandSession):
     if keepalive['tewwtlistener_alive'] == True or keepalive['reboot_tewwtlistener'] == True:

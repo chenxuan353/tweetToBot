@@ -7,12 +7,16 @@ import asyncio
 import os
 import traceback
 import config
+
+__plugin_name__ = '通用推特监听指令'
+__plugin_usage__ = r"""
+用于配置推特监听
+详见：
+https://github.com/chenxuan353/tweetToQQbot
 """
-通用推特监听指令
-"""
+
 #推特事件处理对象，由启动调用的更新检测方法有关
 #allow_start_method = ('twitter_api','socket_api','twint')
-
 if config.UPDATA_METHOD == 'twitter_api':
     import module.twitterApi as tweetListener
 else:
@@ -396,6 +400,7 @@ async def globalRemove(session: CommandSession):
             int(cs['pushto']),
             self_id=int(session.event['self_id'])
         )
+        push_list.savePushList()
         await session.send(res[1])
     else:
         await session.send("此消息类型不支持:"+cs['messagetype'])
