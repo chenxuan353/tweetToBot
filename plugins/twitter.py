@@ -1,4 +1,4 @@
-import module.twitter as tweetListener
+import module.twitterApi as tweetListener
 from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
 from helper import commandHeadtail,keepalive,log_print
 from tweepy import TweepError

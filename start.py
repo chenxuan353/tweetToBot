@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import nonebot
-import module.twitter as tweetListener
+import module.twitterApi as tweetListener
 import traceback
 import time
 import asyncio

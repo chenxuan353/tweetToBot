@@ -96,10 +96,10 @@ class MyStreamListener(tweepy.StreamListener):
                 #下载图片，并保存到文件夹中
                 if not os.path.isfile(filename):
                     urllib.request.urlretrieve(url,filename=filename)
-            except IOError as e:
+            except IOError:
                 s = traceback.format_exc(limit=5)
                 log_print(2,'文件操作失败'+s)
-            except Exception as e:
+            except Exception:
                 s = traceback.format_exc(limit=5)
                 log_print(2,s)
     #媒体保存-保存推特中携带的媒体(目前仅支持图片-考虑带宽，后期可能不会增加支持)
