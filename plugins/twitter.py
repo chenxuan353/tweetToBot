@@ -1,6 +1,6 @@
 import module.twitter as tweetListener
-from nonebot import on_command, CommandSession, permission
-from helper import commandHeadtail,keepalive
+from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
+from helper import commandHeadtail,keepalive,log_print
 from tweepy import TweepError
 import time
 import asyncio
@@ -10,6 +10,13 @@ import re
 import start
 #推送列表的引用
 push_list : tweetListener.PushList = tweetListener.push_list
+
+@on_notice('group_decrease')
+async def group_increase_leave_me(session: NoticeSession):
+    if session.event['sub_type'] == 'kick_me' or int(session.event['self_id']) == int(session.event['user_id']):
+        push_list.delPushunitFromPushTo("group",int(session.event['group_id']))
+        push_list.savePushList()
+        log_print(6,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
 
 @on_command('runTweetListener',aliases=['启动监听'], permission=permission.SUPERUSER,only_to_me = False)
 async def runTweetListener(session: CommandSession):
@@ -67,6 +74,7 @@ async def delalltest(session: CommandSession):
         return
     sent_id = str(sent_id)
     res = push_list.delPushunitFromPushTo(message_type,int(sent_id))
+    push_list.savePushList()
     await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
 
@@ -536,16 +544,16 @@ async def encodetweetid(session: CommandSession):
     #parameter = commandHeadtail(stripped_arg)
 
 """
-	'font': 8250736, 
+	'font': , 
     'message': [{'type': 'text', 'data': {'text': '!getpushlist'}}], 
-    'message_id': 436, 
+    'message_id': , 
     'message_type': 'private', 
     'post_type': 'message', 
     'raw_message': '!getpushlist', 
-    'self_id': 1837730674, 
-    'sender': {'age': 20, 'nickname': '晨轩°', 'sex': 'male', 'user_id': 3309003591}, 
+    'self_id': , 
+    'sender': {'age': , 'nickname': '', 'sex': '', 'user_id': }, 
     'sub_type': 'friend', 
-    'time': 1587967443, 
-    'user_id': 3309003591, 
+    'time': , 
+    'user_id': , 
     'to_me': True}
 """

@@ -20,8 +20,6 @@ from helper import log_print,keepalive
 '''
 nonebot封装的CQHTTP插件
 '''
-def get_keepalive():
-    return keepalive
 def init():
     base_path = 'cache/'
     file_path = 'config'
@@ -101,8 +99,6 @@ async def DealAndKeepAlive():
         if keepalive['reboot_tewwtlistener'] == True:
             reboot_tewwtlistener()
 
-#threading.Thread(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None)
-#Future = threads.submit(run_tewwtlistener,new_loop)
 
 if __name__ == "__main__":
     #初始化
