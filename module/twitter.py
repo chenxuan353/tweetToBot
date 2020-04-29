@@ -412,8 +412,10 @@ api = tweepy.API(auth, proxy=config.api_proxy)
 #创建监听对象
 myStreamListener = MyStreamListener()
 def Run():
+    #读取推送侦听配置
+    res = push_list.readPushList()
+    log_print(2,('侦听配置读取成功' if res[0] == True else '侦听配置读取失败:' + res[1]))
     #创建监听流
-    push_list.readPushList()
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
     myStream.filter(follow=push_list.spylist,is_async=False)
 
