@@ -253,15 +253,16 @@ class PushList:
         for Pushunit in table:
             self.delPushunit(Pushunit)
         return (True,'移除成功！')
-    #移除某个推送对象关联的所有推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
-    def delPushunitFromPushTo(self,message_type:str,pushTo:int) -> tuple:
+    #移除某个推送对象关联的所有推送单元,参数-消息类型，对象ID，CQID 返回值-(布尔型-是否成功,字符串-消息)
+    def delPushunitFromPushTo(self,message_type:str,pushTo:int,self_id:int = 0) -> tuple:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         table = self.getLitsFromPushTo(message_type,pushTo)
         if table == []:
             return (True,'移除成功！')
         for Pushunit in table:
-            self.delPushunit(Pushunit)
+            if self_id == 0 or self_id == Pushunit['bindCQID']:
+                self.delPushunit(Pushunit)
         return (True,'移除成功！')
     #移除某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
     def delPushunitFromPushToAndTweetUserID(self,message_type:str,pushTo:int,tweet_user_id:int) -> tuple:
@@ -296,7 +297,7 @@ class PushList:
             return (False,'推送单元不存在！')
         self.__push_list[message_type][pushTo]['pushunits'][tweet_user_id][key][value]
         return (True,'属性已更新')
-
+    
 
 #字符串模版
 class tweetToStrTemplate(string.Template):

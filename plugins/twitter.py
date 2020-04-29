@@ -14,7 +14,7 @@ push_list : tweetListener.PushList = tweetListener.push_list
 @on_notice('group_decrease')
 async def group_increase_leave_me(session: NoticeSession):
     if session.event['sub_type'] == 'kick_me' or int(session.event['self_id']) == int(session.event['user_id']):
-        push_list.delPushunitFromPushTo("group",int(session.event['group_id']))
+        push_list.delPushunitFromPushTo("group",int(session.event['group_id']),self_id = int(session.event['self_id']))
         push_list.savePushList()
         log_print(6,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
 
@@ -73,7 +73,7 @@ async def delalltest(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     sent_id = str(sent_id)
-    res = push_list.delPushunitFromPushTo(message_type,int(sent_id))
+    res = push_list.delPushunitFromPushTo(message_type,int(sent_id),self_id=int(session.event['self_id']))
     push_list.savePushList()
     await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
@@ -376,6 +376,9 @@ async def setGroupAttr(session: CommandSession):
         1:cs[1],
         2:cs[2].strip()
     }
+    if cs[0] == '' or cs[2] == '':
+        await session.send("缺少参数")
+        return
     if cs[0] not in Pushunit_allowEdit:
         await session.send('属性值不存在！')
         return
@@ -418,6 +421,9 @@ async def setAttr(session: CommandSession):
         1:cs[1],
         2:cs[2].strip()
     }
+    if cs[0] == '' or cs[2] == '':
+        await session.send("缺少参数")
+        return
     #处理用户ID
     tweet_user_id : int = -1
     if cs[0].isdecimal():
@@ -499,6 +505,43 @@ async def setAttr(session: CommandSession):
     push_list.savePushList()
     await session.send(res[1])
 
+#移除某个人或某个群的所有监测，用于修复配置错误(退出群/删除好友时不在线)
+@on_command('globalRemove',aliases=['全局移除'],permission=permission.SUPERUSER,only_to_me = True)
+async def globalRemove(session: CommandSession):
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg == '':
+        await session.send("缺少参数")
+        return
+    cs = commandHeadtail(stripped_arg)
+    cs = {
+        'messagetype':cs[0],
+        'pushto':cs[2].strip()
+    }
+    if cs['pushto'] == '' or cs['messagetype'] == '':
+        await session.send("缺少参数")
+        return
+    if not cs['pushto'].isdecimal():
+        await session.send("Q号或群号不合法:"+cs['pushto'])
+        return
+    messagetype_list = {
+        '私聊':'private',
+        'private':'private',
+        '群聊':'group',
+        'group':'group',
+        '好友':'private',
+        '群':'group',
+    }
+    if cs['messagetype'] in messagetype_list:
+        res = push_list.delPushunitFromPushTo(
+            messagetype_list[cs['messagetype']],
+            int(cs['pushto']),
+            self_id=int(session.event['self_id'])
+        )
+        await session.send(res[1])
+    else:
+        await session.send("此消息类型不支持:"+cs['messagetype'])
+        return
+    pass
 #推特ID编码解码
 #解码成功返回推特ID，失败返回-1
 def decode_b64(str) -> int:
