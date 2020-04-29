@@ -15,10 +15,10 @@ base_tweet_id = '2006101'
 #推特API代理(127.0.0.1:8080)
 api_proxy = ""
 
-#默认botQQ 重要信息及未分类信息将推送至此QQ，为空可能导致错误
-default_bot_QQ = 
+#默认botQQ 重要信息及未分类信息将推送至此QQ，为空可能导致错误。请务必保持此账号能连接到nonebot
+default_bot_QQ : int = 
 #bot错误信息推送到的Q号，为空时不进行推送
-bot_error_printID = 
+bot_error_printID : int =  
 #填写twitter提供的开发Key和secret
 consumer_key = '********************'
 consumer_secret = '********************'
