@@ -407,7 +407,7 @@ class tweetEventDeal:
                 deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
                 deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text"
@@ -438,7 +438,7 @@ class tweetEventDeal:
     #尝试从缓存中获取用户信息,返回用户信息表
     def tryGetUserInfo(self, tweet_user_id) -> list:
         if tweet_user_id in self.userinfolist:
-            return self.userinfolist[tweet_user_id]['name']
+            return self.userinfolist[tweet_user_id]
         return {}
     #消息发送(消息类型，消息发送到，消息内容)
     def send_msg(self, message_type:str, send_id:int, message:str,bindCQID:int = config.default_bot_QQ):

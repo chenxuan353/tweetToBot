@@ -118,7 +118,7 @@ async def setGroupSetting(session: CommandSession):
 #获取某个单元的推送设置列表
 def userinfoToStr(userinfo):
     if userinfo:
-        res = "\n" + '用户名：' + userinfo['name'] + \
+        res = "\n" + '用户名：' + userinfo['name'] + "\n" +\
             '用户昵称：' + userinfo['screen_name'] + "\n"
         return res
     return ''
@@ -169,7 +169,7 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
     if tweetListener:
         userinfo = tweet_event_deal.tryGetUserInfo(tweet_user_id)
     res = '用户ID:' + str(tweet_user_id) + "\n" + \
-        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + \
+        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + "\n" +\
         '描述:' + Pushunit['des'] + \
         userinfoToStr(userinfo)
     for attrname,attrdisplayname in attrlist.items():
@@ -222,10 +222,10 @@ async def setGroupAttr(session: CommandSession):
         'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
         'none':'none','发推':'none',
         #推特个人信息变动推送开关
-        'change_id':'change_ID','ID改变':'change_ID',
-        'change_name':'change_name','名称改变':'change_name',
-        'change_description':'change_description','描述改变':'change_description',
-        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange'
+        'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
+        'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name',
+        'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
+        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
         }
     template_attr = (
         'retweet_template',
