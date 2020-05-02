@@ -205,7 +205,7 @@ pip安装 nonebot,tweepy
 ###### 	转推
 
 ```
-推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text
+推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text
 ```
 
 ###### 	转发并评论
@@ -252,11 +252,23 @@ pip安装 nonebot,tweepy
 
 权限：超级管理员,@bot
 
-功能：移除一个本群监测的用户
+功能：设置指定监测对象的属性
 
 例：setGroupAttr 997786053124616192 转推 关
 
-注：UID可以通过命令getpushlist查看
+​		setGroupAttr 997786053124616192 昵称 
+
+​		setGroupAttr 997786053124616192 昵称 FBKwaring
+
+注：UID可以通过命令**getpushlist**查看，大部分属性与**setGroupAttr**命令相同
+
+#### 特有的属性支持：
+
+注：属性名称，别名1，...，别名n
+
+​    nick,昵称
+
+​    des,描述
 
 
 

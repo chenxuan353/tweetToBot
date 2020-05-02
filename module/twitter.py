@@ -417,6 +417,7 @@ class tweetEventDeal:
                 t = tweetToStrTemplate(deftemplate_another)
         else:
             #自定义模版
+            template_text = template_text.replace("\\n","\n")
             t = tweetToStrTemplate(template_text)
 
         #转换为字符串

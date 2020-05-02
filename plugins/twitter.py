@@ -170,7 +170,7 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
         userinfo = tweet_event_deal.tryGetUserInfo(tweet_user_id)
     res = '用户ID:' + str(tweet_user_id) + "\n" + \
         '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + "\n" +\
-        '描述:' + Pushunit['des'] + \
+        '描述:' + Pushunit['des'].replace("\\n","\n") + \
         userinfoToStr(userinfo)
     for attrname,attrdisplayname in attrlist.items():
         value = push_list.getPuslunitAttr(Pushunit,attrname)
@@ -357,7 +357,6 @@ async def setAttr(session: CommandSession):
         await session.send('属性值不存在！')
         return
     if Pushunit_allowEdit[cs[2]] == 'des' or Pushunit_allowEdit[cs[2]] == 'nick':
-        cs[4] = cs[4].replace("\\n","\n")
         res = push_list.setPushunitAttr(
             session.event['message_type'],
             PushTo,
@@ -366,7 +365,6 @@ async def setAttr(session: CommandSession):
             cs[4]
         )
     elif cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
-        cs[4] = cs[4].replace("\\n","\n")
         res = push_list.setPushunitAttr(
             session.event['message_type'],
             PushTo,
