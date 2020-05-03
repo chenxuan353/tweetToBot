@@ -1,18 +1,25 @@
 # -*- coding: UTF-8 -*-
+import os
+from os import path
+#初始化文件夹
+base_path = 'cache'
+if not os.path.exists(os.path.join(base_path,'config')):
+    os.makedirs(os.path.join(base_path,'config'))
+if not os.path.exists(os.path.join(base_path,'log')):
+    os.makedirs(os.path.join(base_path,'log'))
+
+
 import nonebot
 import module.twitterApi as tweetListener
 import traceback
 import time
 import asyncio
-import os
 import threading
-from os import path
-
 #配置
 import config
 #日志输出
-from helper import log_print,keepalive
-
+from helper import keepalive,getlogger,msgSendToBot
+logger = getlogger('START')
 '''
 nonebot封装的CQHTTP插件
 '''
@@ -20,23 +27,18 @@ nonebot封装的CQHTTP插件
 def init():
     allow_start_method = ('twitter_api','socket_api','twint')
     if config.UPDATA_METHOD not in allow_start_method:
-        raise Exception('配置的更新检测(UPDATA_METHOD)方法不合法：'+config.UPDATA_METHOD)
-    base_path = 'cache/'
-    file_path = 'config'
-    if not os.path.exists(base_path + file_path):
-        log_print(4,'文件夹' + base_path + file_path + '不存在，重新建立')
-        #os.mkdir(file_path)
-        os.makedirs(base_path + file_path)
+        msg = '配置的更新检测(UPDATA_METHOD)方法不合法：'+str(config.UPDATA_METHOD)
+        logger.critical(msg)
+        raise Exception(msg)
 
 def reboot_tewwtlistener():
     keepalive['reboot_tewwtlistener'] = False
     if keepalive['reboot_tweetListener_cout'] > 5:
-        log_print(6,'重试次数过多，停止重试...')
+        msgSendToBot(logger,'重试次数过多，停止重试...')
         keepalive['tewwtlistener_alive'] = False
         return
     keepalive['reboot_tweetListener_cout'] = keepalive['reboot_tweetListener_cout'] + 1
-    log_print(6,'尝试重启推特流，'+'进行第 ' + str(keepalive['reboot_tweetListener_cout']) + ' 次尝试...')
-
+    msgSendToBot(logger,'尝试重启推特流，'+'进行第 ' + str(keepalive['reboot_tweetListener_cout']) + ' 次尝试...')
     keepalive['tweetListener_threads'] = threading.Thread(
         group=None, 
         target=run_tewwtlistener, 
@@ -52,9 +54,9 @@ def run_tewwtlistener():
     try:
         tweetListener.Run()
     except:
-        log_print(0,'推特监听异常,将在10秒后尝试重启...')
+        logger.warning('推特监听异常,将在10秒后尝试重启...')
         s = traceback.format_exc(limit=10)
-        log_print(2,s)
+        logger.warning(s)
         time.sleep(10)
         reboot_tewwtlistener()
         return
@@ -70,9 +72,10 @@ def run_nonebot():
         )
         nonebot.run(host='127.0.0.1', port = 8190)
     except:
-        log_print(1,'BOT状态异常')
+        logger.critical('BOT状态异常')
         s = traceback.format_exc(limit=10)
-        log_print(2,s)
+        logger.critical(s)
+        raise Exception(s)
 
 def nonebot_threads_run():
     keepalive['nonebot_threads'] = threading.Thread(
@@ -103,13 +106,13 @@ if __name__ == "__main__":
     #初始化
     init()
     #启动线程
-    log_print(4,'启动nonebot...')
+    logger.info('启动nonebot...')
     nonebot_threads_run()
     time.sleep(2)
-    log_print(4,'启动推特流...')
+    logger.info('启动推特流...')
     tweetListener_threads_run()
     loop = asyncio.get_event_loop()
-    log_print(4,'维持主线程运行...')
+    logger.info('维持主线程运行...')
     loop.run_until_complete(DealAndKeepAlive())
 
 

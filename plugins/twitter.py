@@ -1,13 +1,13 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
-from helper import commandHeadtail,keepalive,log_print
+from helper import commandHeadtail,keepalive,getlogger,msgSendToBot,CQsessionToStr
 from module.twitter import push_list
 import time
 import asyncio
 import os
 import traceback
 import config
-
+logger = getlogger(__name__)
 __plugin_name__ = '通用推特监听指令'
 __plugin_usage__ = r"""
 用于配置推特监听
@@ -28,7 +28,7 @@ async def group_increase_leave_me(session: NoticeSession):
     if session.event['sub_type'] == 'kick_me' or int(session.event['self_id']) == int(session.event['user_id']):
         push_list.delPushunitFromPushTo("group",int(session.event['group_id']),self_id = int(session.event['self_id']))
         push_list.savePushList()
-        log_print(6,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
+        msgSendToBot(logger,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
 
 @on_command('delall',aliases=['这里单推bot'], permission=permission.SUPERUSER,only_to_me = True)
 async def delalltest(session: CommandSession):
@@ -44,6 +44,7 @@ async def delalltest(session: CommandSession):
     sent_id = str(sent_id)
     res = push_list.delPushunitFromPushTo(message_type,int(sent_id),self_id=int(session.event['self_id']))
     push_list.savePushList()
+    logger.info(CQsessionToStr(session))
     await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
 
@@ -75,6 +76,7 @@ async def getpushlist(session: CommandSession):
         return
     s = get_pushTo_spylist(message_type,sent_id)
     await session.send(s)
+    logger.info(CQsessionToStr(session))
 
 #获取推送对象总属性设置
 def getPushToSetting(message_type:str,pushTo:int) -> str:
@@ -110,6 +112,7 @@ def getPushToSetting(message_type:str,pushTo:int) -> str:
     return res
 @on_command('getGroupSetting',aliases=['全局设置列表'],permission=permission.SUPERUSER,only_to_me = True)
 async def setGroupSetting(session: CommandSession):
+    logger.info(CQsessionToStr(session))
     res = getPushToSetting(
         session.event['message_type'],
         session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')]
@@ -195,6 +198,7 @@ async def getSetting(session: CommandSession):
         session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
         tweet_user_id
     )
+    logger.info(CQsessionToStr(session))
     await session.send(res[1])
 
 #推送对象总属性设置
@@ -278,7 +282,10 @@ async def setGroupAttr(session: CommandSession):
         )
     else:
         res = (False,'属性的值不合法！')
+        await session.send(res[1])
+        return
     push_list.savePushList()
+    logger.info(CQsessionToStr(session))
     await session.send(res[1])
 #推送对象的监测对象属性设置
 @on_command('setAttr',aliases=['对象设置'],permission=permission.SUPERUSER,only_to_me = True)
@@ -390,8 +397,11 @@ async def setAttr(session: CommandSession):
         )
     else:
         res = (False,'属性的值不合法！')
+        await session.send(res[1])
+        return
     push_list.savePushList()
     await session.send(res[1])
+    logger.info(CQsessionToStr(session))
 
 #移除某个人或某个群的所有监测，用于修复配置错误(退出群/删除好友时不在线)
 @on_command('globalRemove',aliases=['全局移除'],permission=permission.SUPERUSER,only_to_me = True)
@@ -426,11 +436,12 @@ async def globalRemove(session: CommandSession):
             self_id=int(session.event['self_id'])
         )
         push_list.savePushList()
+        logger.info(CQsessionToStr(session))
         await session.send(res[1])
     else:
         await session.send("此消息类型不支持:"+cs['messagetype'])
         return
-    pass
+
 #推特ID编码解码
 def decode_b64(str) -> int:
     table = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
@@ -460,6 +471,7 @@ async def decodetweetid(session: CommandSession):
     if res == -1:
         await session.send("缩写推特ID不正确")
         return
+    logger.info(CQsessionToStr(session))
     await session.send("推特ID为："+str(res))
 
 def encode_b64(n:int) -> str:
@@ -471,7 +483,7 @@ def encode_b64(n:int) -> str:
     else:
         while 0 < temp:
             result.append(table[int(temp) % 64])
-            temp = int(temp)/64
+            temp = int(temp)//64
     return ''.join([x for x in reversed(result)])
 @on_command('entweetid',aliases=['推特ID压缩'],only_to_me = False)
 async def encodetweetid(session: CommandSession):
@@ -482,6 +494,7 @@ async def encodetweetid(session: CommandSession):
         await session.send("推特ID不正确")
         return
     res = encode_b64(int(stripped_arg))
+    logger.info(CQsessionToStr(session))
     await session.send("推特ID缩写为："+res)
 
 """

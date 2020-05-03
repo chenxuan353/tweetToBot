@@ -6,7 +6,9 @@ import traceback
 #引入配置
 import config
 #日志输出
-from helper import log_print,keepalive
+from helper import keepalive,getlogger,msgSendToBot
+logger = getlogger(__name__)
+
 #引入推送列表、推送处理模版
 from module.twitter import push_list,tweetEventDeal
 
@@ -60,7 +62,7 @@ class tweetApiEventDeal(tweetEventDeal):
             str = '推特ID：' +tweetinfo['id_str']+'，'+ \
                 tweetinfo['user']['screen_name']+"发送了推文:\n"+ \
                 tweetinfo['text']
-            log_print(5,'(！)'+ str)
+            logger.info('(！)'+ str)
         elif tweetinfo['type'] == 'retweet':
             pass
         else:
@@ -71,9 +73,9 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['Related_user']['screen_name']+"的互动:\n"+ \
             tweetinfo['text']
             if tweetinfo['user']['id_str'] in push_list.spylist:
-                log_print(5,'(！)'+ str)
+                logger.info('(！)'+ str)
             else:
-                log_print(4,str)
+                logger.info(str)
     #重新包装推特信息
     def get_tweet_info(self, tweet):
         tweetinfo = {}
@@ -150,17 +152,17 @@ class MyStreamListener(tweepy.StreamListener):
     #错误处理
     def on_error(self, status_code):
         #推特错误代码https://developer.twitter.com/en/docs/basics/response-codes
-        log_print(1,status_code)
+        logger.critical(status_code)
         #返回False结束流
         return False
     #开始链接监听
     def on_connect(self):
-        log_print(6,"推送流链接已就绪")
+        msgSendToBot(logger,"推送流链接已就绪")
         keepalive['reboot_tweetListener_cout'] = 0
         self.isrun = True
     #断开链接监听
     def on_disconnect(self, notice):
-        log_print(6,"推送流已断开链接")
+        msgSendToBot(logger,"推送流已断开链接")
         self.isrun = False
         raise Exception
     #推特事件监听
@@ -175,7 +177,7 @@ class MyStreamListener(tweepy.StreamListener):
             tweet_event_deal.statusPrintToLog(tweetinfo)
         except:
             str = traceback.format_exc(limit=5)
-            log_print(2,str)
+            logger.error(str)
 
 #推特认证
 auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
@@ -191,9 +193,9 @@ def Run():
     #读取推送侦听配置
     res = push_list.readPushList()
     if res[0] == True:
-        log_print(4,'侦听配置读取成功')
+        logger.info('侦听配置读取成功')
     else:
-        log_print(2,'侦听配置读取失败:' + res[1])
+        logger.error('侦听配置读取失败:' + res[1])
     #创建监听流
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
     myStream.filter(follow=push_list.spylist,is_async=False)

@@ -7,7 +7,8 @@ import os
 #引入配置
 import config
 #日志输出
-from helper import data_read,data_save,log_print
+from helper import data_read,data_save,getlogger,msgSendToBot
+logger = getlogger(__name__)
 #引入测试方法
 test = None
 try:
@@ -18,7 +19,7 @@ except:
 推送列表维护，及推送处理模版类定义
 '''
 
-PushList_config_name = 'PushListData.json'
+PushList_config_name = os.path.join('config','PushListData.json')
 base_tweet_id = config.base_tweet_id
 
 #10进制转64进制
@@ -31,7 +32,7 @@ def encode_b64(n:int) -> str:
     else:
         while 0 < temp:
             result.append(table[int(temp) % 64])
-            temp = int(temp)/64
+            temp = int(temp)//64
     return ''.join([x for x in reversed(result)])
 def decode_b64(str):
     table = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
@@ -451,15 +452,15 @@ class tweetEventDeal:
                 bot.sync.send_msg_rate_limited(self_id=bindCQID,group_id=send_id,message=message)
         except:
             s = traceback.format_exc(limit=5)
-            log_print(2,s)
+            logger.error(s)
             pass
     #图片保存（待优化）
     def seve_image(self, name, url, file_path='img'):
         #保存图片到磁盘文件夹 cache/file_path中，默认为当前脚本运行目录下的 cache/img 文件夹
             base_path = 'cache/' #基准路径
             try:
-                if not os.path.exists(base_path + file_path):
-                    log_print(4,'文件夹' + base_path + file_path + '不存在，重新建立')
+                if not os.path.exists(os.path.join(base_path,file_path)):
+                    logger.info('文件夹' + base_path + file_path + '不存在，重新建立')
                     #os.mkdir(file_path)
                     os.makedirs(base_path + file_path)
                 #获得图片后缀
@@ -471,10 +472,10 @@ class tweetEventDeal:
                     urllib.request.urlretrieve(url,filename=filename)
             except IOError:
                 s = traceback.format_exc(limit=5)
-                log_print(2,'文件操作失败'+s)
+                logger.error('文件操作失败'+s)
             except Exception:
                 s = traceback.format_exc(limit=5)
-                log_print(2,s)
+                logger.error(s)
 #建立列表
 push_list = PushList()
 

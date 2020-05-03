@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession, permission
-from helper import keepalive,commandHeadtail
+from helper import keepalive,commandHeadtail,getlogger,msgSendToBot,CQsessionToStr
 from tweepy import TweepError
 from module.twitter import push_list
 import module.twitterApi as tweetListener
@@ -8,6 +8,7 @@ import traceback
 import re
 import asyncio
 import os
+logger = getlogger(__name__)
 """
 包含了推特API特有命令
 """
@@ -24,6 +25,7 @@ async def runTweetListener(session: CommandSession):
         return
     keepalive['reboot_tweetListener_cout'] = 0
     await session.send('尝试启动中...')
+    logger.info(CQsessionToStr(session))
     keepalive['reboot_tewwtlistener'] = True
 
 @on_command('getuserinfo',aliases=['查询推特用户'],permission=permission.SUPERUSER,only_to_me = True)
@@ -38,7 +40,7 @@ async def getuserinfo(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
     except TweepError:
         s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误'+s)
+        logger.error('tweepy错误:'+s)
         await session.send("查询不到信息")
         return
     tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
@@ -53,7 +55,7 @@ async def getuserinfo(session: CommandSession):
         '关注数:' + str(userinfo.friends_count) + "\n" + \
         '发推数(包括转发)：' + str(userinfo.statuses_count) + "\n" + \
         '账户创建时间：' + str(userinfo.created_at)
-    await asyncio.sleep(2.5)
+    logger.info(CQsessionToStr(session))
     await session.send(s)
 
 
@@ -74,7 +76,7 @@ async def delOne(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
     except TweepError:
         s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误:'+s)
+        logger.error('tweepy错误:'+s)
         await session.send("查询不到信息,bksn")
         return
     tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
@@ -90,6 +92,7 @@ async def delOne(session: CommandSession):
         '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
     push_list.savePushList()
+    logger.info(CQsessionToStr(session))
     await session.send(s)
 
 @on_command('addone',aliases=['给俺D一个'],permission=permission.SUPERUSER,only_to_me = True)
@@ -109,7 +112,7 @@ async def addOne(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = cs[0])
     except TweepError:
         s = traceback.format_exc(limit=5)
-        tweetListener.log_print(3,'推Py错误:'+s)
+        logger.error('tweepy错误:'+s)
         await session.send("查询不到信息,你D都能D歪来")
         return
     tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
@@ -135,4 +138,5 @@ async def addOne(session: CommandSession):
         '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
     push_list.savePushList()
+    logger.info(CQsessionToStr(session))
     await session.send(s)
