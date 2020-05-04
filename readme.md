@@ -26,7 +26,7 @@ pip安装 nonebot,tweepy
 
 然后就可以用start.py启动项目了
 
-预期加入功能：socket广播推送功能，烤推功能
+预期加入功能：烤推功能
 
 仅支持 Python 3.7+ 及 CQHTTP 插件 v4.8+。
 

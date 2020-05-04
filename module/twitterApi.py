@@ -2,7 +2,7 @@
 import nonebot
 import tweepy
 import traceback
-
+import asyncio
 #引入配置
 import config
 #日志输出
@@ -37,7 +37,6 @@ class tweetApiEventDeal(tweetEventDeal):
             self.send_msg(Pushunit['type'],Pushunit['pushTo'],str)
         elif event['type'] in ['change_ID','change_name','change_description','change_headimgchange']:
             self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'])
-        #尝试从缓存中获取昵称
 
     #媒体保存-保存推特中携带的媒体(目前仅支持图片-考虑带宽，后期不会增加对视频以及gif支持)
     def save_media(self, tweetinfo):
@@ -79,7 +78,7 @@ class tweetApiEventDeal(tweetEventDeal):
     #重新包装推特信息
     def get_tweet_info(self, tweet):
         tweetinfo = {}
-        tweetinfo['created_at'] = tweet.created_at
+        tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
         tweetinfo['text'] = tweet.text
@@ -157,12 +156,12 @@ class MyStreamListener(tweepy.StreamListener):
         return False
     #开始链接监听
     def on_connect(self):
-        msgSendToBot(logger,"推送流链接已就绪")
+        msgSendToBot(logger,"推特流链接已就绪")
         keepalive['reboot_tweetListener_cout'] = 0
         self.isrun = True
     #断开链接监听
     def on_disconnect(self, notice):
-        msgSendToBot(logger,"推送流已断开链接")
+        msgSendToBot(logger,"推特流已断开链接")
         self.isrun = False
         raise Exception
     #推特事件监听

@@ -56,8 +56,7 @@ class PushList:
     #映射推送关联(推送对象(type:str,ID:int)->推送单元)
     __push_list = {
         'private':{},
-        'group':{},
-        'repush':{} #推特数据转发
+        'group':{}
     } 
     __spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
     spylist = [str(base_tweet_id)] #流监测列表

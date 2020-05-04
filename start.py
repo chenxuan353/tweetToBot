@@ -15,6 +15,7 @@ import traceback
 import time
 import asyncio
 import threading
+
 #配置
 import config
 #日志输出
@@ -47,6 +48,22 @@ def reboot_tewwtlistener():
     )
     keepalive['tweetListener_threads'].start()
 
+def run_nonebot():
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    try:
+        nonebot.init(config)
+        nonebot.load_plugins(
+            path.join(path.dirname(__file__), 'plugins'),
+            'plugins'
+        )
+        nonebot.run(host='127.0.0.1', port = 8190)
+    except:
+        logger.critical('BOT状态异常')
+        s = traceback.format_exc(limit=10)
+        logger.critical(s)
+        raise Exception(s)
+
 def run_tewwtlistener():
     keepalive['tewwtlistener_alive'] = True
     new_loop = asyncio.new_event_loop()
@@ -61,18 +78,13 @@ def run_tewwtlistener():
         reboot_tewwtlistener()
         return
 
-def run_nonebot():
+def run_tweetsocketServer():
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
     try:
-        nonebot.init(config)
-        nonebot.load_plugins(
-            path.join(path.dirname(__file__), 'plugins'),
-            'plugins'
-        )
-        nonebot.run(host='127.0.0.1', port = 8190)
+        tweetsocketServer.Run()
     except:
-        logger.critical('BOT状态异常')
+        logger.critical('推特转发服务异常')
         s = traceback.format_exc(limit=10)
         logger.critical(s)
         raise Exception(s)
@@ -94,6 +106,15 @@ def tweetListener_threads_run():
         daemon=True
     )
     keepalive['tweetListener_threads'].start()
+
+def tweetsocketServer_threads_run():
+    keepalive['tweetsocketServer_threads'] = threading.Thread(
+        group=None, 
+        target=run_tweetsocketServer, 
+        name='tweetsocketServer_threads', 
+        daemon=True
+    )
+    keepalive['tweetsocketServer_threads'].start()
 
 async def DealAndKeepAlive():
     while True:
