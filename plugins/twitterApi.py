@@ -43,7 +43,7 @@ async def getuserinfo(session: CommandSession):
         logger.error('tweepy错误:'+s)
         await session.send("查询不到信息")
         return
-    tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
+    tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
     file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \

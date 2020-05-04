@@ -54,9 +54,9 @@ def run_tewwtlistener():
     try:
         tweetListener.Run()
     except:
-        logger.warning('推特监听异常,将在10秒后尝试重启...')
+        msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
         s = traceback.format_exc(limit=10)
-        logger.warning(s)
+        logger.error(s)
         time.sleep(10)
         reboot_tewwtlistener()
         return

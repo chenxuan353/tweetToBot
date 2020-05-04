@@ -14,7 +14,8 @@ from nonebot import CommandSession
 """
 
 file_base_path = "cache"
-config_file_base_path = os.path.join(file_base_path,'config')
+config_file_base_path = 'config'
+log_file_base_path = 'log'
 #每天一个日志文件
 bindCQID = config.default_bot_QQ
 bot_error_printID = config.bot_error_printID
@@ -35,7 +36,7 @@ def getlogger(name) -> logging.Logger:
     sh.setFormatter(logformat)
     reslogger.addHandler(sh)
     trf = logging.handlers.TimedRotatingFileHandler(
-                filename=os.path.join(file_base_path,'log',name+"_"+"log.log"),
+                filename=os.path.join(file_base_path,log_file_base_path,name+".log"),
                 encoding="utf-8",
                 when="H", 
                 interval=24, 
@@ -52,11 +53,11 @@ def commandHeadtail(s:str):
     return s.partition(" ")
 #酷Q插件日志预处理
 def CQsessionToStr(session:CommandSession):
-    msg = 'cmd'+session.event['raw_message']+ \
-        'text'+session.current_arg_text+ \
-        'message_type'+session.event['message_type']+ \
-        'send_id:'+str(session.event['user_id']) if session.event['message_type']=='private' else str(session.event['group_id'])+ \
-        'self_id:'+str(session.event['self_id'])
+    msg = 'cmd:'+session.event['raw_message']+ \
+        ' ;self_id:'+str(session.event['self_id']) + \
+        ' ;message_type:'+session.event['message_type']+ \
+        ' ;send_id:'+str(session.event['user_id']) if session.event['message_type']=='private' else str(session.event['group_id'])+ \
+        ' ;text:'+session.current_arg_text
     return msg
 #处理日志输出
 def msgSendToBot(reclogger:logging.Logger,message:str,*arg):
@@ -70,6 +71,7 @@ def msgSendToBot(reclogger:logging.Logger,message:str,*arg):
                 self_id=bindCQID,
                 user_id=bot_error_printID,
                 message=message)
+            logger.info('向'+str(bot_error_printID)+'发送了：'+message)
         except ValueError:
             logger.warning('BOT未初始化,错误消息未发送')
         except:
@@ -78,10 +80,11 @@ def msgSendToBot(reclogger:logging.Logger,message:str,*arg):
             logger.error(s)
 
 #数据文件操作,返回(逻辑值T/F,dict数据/错误信息)
-def data_read(filename:str) -> tuple:
+def data_read(filename:str,path:str = config_file_base_path) -> tuple:
     try:
-        f = open(os.path.join(file_base_path,filename),mode = 'r',encoding='utf-8')
+        f = open(os.path.join(file_base_path,path,filename),mode = 'r',encoding='utf-8')
         data = json.load(f)
+        logger.info('读取配置文件：'+json.dumps(data))
     except IOError:
         logger.error('IOError: 未找到文件或文件不存在-'+filename)
         return (False,'配置文件读取失败')
@@ -93,9 +96,9 @@ def data_read(filename:str) -> tuple:
     else:
         f.close()
     return (True,'读取成功',data)
-def data_save(filename:str,data):
+def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
     try:
-        fw = open(os.path.join(file_base_path,filename),mode = 'w',encoding='utf-8')
+        fw = open(os.path.join(file_base_path,path,filename),mode = 'w',encoding='utf-8')
         json.dump(data,fw,ensure_ascii=False,indent=4)
     except IOError:
         logger.error('IOError: 未找到文件或文件不存在-'+filename)

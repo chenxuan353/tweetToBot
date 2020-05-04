@@ -19,7 +19,7 @@ except:
 推送列表维护，及推送处理模版类定义
 '''
 
-PushList_config_name = os.path.join('config','PushListData.json')
+PushList_config_name = 'PushListData.json'
 base_tweet_id = config.base_tweet_id
 
 #10进制转64进制
@@ -56,7 +56,8 @@ class PushList:
     #映射推送关联(推送对象(type:str,ID:int)->推送单元)
     __push_list = {
         'private':{},
-        'group':{}
+        'group':{},
+        'repush':{} #推特数据转发
     } 
     __spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
     spylist = [str(base_tweet_id)] #流监测列表
@@ -90,7 +91,7 @@ class PushList:
         } 
         self.__spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
         self.spylist = [str(base_tweet_id)] #流监测列表
-    #推送单元解包
+    #获取所有推送单元
     def getAllPushUnit(self) -> list:
         sourcedata = self.__spy_relate.copy()
         PushUnits = []
@@ -98,15 +99,44 @@ class PushList:
             for PushUnit in PushUnitList:
                 PushUnits.append(PushUnit)
         return PushUnits
+    #获取所有推送对象的全局设置信息
+    def getAllPushTo(self) -> list:
+        PushToAttrList = []
+        sourcedata = self.__push_list.copy()
+        for pushTo,frameunit in sourcedata['private'].items():
+            PushToAttrList.append({
+                'message_type':'private',
+                'pushTo':pushTo,
+                'Pushunitattr':frameunit['Pushunitattr'].copy()
+            })
+        for pushTo,frameunit in sourcedata['group'].items():
+            PushToAttrList.append({
+                'message_type':'group',
+                'pushTo':pushTo,
+                'Pushunitattr':frameunit['Pushunitattr'].copy()
+            })
+        return PushToAttrList
     def savePushList(self) -> tuple:
         PushUnits = self.getAllPushUnit()
-        return data_save(PushList_config_name,PushUnits)
+        PushToAttrList = self.getAllPushTo()
+        return data_save(
+            PushList_config_name,
+            {
+                'PushUnits':PushUnits,
+                'PushToAttrList':PushToAttrList
+            },
+            'config'
+            )
     def readPushList(self) -> tuple:
-        data = data_read(PushList_config_name)
+        data = data_read(PushList_config_name,'config')
         if data[0] != False:
             self.clear()
-            for PushUnit in data[2]:
+            for PushUnit in data[2]['PushUnits']:
                 self.addPushunit(PushUnit)
+            for PushToAttrs in data[2]['PushToAttrList']:
+                if PushToAttrs['pushTo'] not in self.__push_list[PushToAttrs['message_type']]:
+                    continue
+                self.__push_list[PushToAttrs['message_type']][PushToAttrs['pushTo']]['Pushunitattr'] = PushToAttrs['Pushunitattr'].copy()
             return (True,data[1])
         return data
     #打包成推送单元中(推送类型-群/私聊，推送对象-群号/Q号,绑定的推特用户ID,单元描述,绑定的酷Q账号,推送模版,各推送开关)
@@ -454,25 +484,29 @@ class tweetEventDeal:
             s = traceback.format_exc(limit=5)
             logger.error(s)
             pass
-    #图片保存（待优化）
-    def seve_image(self, name, url, file_path='img'):
+    #图片保存
+    def seve_image(self, name, url, file_path='img',canCover=False):
         #保存图片到磁盘文件夹 cache/file_path中，默认为当前脚本运行目录下的 cache/img 文件夹
-            base_path = 'cache/' #基准路径
+            base_path = 'cache' #基准路径
             try:
                 if not os.path.exists(os.path.join(base_path,file_path)):
-                    logger.info('文件夹' + base_path + file_path + '不存在，重新建立')
+                    logger.info('文件夹' + os.path.join(base_path,file_path) + '不存在，重新建立')
                     #os.mkdir(file_path)
-                    os.makedirs(base_path + file_path)
+                    os.makedirs(os.path.join(base_path,file_path))
                 #获得图片后缀
                 file_suffix = os.path.splitext(url)[1]
                 #拼接图片名（包含路径）
-                filename = '{}{}{}{}'.format(base_path + file_path,os.sep,name,file_suffix)
+                filename = os.path.join(base_path,file_path,name+file_suffix)
                 #下载图片，并保存到文件夹中
-                if not os.path.isfile(filename):
-                    urllib.request.urlretrieve(url,filename=filename)
+                if os.path.isfile(filename):
+                    if canCover:
+                        os.remove(filename)
+                    else:
+                        return
+                urllib.request.urlretrieve(url,filename=filename)
             except IOError:
                 s = traceback.format_exc(limit=5)
-                logger.error('文件操作失败'+s)
+                logger.error('文件操作失败'+s+"\n文件路径:"+filename)
             except Exception:
                 s = traceback.format_exc(limit=5)
                 logger.error(s)
