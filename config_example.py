@@ -10,7 +10,7 @@ COMMAND_START = {'!','！'}
 NICKNAME = {'bot', 'bot哥', '工具人', '最菜群友'}
 #nonebot的debug开关
 DEBUG = True
-#推特更新检测方法(twitter_api-推特API,socket_api-暂未开发,twint-暂未开发)
+#推特更新检测方法(twitter_api-推特API,twint-暂未开发)
 UPDATA_METHOD = "twitter_api"
 
 #图片发送目录默认在酷Q 图片文件夹的tweet文件夹内,图片下载文件夹在脚本运行目录的cache文件夹内的tweet文件夹
