@@ -1,4 +1,12 @@
-# **可提供一对多转推服务的bot后端**
+# 可提供一对多转推服务的BOT后端
+
+### 简介
+
+本仓库主要依赖于模块[nonebot](https://github.com/nonebot/nonebot)和[tweepy](https://github.com/tweepy/tweepy) 与CoolQ的通信依赖于CQHttp
+
+特别鸣谢[richardchien](https://github.com/richardchien)对上述封装项目的贡献
+
+**本项目目前仅支持 Python 3.7+ 及 CQHTTP 插件 v4.8+**
 
 目前仍然处于测试状态
 
@@ -14,13 +22,33 @@
 
 注：意味着不管是什么方式侦听到的更新，都可以进行推送。
 
-*为了保证推送的正常运行使用了多线程
+*※ 为了保证推送的正常运行使用了多线程*
 
-依赖的模块 nonebot,tweepy
+**预期加入功能：烤推功能**
 
-### 部署：
+※ 接收推送的接口已经二次封装，只要事件符合推送事件处理器的数据格式，就可以正常推送。
 
-pip安装 nonebot,tweepy
+吃一堑长一智，现在配置文件读取后会以JSON的形式输出到日志中，如果丢失了配置文件，可以凭日志回档。
+
+*停止推特流转发的开发，我太菜了。已经编写了大半-存在编译器无法定位的闪退问题，有需要可以提交issue。*
+
+### 部署
+
+#### 部署CoolQ
+
+安装CoolQ并按照帖子内文档部署
+
+[Air](https://cqp.cc/t/23253) [Pro](https://cqp.cc/t/14901) [Docker](https://cqp.cc/t/34558)
+
+#### 启动插件
+
+下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的CPK依赖包并安装(放到依赖包位置并配置端口)
+
+*如在Docker中部署请在此处启动Docker服务*
+
+#### 启动服务
+
+安装依赖
 
 ```shell
 pip install nonebot[scheduler]
@@ -46,16 +74,6 @@ vi config.py
 python start.py
 ```
 
-**预期加入功能：烤推功能**
-
-**仅支持 Python 3.7+ 及 CQHTTP 插件 v4.8+。**
-
-※ 接收推送的接口已经二次封装，只要事件符合推送事件处理器的数据格式，就可以正常推送。
-
-吃一堑长一智，现在配置文件读取后会以JSON的形式输出到日志中，如果丢失了配置文件，可以凭日志回档。
-
-停止推特流转发的开发，我太菜了。已经编写了大半-存在编译器无法定位的闪退问题，有需要可以提交issue。
-
 ## 推特监听目前支持的功能/命令
 
 ### 使用说明
@@ -71,7 +89,7 @@ python start.py
 
 - 命令格式：`runTweetListener`
 
-- 同义格式：启动监听
+- 同义格式：`启动监听`
 
 - 所需权限：超级管理员, @bot
 
@@ -81,7 +99,7 @@ python start.py
 
 - 命令格式：`delall`
 
-- 同义格式：这里单推bot
+- 同义格式：`这里单推bot`
 
 - 所需权限：超级管理员, @bot
 
@@ -91,7 +109,7 @@ python start.py
 
 - 命令格式：`getpushlist`
 
-- 同义格式：DD列表
+- 同义格式：`DD列表`
 
 - 所需权限：无限制
 
@@ -135,7 +153,7 @@ python start.py
 
 - 命令格式：`delone <推特用户ID>`
 
-- 同义格式：我不想D了
+- 同义格式：`我不想D了 <推特用户ID>`
 
 - 所需权限：超级管理员, @bot
 
@@ -143,11 +161,11 @@ python start.py
 
 
 
-#### 显示BOT推送设置 getGroupSetting
+#### 显示BOT推送设置 `getGroupSetting`
 
 - 命令格式：`getGroupSetting`
 
-- 同义格式：全局设置列表
+- 同义格式：`全局设置列表`
 
 - 所需权限：无限制
 
@@ -155,11 +173,11 @@ python start.py
 
 
 
-#### 显示推送设置 getSetting
+#### 显示推送设置 `getSetting`
 
 - 命令格式：`getSetting <推特用户ID>`
 
-- 同义格式：对象设置列表
+- 同义格式：`对象设置列表 <推特用户ID>`
 
 - 所需权限：无限制
 
@@ -167,17 +185,17 @@ python start.py
 
 
 
-#### 设置推送属性 setGroupAttr
+#### 设置推送属性 `setGroupAttr`
 
 - 命令格式：`setGroupAttr <属性> <值>`
 
-- 同义格式：全局设置
+- 同义格式：`全局设置 <属性> <值>`
 
 - 所需权限：超级管理员, @bot
 
 - 功能说明：移除一个本群监听的用户
 
-例：setGroupAttr 转推 关
+例：`setGroupAttr 转推 关`
 
 ##### 支持的属性列表(大小写不敏感)
 
@@ -185,32 +203,46 @@ python start.py
 
 ###### 	携带图片发送
 
+- 属性
+
 > upimg，图片，img
 
-#####     消息模版(参数为模版字符串)
+- 值
+
+> true,开,打开,开启,1
+
+> false,关,关闭,0
+
+######     消息模版(参数为模版字符串)
+
+- 属性
 
 > retweet_template,转推模版
->
+
 > quoted_template,转推并评论模版
->
+
 > reply_to_status_template,回复模版
->
+
 > reply_to_user_template,被提及模版
->
+
 > none_template,发推模版
 
-#####     推特转发各类型开关
+- 值
+
+[自定义消息模板格式](https://github.com/chenxuan353/tweetToQQbot#%E6%A8%A1%E7%89%88%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%AF%B4%E6%98%8E)
+
+######     推特转发各类型开关
 
 - 属性
 
 > retweet,转推
->
+
 > quoted,转推并评论
->
+
 > reply_to_status,回复
->
+
 > reply_to_user,被提及
->
+
 > none,发推
 
 - 值
@@ -219,22 +251,22 @@ python start.py
 >
 > false,关,关闭,0
 
-#####     推特个人信息变动推送开关
+######     推特个人信息变动推送开关
 
-###### 	属性
+- 属性
 
 > change_id,ID改变
->
+
 > change_name,名称改变
->
+
 > change_description,描述改变
->
+
 > change_headimgchange,头像改变
 
-###### 	支持的值
+- 值
 
 > true,开,打开,开启,1
->
+
 > false,关,关闭,0
 
 #### 模版字符串说明
@@ -270,30 +302,30 @@ python start.py
 ​	注：使用`\n`替代换行符，理论上直接换行也可以但是十分不推荐
 
 > $tweet_id 推特ID
->
+
 > $tweet_id_min 压缩推特id
->
+
 > $tweet_nick 操作人昵称
->
+
 > $tweet_user_id 操作人ID
->
+
 > $tweet_text 发送推特的完整内容
->
+
 > $related_user_id 关联用户ID
->
+
 > $related_user_name 关联用户昵称-昵称-昵称查询不到时为ID(被评论/被转发/被提及)
->
+
 > $related_tweet_id 关联推特ID(被评论/被转发)
->
+
 >  $related_tweet_id_min 关联推特ID的压缩(被评论/被转发)
->
+
 > $related_tweet_text 关联推特内容(被转发或被转发并评论时存在)
 
-### 更改监听对象属性 setAttr
+#### 更改监听对象属性 `setAttr`
 
 - 命令格式：`setAttr <监听用户UID> <属性> <值>`
 
-- 同义格式：对象设置
+- 同义格式：`对象设置 <监听用户UID> <属性> <值>`
 
 - 所需权限：超级管理员, @bot
 
@@ -307,42 +339,30 @@ python start.py
 
 ※ UID可以通过命令**getpushlist**查看，大部分属性与**setGroupAttr**命令相同
 
-#### 特有的属性支持
+##### 特有的属性支持
 
-**※ 属性名称，别名1，...，别名n**
+###### **※ 属性名称，别名1，...，别名n**
 
 > nick,昵称
->
+
 > des,描述
 
 
 
-### 删除推送对象 globalRemove
+#### 删除推送对象 `globalRemove`
 
-- 命令格式：globalRemove 消息类型 Q号/群号
+- 命令格式：`globalRemove <消息类型> <QQ号/群号>`
 
-- 同义格式：全局移除
+- 同义格式：`全局移除 <消息类型> <QQ号/群号>`
 
 - 所需权限：超级管理员, @bot
 
 - 功能说明：移除某个人或某个群的所有监听，用于修复配置错误(退出群/删除好友时不在线)
 
-#### 消息类型
+##### 消息类型
 
 > 私聊,好友,private
->
+
 > 群聊,群,group
 
 例：`globalRemove 群聊 123456`
-
-
-
-### 查询推特用户信息 getuserinfo
-
-- 命令格式：getuserinfo
-
-- 同义格式：查询推特用户
-
-- 所需权限：超级管理员, @bot
-
-- 功能说明：查询某个用户的信息，显示的头像将会更新(新增与减少监听不会重新下载头像)
