@@ -40,11 +40,35 @@
 
 [Air](https://cqp.cc/t/23253) [Pro](https://cqp.cc/t/14901) [Docker](https://cqp.cc/t/34558)
 
+- Docker中部署Air
+
+  ```shell
+  mkdir coolq-data
+  docker run --name=coolq -d -p <CPDI>:9000 -v /root/coolq-data:/home/user/coolq -e VNC_PASSWD=<CP> -e COOLQ_ACCOUNT=<QQ> coolq/wine-coolq
+  ```
+
+  
+
+- Docker中部署Pro
+
+  ```shell
+  mkdir coolq
+  docker run --name=coolq -d -p <Corresponding Port of Docker Image>:9000 -v `pwd`/coolq:/home/user/coolq -e COOLQ_ACCOUNT=<QQ ID> -e COOLQ_URL=http://dlsec.cqp.me/cqp-full -e VNC_PASSWD=<Console Password> coolq/wine-coolq
+  ```
+
+
+
 #### 启动插件
 
-下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的CPK依赖包并安装(放到依赖包位置并配置端口)
+下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的[CPK依赖包](https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk)并安装(放到依赖包位置并初次启动后配置端口)
 
-*如在Docker中部署请在此处启动Docker服务*
+**Docker请直接使用wget命令操作**
+
+```shell
+wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk
+```
+
+*如在Docker中部署请在此处启动插件服务*
 
 #### 启动服务
 
