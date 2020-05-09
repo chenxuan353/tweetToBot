@@ -370,7 +370,7 @@ class tweetEventDeal:
     #事件预处理-发送事件
     def deal_event(self, event):
         table = push_list.getLitsFromTweeUserID(event['user_id'])
-        if test:
+        if test != None:
             test.event_push(event)
         for Pushunit in table:
             #获取属性判断是否可以触发事件
@@ -459,7 +459,7 @@ class tweetEventDeal:
                 for media_unit in tweetinfo['extended_entities']:
                     #组装CQ码
                     file_suffix = os.path.splitext(media_unit['media_url'])[1]
-                    s = s + '[CQ:image,file=tweet/' + media_unit['id_str'] + file_suffix + ']'
+                    s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
         return s
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):

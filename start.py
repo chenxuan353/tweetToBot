@@ -127,13 +127,22 @@ if __name__ == "__main__":
     #初始化
     init()
     #启动线程
-    logger.info('启动nonebot...')
-    nonebot_threads_run()
+    #logger.info('启动nonebot...')
+    #nonebot_threads_run()
     time.sleep(2)
     logger.info('启动推特流...')
     tweetListener_threads_run()
-    loop = asyncio.get_event_loop()
+    
+    logger.info('启动nonebot...')
+    nonebot.init(config)
+    nonebot.load_plugins(
+        path.join(path.dirname(__file__), 'plugins'),
+        'plugins'
+    )
+    nonebot.run(host=config.NONEBOT_HOST, port = config.NONEBOT_PORT)
+
     logger.info('维持主线程运行...')
+    loop = asyncio.get_event_loop()
     loop.run_until_complete(DealAndKeepAlive())
 
 

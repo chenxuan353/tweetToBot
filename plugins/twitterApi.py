@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-from nonebot import on_command, CommandSession, permission
+from nonebot import on_command, CommandSession, permission as perm
 from helper import keepalive,commandHeadtail,getlogger,msgSendToBot,CQsessionToStr
 from tweepy import TweepError
 from module.twitter import push_list
@@ -8,6 +8,7 @@ import traceback
 import re
 import asyncio
 import os
+import config
 logger = getlogger(__name__)
 """
 包含了推特API特有命令
@@ -18,8 +19,9 @@ __plugin_usage__ = r"""
 详见：
 https://github.com/chenxuan353/tweetToQQbot
 """
-@on_command('runTweetListener',aliases=['启动监听'], permission=permission.SUPERUSER,only_to_me = False)
+@on_command('runTweetListener',aliases=['启动监听'], permission=perm.SUPERUSER,only_to_me = False)
 async def runTweetListener(session: CommandSession):
+    await asyncio.sleep(0.2)
     if keepalive['tewwtlistener_alive'] == True or keepalive['reboot_tewwtlistener'] == True:
         await session.send('推特监听仍在运行中，无法二次启动！')
         return
@@ -28,7 +30,7 @@ async def runTweetListener(session: CommandSession):
     logger.info(CQsessionToStr(session))
     keepalive['reboot_tewwtlistener'] = True
 
-@on_command('getuserinfo',aliases=['查询推特用户'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('getuserinfo',aliases=['查询推特用户'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def getuserinfo(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -48,7 +50,7 @@ async def getuserinfo(session: CommandSession):
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         '描述:' + userinfo.description + "\n" + \
         '推文受保护:' + str(userinfo.protected) + "\n" + \
         '被关注数:' + str(userinfo.followers_count) + "\n" + \
@@ -58,9 +60,7 @@ async def getuserinfo(session: CommandSession):
     logger.info(CQsessionToStr(session))
     await session.send(s)
 
-
-
-@on_command('delone',aliases=['我不想D了','俺不想D了'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('delone',aliases=['我不想D了','俺不想D了'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def delOne(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -89,13 +89,13 @@ async def delOne(session: CommandSession):
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))
     await session.send(s)
 
-@on_command('addone',aliases=['给俺D一个'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('addone',aliases=['给俺D一个'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def addOne(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -135,7 +135,7 @@ async def addOne(session: CommandSession):
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,file=userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
         ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))

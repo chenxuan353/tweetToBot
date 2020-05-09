@@ -1,8 +1,18 @@
 # **可提供一对多转推服务的bot后端**
 
-目前仍然处于测试状态
+### 简介
 
-已经可用，对大部分异常进行了处理，现在基本不会宕机了
+本仓库主要依赖于模块[nonebot](https://github.com/nonebot/nonebot)和[tweepy](https://github.com/tweepy/tweepy) 与CoolQ的通信依赖于CQHttp
+
+特别鸣谢[richardchien](https://github.com/richardchien)对上述封装项目的贡献
+
+**本项目目前仅支持 Python 3.7 及 CQHTTP 插件 v4.8+**
+
+目前仍然处于测试状态，功能大部分已经完善，可以对bot深度定制化
+
+**预期加入功能：烤推功能**
+
+支持多个bot远程连接此后端，已经对可能的冲突进行了处理
 
 目前推特的推送流异常后将尝试5次重启(重启前等待十秒)，五次重启均失败时需要手动重启。
 
@@ -10,17 +20,55 @@
 
 已经保证了每个群就算是多个bot同时存在也只会添加一个相同监听对象的推送
 
+现在配置文件读取后会以JSON的形式输出到日志中，如果丢失了配置文件，可以凭日志回档。
+
 并且在退群时会自动卸载监听(需要bot在线)，配置异常时可以手动清除检测
 
-注：意味着不管是什么方式侦听到的更新，都可以进行推送。
+※ 接收推送的接口已经二次封装，只要事件符合推送事件处理器的数据格式，就可以正常推送。
 
-*为了保证推送的正常运行使用了多线程
+※ 为了保证推送的正常运行使用了多线程
 
-依赖的模块 nonebot,tweepy
+### 部署
 
-### 部署：
+#### 部署CoolQ
 
-pip安装 nonebot,tweepy
+安装CoolQ并按照帖子内文档部署
+
+[Air](https://cqp.cc/t/23253) [Pro](https://cqp.cc/t/14901) [Docker](https://cqp.cc/t/34558)
+
+- Docker中部署Air
+
+  ```shell
+  mkdir coolq-data
+  docker run --name=coolq -d -p <CPDI>:9000 -v /root/coolq-data:/home/user/coolq -e VNC_PASSWD=<CP> -e COOLQ_ACCOUNT=<QQ> coolq/wine-coolq
+  ```
+
+  
+
+- Docker中部署Pro
+
+  ```shell
+  mkdir coolq
+  docker run --name=coolq -d -p <Corresponding Port of Docker Image>:9000 -v `pwd`/coolq:/home/user/coolq -e COOLQ_ACCOUNT=<QQ ID> -e COOLQ_URL=http://dlsec.cqp.me/cqp-full -e VNC_PASSWD=<Console Password> coolq/wine-coolq
+  ```
+
+
+
+#### 启动插件
+
+下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的[CPK依赖包](https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk)并安装(放到依赖包位置并初次启动后配置端口)
+
+**Docker请直接使用wget命令操作**
+
+```shell
+wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk
+```
+
+*如在Docker中部署请在此处启动插件服务*
+
+#### 启动服务
+
+安装依赖
 
 ```shell
 pip install nonebot[scheduler]
@@ -46,15 +94,7 @@ vi config.py
 python start.py
 ```
 
-**预期加入功能：烤推功能**
-
-**仅支持 Python 3.7+ 及 CQHTTP 插件 v4.8+。**
-
-※ 接收推送的接口已经二次封装，只要事件符合推送事件处理器的数据格式，就可以正常推送。
-
-吃一堑长一智，现在配置文件读取后会以JSON的形式输出到日志中，如果丢失了配置文件，可以凭日志回档。
-
-停止推特流转发的开发，我太菜了。已经编写了大半-存在编译器无法定位的闪退问题，有需要可以提交issue。
+## 
 
 ## 推特监听目前支持的功能/命令
 
@@ -67,11 +107,21 @@ python start.py
 
 ### 命令列表
 
-#### 手动重启监听 `runTweetListener`
+#### 帮助 `about`
+
+- 命令格式：`about`
+
+- 同义格式：`帮助`、`关于`、`help`
+
+- 所需权限：无限制
+
+- 功能说明：返回转推bot的关于消息
+
+#### 恢复监听 `runTweetListener`
 
 - 命令格式：`runTweetListener`
 
-- 同义格式：启动监听
+- 同义格式：`启动监听`
 
 - 所需权限：超级管理员, @bot
 
@@ -81,9 +131,9 @@ python start.py
 
 - 命令格式：`delall`
 
-- 同义格式：这里单推bot
+- 同义格式：`这里单推bot`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/群主, @bot
 
 - 功能：移除当前私聊/群的所有监听
 
@@ -91,9 +141,9 @@ python start.py
 
 - 命令格式：`getpushlist`
 
-- 同义格式：DD列表
+- 同义格式：`DD列表`
 
-- 所需权限：无限制
+- 所需权限：超级管理员/群管理/群主/好友私聊
 
 - 功能：获取当前私聊/群的监听列表
 
@@ -105,7 +155,7 @@ python start.py
 
 - 同义格式：`查询推特用户 <推特用户ID>` 
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/好友私聊/群管理/群主, @bot
 
 - 功能：获取当前私聊/群的监听列表
 
@@ -119,15 +169,17 @@ python start.py
 
 - 同义格式：`给俺D一个 <推特用户ID> <称呼> <描述>`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/好友私聊/群管理/群主, @bot
 
 - 功能说明：添加一个用户到本群监听
 
 - 使用例：`给俺D一个 shirakamifubuki 吹雪 我永远喜欢小狐狸`
 
-  (不设置昵称)使用例：`给俺D一个 shirakamifubuki  我永远喜欢小狐狸`**※ 无参数同样需要空格分割**
-
-注意：不需要设置昵称的情况下空格不能省略
+  (不设置昵称)使用例：`给俺D一个 shirakamifubuki  我永远喜欢小狐狸`
+  
+  (完全无参数)使用例：`给俺D一个 shirakamifubuki`
+  
+  **※ 跨参数设置同样需要空格分割，完全不设置参数时可以不添加空格**
 
 ![image-20200428113806819](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428113806819.png)
 
@@ -135,9 +187,9 @@ python start.py
 
 - 命令格式：`delone <推特用户ID>`
 
-- 同义格式：我不想D了
+- 同义格式：`我不想D了`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/群管理/群主/好友私聊, @bot
 
 - 功能说明：移除一个本群监听的用户
 
@@ -147,9 +199,9 @@ python start.py
 
 - 命令格式：`getGroupSetting`
 
-- 同义格式：全局设置列表
+- 同义格式：`全局设置列表`
 
-- 所需权限：无限制
+- 所需权限：超级管理员/群管理/群主/好友私聊, @bot
 
 - 功能说明：显示当前私聊/群的全局推送设置
 
@@ -159,9 +211,9 @@ python start.py
 
 - 命令格式：`getSetting <推特用户ID>`
 
-- 同义格式：对象设置列表
+- 同义格式：`对象设置列表`
 
-- 所需权限：无限制
+- 所需权限：超级管理员/群管理/群主/好友私聊, @bot
 
 - 功能说明：显示当前私聊/群的某个监听对象的推送设置
 
@@ -171,9 +223,9 @@ python start.py
 
 - 命令格式：`setGroupAttr <属性> <值>`
 
-- 同义格式：全局设置
+- 同义格式：`全局设置`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/群管理/群主/好友私聊, @bot
 
 - 功能说明：移除一个本群监听的用户
 
@@ -293,9 +345,9 @@ python start.py
 
 - 命令格式：`setAttr <监听用户UID> <属性> <值>`
 
-- 同义格式：对象设置
+- 同义格式：`对象设置`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/群管理/群主/好友私聊, @bot
 
 - 功能说明：设置指定监听对象的属性
 
@@ -319,11 +371,11 @@ python start.py
 
 ### 删除推送对象 globalRemove
 
-- 命令格式：globalRemove 消息类型 Q号/群号
+- 命令格式：`globalRemove 消息类型 Q号/群号`
 
-- 同义格式：全局移除
+- 同义格式：`全局移除`
 
-- 所需权限：超级管理员, @bot
+- 所需权限：超级管理员/好友私聊, @bot
 
 - 功能说明：移除某个人或某个群的所有监听，用于修复配置错误(退出群/删除好友时不在线)
 
@@ -339,10 +391,22 @@ python start.py
 
 ### 查询推特用户信息 getuserinfo
 
-- 命令格式：getuserinfo
+- 命令格式：`getuserinfo <用户UID/用户ID>`
 
-- 同义格式：查询推特用户
+- 同义格式：`查询推特用户`
+
+- 所需权限：超级管理员/好友私聊, @bot
+
+- 功能说明：查询某个用户的信息，显示的头像将会更新(新增与减少监听不会重新下载头像)
+
+
+
+### 全局移除 globalRemove
+
+- 命令格式：`globalRemove <private/私聊/group/群聊> <QQ号/群号>`
+
+- 同义格式：`全局移除`
 
 - 所需权限：超级管理员, @bot
 
-- 功能说明：查询某个用户的信息，显示的头像将会更新(新增与减少监听不会重新下载头像)
+- 功能说明：移除某个人或某个群的所有监测，用于修复配置错误(退出群/删除好友时不在线)

@@ -34,9 +34,9 @@ class tweetApiEventDeal(tweetEventDeal):
                     push_list.getPuslunitAttr(Pushunit,'upimg')[1],
                     push_list.getPuslunitAttr(Pushunit,event['type']+'_template')[1]
                 )
-            self.send_msg(Pushunit['type'],Pushunit['pushTo'],str)
+            self.send_msg(Pushunit['type'],Pushunit['pushTo'],str,Pushunit['bindCQID'])
         elif event['type'] in ['change_ID','change_name','change_description','change_headimgchange']:
-            self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'])
+            self.send_msg(Pushunit['type'],Pushunit['pushTo'],data['str'],Pushunit['bindCQID'])
 
     #媒体保存-保存推特中携带的媒体(目前仅支持图片-考虑带宽，后期不会增加对视频以及gif支持)
     def save_media(self, tweetinfo):

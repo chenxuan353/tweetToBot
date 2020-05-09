@@ -3,18 +3,25 @@ from nonebot.default_config import *
 #也可以在此处对nonebot进行设置
 
 #添加超级管理员 Q号-数值 例:SUPERUSERS.add(12345678)
-SUPERUSERS.add()
+SUPERUSERS.add(12345)
 #命令起始标识
 COMMAND_START = {'!','！'}
 #bot称呼-暂无作用
 NICKNAME = {'bot', 'bot哥', '工具人', '最菜群友'}
 #nonebot的debug开关
 DEBUG = True
+#nonebot的监听地址与启动端口
+NONEBOT_HOST:str = '0.0.0.0'
+NONEBOT_PORT:int = 7000
 #推特更新检测方法(twitter_api-推特API,twint-暂未开发)
 UPDATA_METHOD = "twitter_api"
 
 #图片发送目录默认在酷Q 图片文件夹的tweet文件夹内,图片下载文件夹在脚本运行目录的cache文件夹内的tweet文件夹
-#可以使用符号链接链接两个目录
+#可以使用符号链接链接两个目录，也可以使用nginx代理图片目录
+#图片相对路径酷Qimage的路径或域名（cqhttp插件支持获取网络图片）
+img_path = '' # https://xxx.xxx.com/
+img_time_out : str= '15' #图片下载超时时间(秒)
+
 #使用推特API必填，用于维持推特流正常运行(至少包括一个监测对象,不影响事件推送)
 #不使用推特API时请设置为None或为空 例:base_tweet_id = None 或者 base_tweet_id = ''
 #2006101 这是yagoo(tanigox)的UID
@@ -22,7 +29,7 @@ base_tweet_id = '2006101'
 #推特API代理(127.0.0.1:8080)
 api_proxy = ""
 
-#默认botQQ 重要信息及未分类信息将推送至此QQ，为空可能导致错误。请务必保持此账号能连接到nonebot
+#默认botQQ 默认推送用的bot，错误信息会使用此bot推送。请务必保持此账号能连接到nonebot
 default_bot_QQ : int = 123456
 #bot错误信息推送到的Q号，为空时不进行推送
 bot_error_printID : int = 123456

@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-from nonebot import on_command, CommandSession, permission,NoticeSession,on_notice
+from nonebot import on_command, CommandSession,NoticeSession,on_notice,permission as perm
 from helper import commandHeadtail,keepalive,getlogger,msgSendToBot,CQsessionToStr
 from module.twitter import push_list
 import time
@@ -25,13 +25,15 @@ tweet_event_deal = tweetListener.tweet_event_deal
 
 @on_notice('group_decrease')
 async def group_increase_leave_me(session: NoticeSession):
+    await asyncio.sleep(0.3)
     if session.event['sub_type'] == 'kick_me' or int(session.event['self_id']) == int(session.event['user_id']):
         push_list.delPushunitFromPushTo("group",int(session.event['group_id']),self_id = int(session.event['self_id']))
         push_list.savePushList()
         msgSendToBot(logger,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
 
-@on_command('delall',aliases=['这里单推bot'], permission=permission.SUPERUSER,only_to_me = True)
+@on_command('delall',aliases=['这里单推bot'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
 async def delalltest(session: CommandSession):
+    await asyncio.sleep(0.2)
     message_type = session.event['message_type']
     sent_id = 0
     if message_type == 'private':
@@ -63,8 +65,9 @@ def get_pushTo_spylist(message_type:str,pushTo:int):
     if unit_cout == 0:
         s = s + '\n' + '单 推 b o t'
     return s
-@on_command('getpushlist',aliases=['DD列表'],only_to_me = False)
+@on_command('getpushlist',aliases=['DD列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = False)
 async def getpushlist(session: CommandSession):
+    await asyncio.sleep(0.2)
     message_type = session.event['message_type']
     sent_id = 0
     if message_type == 'private':
@@ -110,8 +113,9 @@ def getPushToSetting(message_type:str,pushTo:int) -> str:
         res = res + attrlist[key] + ':'  + \
             (value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]) + '\n'
     return res
-@on_command('getGroupSetting',aliases=['全局设置列表'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('getGroupSetting',aliases=['全局设置列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setGroupSetting(session: CommandSession):
+    await asyncio.sleep(0.2)
     logger.info(CQsessionToStr(session))
     res = getPushToSetting(
         session.event['message_type'],
@@ -180,8 +184,9 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
         res = res + '\n' + attrdisplayname + ':' + \
             (value[1] if value[1] not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value[1]])
     return (True,res)
-@on_command('getSetting',aliases=['对象设置列表'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('getSetting',aliases=['对象设置列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def getSetting(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -202,8 +207,9 @@ async def getSetting(session: CommandSession):
     await session.send(res[1])
 
 #推送对象总属性设置
-@on_command('setGroupAttr',aliases=['全局设置'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('setGroupAttr',aliases=['全局设置'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setGroupAttr(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -288,8 +294,9 @@ async def setGroupAttr(session: CommandSession):
     logger.info(CQsessionToStr(session))
     await session.send(res[1])
 #推送对象的监测对象属性设置
-@on_command('setAttr',aliases=['对象设置'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('setAttr',aliases=['对象设置'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setAttr(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -404,8 +411,9 @@ async def setAttr(session: CommandSession):
     logger.info(CQsessionToStr(session))
 
 #移除某个人或某个群的所有监测，用于修复配置错误(退出群/删除好友时不在线)
-@on_command('globalRemove',aliases=['全局移除'],permission=permission.SUPERUSER,only_to_me = True)
+@on_command('globalRemove',aliases=['全局移除'],permission=perm.SUPERUSER,only_to_me = True)
 async def globalRemove(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -464,6 +472,7 @@ def decode_b64(str) -> int:
     return result + 1253881609540800000
 @on_command('detweetid',aliases=['推特ID解压'],only_to_me = False)
 async def decodetweetid(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         return
@@ -487,6 +496,7 @@ def encode_b64(n:int) -> str:
     return ''.join([x for x in reversed(result)])
 @on_command('entweetid',aliases=['推特ID压缩'],only_to_me = False)
 async def encodetweetid(session: CommandSession):
+    await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         return
@@ -497,6 +507,11 @@ async def encodetweetid(session: CommandSession):
     logger.info(CQsessionToStr(session))
     await session.send("推特ID缩写为："+res)
 
+@on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
+async def about(session: CommandSession):
+    logger.info(CQsessionToStr(session))
+    msg = 'https://github.com/chenxuan353/tweetToQQbot'
+    await session.send(msg)
 """
 	'font': , 
     'message': [{'type': 'text', 'data': {'text': '!getpushlist'}}], 
