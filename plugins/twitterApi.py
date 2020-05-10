@@ -19,6 +19,7 @@ __plugin_usage__ = r"""
 详见：
 https://github.com/chenxuan353/tweetToQQbot
 """
+
 @on_command('runTweetListener',aliases=['启动监听'], permission=perm.SUPERUSER,only_to_me = False)
 async def runTweetListener(session: CommandSession):
     await asyncio.sleep(0.2)
@@ -45,6 +46,7 @@ async def getuserinfo(session: CommandSession):
         logger.error('tweepy错误:'+s)
         await session.send("查询不到信息")
         return
+
     tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
     file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
@@ -79,6 +81,7 @@ async def delOne(session: CommandSession):
         logger.error('tweepy错误:'+s)
         await session.send("查询不到信息,bksn")
         return
+        
     tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
     file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
     res = push_list.delPushunitFromPushToAndTweetUserID(

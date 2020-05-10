@@ -94,8 +94,6 @@ vi config.py
 python start.py
 ```
 
-## 
-
 ## 推特监听目前支持的功能/命令
 
 ### 使用说明
