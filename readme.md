@@ -139,13 +139,13 @@ python start.py
 
 #### 查看监听列表 `getpushlist`
 
-- 命令格式：`getpushlist`
+- 命令格式：`getpushlist <页码-可选>`
 
 - 同义格式：`DD列表`
 
 - 所需权限：超级管理员/群管理/群主/好友私聊
 
-- 功能：获取当前私聊/群的监听列表
+- 功能：获取当前私聊/群的监听列表，页数默认为1。
 
 ![image-20200428114040218](https://raw.githubusercontent.com/chenxuan353/tweetToQQbot/master/readme/image-20200428114040218.png)
 

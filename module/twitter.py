@@ -227,12 +227,12 @@ class PushList:
         for v in dict_.values():
             res.append(v)
         return res
-    #返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表[]
+    #返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表{}
     def getLitsFromPushToAndID(self,message_type:str,pushTo:int) -> dict:
         if message_type not in self.message_type_list:
             raise Exception("无效的消息类型！",message_type)
         if pushTo not in self.__push_list[message_type]:
-            return []
+            return {}
         return self.__push_list[message_type][pushTo]['pushunits']
     #返回推送对象关联的推送属性组,推送对象不存在时返回空字典{}
     def getAttrLitsFromPushTo(self,message_type:str,pushTo:int) -> dict:

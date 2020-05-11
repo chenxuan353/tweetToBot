@@ -51,23 +51,37 @@ async def delalltest(session: CommandSession):
 
 
 #获取指定推送对象的推送列表（推送标识，推送对象ID）
-def get_pushTo_spylist(message_type:str,pushTo:int):
+def get_pushTo_spylist(message_type:str,pushTo:int,page:int):
     if message_type not in push_list.message_type_list:
         raise Exception("无效的消息类型！",message_type)
     table = push_list.getLitsFromPushToAndID(message_type,pushTo)
     s = ''
     unit_cout = 0
     for key in table:
+        if ((unit_cout//5)+1) == page:
+            s = s + (table[key]['nick'] if table[key]['nick'] != '' else tweet_event_deal.tryGetNick(key,"未定义昵称")) + \
+                "," + str(key) + ',' + table[key]['des'] + "\n"
         unit_cout = unit_cout + 1
-        s = s + (table[key]['nick'] if table[key]['nick'] != '' else tweet_event_deal.tryGetNick(key,"未定义昵称")) + \
-            "," + str(key) + ',' + table[key]['des'] + "\n"
+    totalpage = (unit_cout-1)//5 + (1 if unit_cout%5 == 0 else 2)
+    if unit_cout > 5 or page != 1:
+        s = s + '页数：' + str(page) + '/' + str(totalpage) + ' '
     s = s + '总监测数：' + str(unit_cout)
     if unit_cout == 0:
         s = s + '\n' + '单 推 b o t'
     return s
 @on_command('getpushlist',aliases=['DD列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = False)
 async def getpushlist(session: CommandSession):
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(0.1)
+    page = 1
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg != '':
+        if not stripped_arg.isdecimal():
+            await session.send("参数不正确")
+            return
+        page = int(stripped_arg)
+        if page < 1:
+            await session.send("参数不正确")
+            return
     message_type = session.event['message_type']
     sent_id = 0
     if message_type == 'private':
@@ -77,7 +91,7 @@ async def getpushlist(session: CommandSession):
     else:
         await session.send('未收录的消息类型:'+message_type)
         return
-    s = get_pushTo_spylist(message_type,sent_id)
+    s = get_pushTo_spylist(message_type,sent_id,page)
     await session.send(s)
     logger.info(CQsessionToStr(session))
 
@@ -510,7 +524,7 @@ async def encodetweetid(session: CommandSession):
 @on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
 async def about(session: CommandSession):
     logger.info(CQsessionToStr(session))
-    msg = 'https://github.com/chenxuan353/tweetToQQbot'
+    msg = 'http://uee.me/dfRwA'
     await session.send(msg)
 """
 	'font': , 
