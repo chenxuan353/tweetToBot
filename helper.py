@@ -86,7 +86,7 @@ def data_read(filename:str,path:str = config_file_base_path) -> tuple:
         data = json.load(f)
         logger.info('读取配置文件：'+json.dumps(data))
     except IOError:
-        logger.error('IOError: 未找到文件或文件不存在-'+filename)
+        logger.error('IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
         return (False,'配置文件读取失败')
     except:
         logger.critical('数据文件读取解析异常')
@@ -101,7 +101,7 @@ def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
         fw = open(os.path.join(file_base_path,path,filename),mode = 'w',encoding='utf-8')
         json.dump(data,fw,ensure_ascii=False,indent=4)
     except IOError:
-        logger.error('IOError: 未找到文件或文件不存在-'+filename)
+        logger.error('IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
         pass
         return (False,'配置文件写入失败')
     except:

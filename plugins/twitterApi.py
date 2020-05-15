@@ -47,12 +47,13 @@ async def getuserinfo(session: CommandSession):
         await session.send("查询不到信息")
         return
 
-    tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
+    #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #'头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
         '描述:' + userinfo.description + "\n" + \
         '推文受保护:' + str(userinfo.protected) + "\n" + \
         '被关注数:' + str(userinfo.followers_count) + "\n" + \
@@ -82,8 +83,9 @@ async def delOne(session: CommandSession):
         await session.send("查询不到信息,bksn")
         return
         
-    tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
+    #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #'头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
     res = push_list.delPushunitFromPushToAndTweetUserID(
         session.event['message_type'],
         session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
@@ -92,7 +94,7 @@ async def delOne(session: CommandSession):
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
         ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))
@@ -118,8 +120,9 @@ async def addOne(session: CommandSession):
         logger.error('tweepy错误:'+s)
         await session.send("查询不到信息,你D都能D歪来")
         return
-    tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
-    file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
+    #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
+    #'头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
     nick = ''
     des = ''
     if cs[2] != '':
@@ -138,7 +141,7 @@ async def addOne(session: CommandSession):
     s = '用户UID:'+ str(userinfo.id) + "\n" + \
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
         ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))

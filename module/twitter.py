@@ -375,9 +375,11 @@ class tweetEventDeal:
         for Pushunit in table:
             #获取属性判断是否可以触发事件
             res = push_list.getPuslunitAttr(Pushunit,event['type'])
+            #res_n = push_list.getPuslunitAttr(Pushunit,'none')
             if res[0] == False:
                 raise Exception("获取Pushunit属性值失败",Pushunit)
             if res[1] == 1:
+                #or (res_n == 1 and event['type'] in ('reply_to_status','reply_to_user') and event['data']['user']['id'] == event['data']['Related_user']['id'])
                 self.deal_event_unit(event,Pushunit)
     def deal_event_unit(self,event,Pushunit):
         raise Exception('未定义事件处理单元')
@@ -412,6 +414,7 @@ class tweetEventDeal:
             'related_tweet_id':'', #关联推特ID(被评论/被转发)
             'related_tweet_id_min':'', #关联推特ID的压缩(被评论/被转发)
             'related_tweet_text':'', #关联推特内容(被转发或被转发并评论时存在)
+            'media_img':'', #媒体
         }
         if tweetinfo['type'] != 'none':
             template_value['related_tweet_id'] = tweetinfo['Related_tweet']['id_str']
@@ -427,23 +430,32 @@ class tweetEventDeal:
                     template_value['related_user_name'] = tweetinfo['Related_user']['name']
                 else:
                     template_value['related_user_name'] = tweetinfo['Related_user']['screen_name']
-
+        #组装图片
+        if upimg == 1:
+            mis = ''
+            if 'extended_entities' in tweetinfo:
+                for media_unit in tweetinfo['extended_entities']:
+                    #组装CQ码
+                    #file_suffix = os.path.splitext(media_unit['media_url'])[1]
+                    #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
+                    mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
+            template_value['media_img'] = mis
         #生成模版类
         s = ""
         t = None
         if template_text == '':
             #默认模版
             if tweetinfo['type'] == 'none':
-                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text"
+                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img"
                 t = tweetToStrTemplate(deftemplate_another)
             else:
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img"
                 t = tweetToStrTemplate(deftemplate_another)
         else:
             #自定义模版
@@ -452,14 +464,6 @@ class tweetEventDeal:
 
         #转换为字符串
         s = t.safe_substitute(template_value)
-        #组装图片
-        if upimg == 1:
-            s = s + "\n"
-            if 'extended_entities' in tweetinfo:
-                for media_unit in tweetinfo['extended_entities']:
-                    #组装CQ码
-                    file_suffix = os.path.splitext(media_unit['media_url'])[1]
-                    s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
         return s
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):

@@ -294,25 +294,25 @@ python start.py
 ###### 	发推
 
 ```
-推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text
+推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img
 ```
 
 ###### 	转推
 
 ```
-推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text
+推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img
 ```
 
 ###### 	转发并评论
 
 ```
-推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text
+推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img
 ```
 
 ###### 	回复与被提及
 
 ```
-推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text
+推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img
 ```
 
 ##### 模版支持的变量
@@ -335,9 +335,11 @@ python start.py
 >
 > $related_tweet_id 关联推特ID(被评论/被转发)
 >
->  $related_tweet_id_min 关联推特ID的压缩(被评论/被转发)
+> $related_tweet_id_min 关联推特ID的压缩(被评论/被转发)
 >
 > $related_tweet_text 关联推特内容(被转发或被转发并评论时存在)
+>
+> $media_img 推特携带的图片
 
 ### 更改监听对象属性 setAttr
 

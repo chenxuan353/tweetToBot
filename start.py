@@ -116,9 +116,9 @@ def tweetsocketServer_threads_run():
     )
     keepalive['tweetsocketServer_threads'].start()
 
-async def DealAndKeepAlive():
+def DealAndKeepAlive():
     while True:
-        await asyncio.sleep(1)
+        time.sleep(1)
         if keepalive['reboot_tewwtlistener'] == True:
             reboot_tewwtlistener()
 
@@ -132,7 +132,13 @@ if __name__ == "__main__":
     time.sleep(2)
     logger.info('启动推特流...')
     tweetListener_threads_run()
-    
+    tweetStreamKeep = threading.Thread(
+        group=None, 
+        target=DealAndKeepAlive, 
+        name='tweetStreamKeep', 
+        daemon=True
+    )
+    tweetStreamKeep.start()
     logger.info('启动nonebot...')
     nonebot.init(config)
     nonebot.load_plugins(
@@ -140,9 +146,8 @@ if __name__ == "__main__":
         'plugins'
     )
     nonebot.run(host=config.NONEBOT_HOST, port = config.NONEBOT_PORT)
-
-    logger.info('维持主线程运行...')
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(DealAndKeepAlive())
+    #logger.info('维持主线程运行...')
+    #loop = asyncio.get_event_loop()
+    #loop.run_until_complete(DealAndKeepAlive())
 
 

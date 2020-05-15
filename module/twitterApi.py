@@ -103,7 +103,7 @@ class tweetApiEventDeal(tweetEventDeal):
         elif status.in_reply_to_screen_name != None:
             return 'reply_to_user' #提及(猜测就是艾特)
         else:
-            return 'none' #未分类(估计是主动发推)
+            return 'none' #未分类(主动发推)
     def deal_tweet(self, status):
         tweetinfo = self.get_tweet_info(status)
         tweetinfo['type'] = self.deal_tweet_type(status)
