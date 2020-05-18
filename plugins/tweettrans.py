@@ -24,7 +24,7 @@ if res[0]:
     group_list = res[2]
 
 @on_command('transswitch',aliases=['ts','烤推授权'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
-def transswitch(session: CommandSession):
+async def transswitch(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
     if session.event['group_id'] in group_list:
@@ -139,7 +139,7 @@ async def translist(session: CommandSession):
         return
     if session.event['group_id'] not in group_list:
         await session.send("烤推未授权")
-    return
+        return
     page = 1
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg != '':
@@ -160,7 +160,7 @@ async def gettrans(session: CommandSession):
         return
     if session.event['group_id'] not in group_list:
         await session.send("烤推未授权")
-    return
+        return
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -184,3 +184,17 @@ async def gettrans(session: CommandSession):
                     ',file='+config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(tweet_id) + '.png' + ']'))
             return
     await session.send("此推文不存在翻译")
+
+@on_command('transabout',aliases=['ta','烤推帮助'],only_to_me = True)
+async def transabout(session: CommandSession):
+    msg = '当前版本为烤推机测试版V1.0' + "\n" + \
+        '!ts -切换烤推授权' + "\n" + \
+        '!t 推文ID 翻译 -合成翻译' + "\n" + \
+        '!tl -已翻译推文列表' + "\n" + \
+        '!gt 推文ID -获取翻译' + "\n" + \
+        '多层回复翻译:' + "\n" + \
+        '##1 第一层翻译' + "\n" + \
+        '#i 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
+        '##2 第二层翻译' + "\n" + \
+        '##main 主翻译'
+    await session.send(msg)
