@@ -31,7 +31,7 @@ async def feedback(session: CommandSession):
         ' ;message_type:'+session.event['message_type']+ \
         ' ;send_id:'+str(session.event['user_id']) if session.event['message_type']=='private' else str(session.event['group_id'])+ \
         ' ;text:'+stripped_arg
-    logger.warning(s)
+    logger.warning('反馈:'+s)
     await session.send('已收到反馈')
 
 async def save_recording():

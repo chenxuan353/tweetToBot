@@ -25,7 +25,9 @@ keepalive = {
     'tewwtlistener_alive' : True,
     'reboot_tweetListener_cout' : 0,
     'tweetListener_threads' : None,
-    'nonebot_threads' : None
+    'nonebot_threads' : None,
+    'last_trans': 0, #上次翻译时间
+    'clear_chrome': False,
 }
 #获取日志对象
 def getlogger(name) -> logging.Logger:
@@ -48,6 +50,11 @@ def getlogger(name) -> logging.Logger:
     return reslogger
 
 logger = getlogger(__name__)
+
+#判断目录存在性，不存在则生成
+def check_path(filepath:str):
+    if not os.path.exists(os.path.join(file_base_path,filepath)):
+        os.makedirs(os.path.join(file_base_path,filepath))
 #参数截断
 def commandHeadtail(s:str):
     return s.partition(" ")
@@ -113,5 +120,30 @@ def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
         fw.close()
     return (True,'保存成功')
 
-#配置文件读取
-
+#临时列表
+class TempMemory:
+    tm : list= None
+    autosave : bool = None
+    name : str = ""
+    limit : int = 0
+    #记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
+    def __init__(self,name:str,limit:int = 30,defdata:list = [],autosave:bool = False,autoload:bool = False):
+        check_path('templist')
+        self.name = name
+        self.limit = limit
+        self.autosave = autosave
+        if autoload:
+            res = data_read(self.name,"templist")
+            if res[0] == True:
+                self.tm = res[2]
+        if self.tm == None:
+            self.tm = defdata
+    def join(self,data):
+        res = None
+        self.tm.append(data)
+        if len(self.tm) > self.limit:
+            res = self.tm.pop(0)
+        if self.autosave:
+            data_save(self.name,self.tm,"templist")
+        return res
+    

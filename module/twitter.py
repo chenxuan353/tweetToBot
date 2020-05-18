@@ -7,7 +7,7 @@ import os
 #引入配置
 import config
 #日志输出
-from helper import data_read,data_save,getlogger,msgSendToBot
+from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory
 logger = getlogger(__name__)
 #引入测试方法
 test = None
@@ -24,7 +24,7 @@ base_tweet_id = config.base_tweet_id
 
 #10进制转64进制
 def encode_b64(n:int) -> str:
-    table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_'
+    table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
     result = []
     temp = n - 1253881609540800000
     if 0 == temp:
@@ -34,7 +34,7 @@ def encode_b64(n:int) -> str:
             result.append(table[int(temp) % 64])
             temp = int(temp)//64
     return ''.join([x for x in reversed(result)])
-def decode_b64(str):
+def decode_b64(str) -> int:
     table = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
                 "6": 6, "7": 7, "8": 8, "9": 9,
                 "a": 10, "b": 11, "c": 12, "d": 13, "e": 14, "f": 15, "g": 16,
@@ -45,10 +45,12 @@ def decode_b64(str):
                 "H": 43, "I": 44, "J": 45, "K": 46, "L": 47, "M": 48, "N": 49,
                 "O": 50, "P": 51, "Q": 52, "R": 53, "S": 54, "T": 55, "U": 56,
                 "V": 57, "W": 58, "X": 59, "Y": 60, "Z": 61,
-                "$": 62, "_": 63}
-    result = 0
+                "-": 62, "_": 63}
+    result : int = 0
     for i in range(len(str)):
         result *= 64
+        if str[i] not in table:
+            return -1
         result += table[str[i]]
     return result + 1253881609540800000
 #推送列表
@@ -303,7 +305,7 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-
+tmemory = TempMemory('tweets',limit = 150,autosave = True,autoload = True)
 class tweetEventDeal:
     #用户信息维护列表
     userinfolist = {}
@@ -361,6 +363,8 @@ class tweetEventDeal:
                 self.userinfolist[userinfo['id']] = userinfo
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
+        if event_type in ('retweet','quoted','reply_to_status','reply_to_user','none'):
+            tmemory.join(event_data)
         eventunit = {
             'type':event_type,
             'user_id':user_id,
@@ -416,6 +420,7 @@ class tweetEventDeal:
             'related_tweet_text':'', #关联推特内容(被转发或被转发并评论时存在)
             'media_img':'', #媒体
         }
+        
         if tweetinfo['type'] != 'none':
             template_value['related_tweet_id'] = tweetinfo['Related_tweet']['id_str']
             template_value['related_tweet_id_min'] = encode_b64(tweetinfo['Related_tweet']['id'])
@@ -446,16 +451,16 @@ class tweetEventDeal:
         if template_text == '':
             #默认模版
             if tweetinfo['type'] == 'none':
-                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img"
+                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_another)
             else:
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_another)
         else:
             #自定义模版

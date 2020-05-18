@@ -1,13 +1,11 @@
 # -*- coding: UTF-8 -*-
 import os
 from os import path
+from helper import check_path
 #初始化文件夹
 base_path = 'cache'
-if not os.path.exists(os.path.join(base_path,'config')):
-    os.makedirs(os.path.join(base_path,'config'))
-if not os.path.exists(os.path.join(base_path,'log')):
-    os.makedirs(os.path.join(base_path,'log'))
-
+check_path(os.path.join('config'))
+check_path(os.path.join('log'))
 
 import nonebot
 import module.twitterApi as tweetListener
@@ -26,7 +24,7 @@ nonebot封装的CQHTTP插件
 '''
 
 def init():
-    allow_start_method = ('twitter_api','socket_api','twint')
+    allow_start_method = ('twitter_api')
     if config.UPDATA_METHOD not in allow_start_method:
         msg = '配置的更新检测(UPDATA_METHOD)方法不合法：'+str(config.UPDATA_METHOD)
         logger.critical(msg)
@@ -47,23 +45,6 @@ def reboot_tewwtlistener():
         daemon=True
     )
     keepalive['tweetListener_threads'].start()
-
-def run_nonebot():
-    new_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(new_loop)
-    try:
-        nonebot.init(config)
-        nonebot.load_plugins(
-            path.join(path.dirname(__file__), 'plugins'),
-            'plugins'
-        )
-        nonebot.run(host='127.0.0.1', port = 8190)
-    except:
-        logger.critical('BOT状态异常')
-        s = traceback.format_exc(limit=10)
-        logger.critical(s)
-        raise Exception(s)
-
 def run_tewwtlistener():
     keepalive['tewwtlistener_alive'] = True
     new_loop = asyncio.new_event_loop()
@@ -77,27 +58,6 @@ def run_tewwtlistener():
         time.sleep(10)
         reboot_tewwtlistener()
         return
-
-def run_tweetsocketServer():
-    new_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(new_loop)
-    try:
-        tweetsocketServer.Run()
-    except:
-        logger.critical('推特转发服务异常')
-        s = traceback.format_exc(limit=10)
-        logger.critical(s)
-        raise Exception(s)
-
-def nonebot_threads_run():
-    keepalive['nonebot_threads'] = threading.Thread(
-        group=None, 
-        target=run_nonebot, 
-        name='nonebot_threads', 
-        daemon=True
-    )
-    keepalive['nonebot_threads'].start()
-
 def tweetListener_threads_run():
     keepalive['tweetListener_threads'] = threading.Thread(
         group=None, 
@@ -106,32 +66,23 @@ def tweetListener_threads_run():
         daemon=True
     )
     keepalive['tweetListener_threads'].start()
-
-def tweetsocketServer_threads_run():
-    keepalive['tweetsocketServer_threads'] = threading.Thread(
-        group=None, 
-        target=run_tweetsocketServer, 
-        name='tweetsocketServer_threads', 
-        daemon=True
-    )
-    keepalive['tweetsocketServer_threads'].start()
-
 def DealAndKeepAlive():
     while True:
         time.sleep(1)
         if keepalive['reboot_tewwtlistener'] == True:
             reboot_tewwtlistener()
-
+        if (not keepalive['clear_chrome']) and (int(time.time()) - keepalive['last_trans']) > 300:
+            keepalive['clear_chrome'] = True
+            os.system('taskkill /im chromedriver.exe /F')
+            os.system('taskkill /im chrome.exe /F')
 
 if __name__ == "__main__":
     #初始化
     init()
     #启动线程
-    #logger.info('启动nonebot...')
-    #nonebot_threads_run()
     time.sleep(2)
     logger.info('启动推特流...')
-    tweetListener_threads_run()
+    #tweetListener_threads_run()
     tweetStreamKeep = threading.Thread(
         group=None, 
         target=DealAndKeepAlive, 
@@ -146,8 +97,5 @@ if __name__ == "__main__":
         'plugins'
     )
     nonebot.run(host=config.NONEBOT_HOST, port = config.NONEBOT_PORT)
-    #logger.info('维持主线程运行...')
-    #loop = asyncio.get_event_loop()
-    #loop.run_until_complete(DealAndKeepAlive())
 
 

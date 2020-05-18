@@ -2,6 +2,7 @@
 cache/
 config.py
 test.py
+chromedriver.exe
 img/
 # Byte-compiled / optimized / DLL files
 __pycache__/

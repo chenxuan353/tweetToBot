@@ -16,18 +16,15 @@ NONEBOT_PORT:int = 7000
 #推特更新检测方法(twitter_api-推特API,twint-暂未开发)
 UPDATA_METHOD = "twitter_api"
 
-#图片发送目录默认在酷Q 图片文件夹的tweet文件夹内,图片下载文件夹在脚本运行目录的cache文件夹内的tweet文件夹
-#可以使用符号链接链接两个目录，也可以使用nginx代理图片目录
-#图片相对路径酷Qimage的路径或域名（cqhttp插件支持获取网络图片）
-img_path = '' # https://xxx.xxx.com/
+#图片发送站点（烤推机图片发送需要，可以是本地相对与酷Q图片发送目录的路径，酷Q远程链接时必须为站点地址）
+trans_img_path = '' # https://xxx.xxx.com/
+#图片发送超时时间
 img_time_out : str= '15' #图片下载超时时间(秒)
 
 #使用推特API必填，用于维持推特流正常运行(至少包括一个监测对象,不影响事件推送)
 #不使用推特API时请设置为None或为空 例:base_tweet_id = None 或者 base_tweet_id = ''
-#2006101 这是yagoo(tanigox)的UID
-base_tweet_id = '2006101' 
-#推特API代理(127.0.0.1:8080)
-api_proxy = ""
+base_tweet_id = '2006101'  #2006101 这是yagoo(tanigox)的UID
+api_proxy = "" #推特API代理(127.0.0.1:8080)
 
 #默认botQQ 默认推送用的bot，错误信息会使用此bot推送。请务必保持此账号能连接到nonebot
 default_bot_QQ : int = 123456
