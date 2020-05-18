@@ -93,7 +93,7 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
         s = traceback.format_exc(limit=10)
         logger.error(s)
         send_msg(session,"错误，服务器异常")
-@on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
+@on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def trans(session: CommandSession):
     if session.event['message_type'] == 'group' and session.event['group_id'] not in group_list:
         await session.send("烤推未授权")
@@ -133,7 +133,7 @@ def getlist(groupid:int,page:int=1):
     totalpage = (cout-1)//5 + (0 if cout%5 == 0 else 1)
     s = s + '页数:'+str(page)+'/'+str(totalpage)+'总记录数：'+str(cout)
     return s
-@on_command('translist',aliases=['tl','烤推列表'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
+@on_command('translist',aliases=['tl','烤推列表'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def translist(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
@@ -154,7 +154,7 @@ async def translist(session: CommandSession):
     await session.send(s)
     logger.info(CQsessionToStr(session))
 
-@on_command('gettrans',aliases=['gt','获取翻译'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
+@on_command('gettrans',aliases=['gt','获取翻译'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def gettrans(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
@@ -185,7 +185,7 @@ async def gettrans(session: CommandSession):
             return
     await session.send("此推文不存在翻译")
 
-@on_command('transabout',aliases=['ta','烤推帮助'],only_to_me = True)
+@on_command('transabout',aliases=['ta','烤推帮助'],only_to_me = False)
 async def transabout(session: CommandSession):
     msg = '当前版本为烤推机测试版V1.0' + "\n" + \
         '!ts -切换烤推授权' + "\n" + \
