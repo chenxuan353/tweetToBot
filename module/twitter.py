@@ -305,7 +305,7 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-tmemory = TempMemory('tweets',limit = 150,autosave = True,autoload = True)
+tmemory = TempMemory('tweets.json',limit = 150,autosave = True,autoload = True)
 class tweetEventDeal:
     #用户信息维护列表
     userinfolist = {}

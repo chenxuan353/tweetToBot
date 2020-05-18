@@ -17,7 +17,7 @@ __plugin_usage__ = r"""
 #线程池
 from concurrent.futures import ThreadPoolExecutor
 pool = ThreadPoolExecutor(max_workers=64)
-trans_tmemory = TempMemory('trans.json',limit=300,autoload=True,autosave=True)
+trans_tmemory = TempMemory('trans_tmemory.json',limit=300,autoload=True,autosave=True)
 group_list = []
 res = data_read('transwhilelist.json')
 if res[0]:
@@ -36,7 +36,7 @@ async def transswitch(session: CommandSession):
         await session.send('烤推授权开启')
         data_save('transwhilelist.json',group_list)
 
-def deal_trans(arg,type_html:str='<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>') -> dict:
+def deal_trans(arg,type_html:str) -> dict:
     trans = {
         'type_html':type_html,
         'text':{}
@@ -70,21 +70,27 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
         for tweet in tmemory.tm:
             if tweet['id'] == tweet_id:
                 logger.info('检测到缓存')
+                logger.info(tmemory)
                 logger.info(tweet)
                 tweet_sname = tweet['user']['screen_name']
                 break
-        trans = deal_trans(arg2)
-        res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(session.event['group_id'])+'-'+str(tweet_id))
+        type_html = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>'
+        if session.event['group_id'] in config.transtemplate:
+            type_html = config.transtemplate[session.event['group_id']]
+        tasktype = int(time.time())
+        trans = deal_trans(arg2,type_html=type_html)
+        res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(session.event['group_id'])+'-'+str(tasktype))
+        time.sleep(0.5)
         if res[0]:
             if session.event['message_type'] == 'group':
                 nick = None
                 if 'nickname' in session.event.sender:
                     nick = session.event.sender['nickname']
-                trans_tmemory.join({'id':tweet_id,'mintrans':arg2[0:15],'tweetid':arg1,'sourcetweetid':tweet_id,'trans':arg2,'op':session.event['user_id'],'opnick':nick,'group':session.event['group_id']})
+                trans_tmemory.join({'id':tweet_id,'mintrans':arg2[0:15],'tweetid':arg1,'tasktype':tasktype,'sourcetweetid':tweet_id,'trans':arg2,'op':session.event['user_id'],'opnick':nick,'group':session.event['group_id']})
             send_msg(session,
-                    config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tweet_id) + '.png' +"\n" + \
+                    config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tasktype) + '.png' +"\n" + \
                     str('[CQ:image,timeout=' + config.img_time_out + \
-                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tweet_id) + '.png' + ']'))
+                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tasktype) + '.png' + ']'))
         else:
             send_msg(session,"错误，"+res[2])
         logger.info(CQsessionToStr(session))
@@ -95,7 +101,9 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
         send_msg(session,"错误，服务器异常")
 @on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def trans(session: CommandSession):
-    if session.event['message_type'] == 'group' and session.event['group_id'] not in group_list:
+    if session.event['message_type'] != 'group':
+        return
+    if session.event['group_id'] not in group_list:
         await session.send("烤推未授权")
         return
     stripped_arg = session.current_arg_text.strip()
@@ -179,15 +187,15 @@ async def gettrans(session: CommandSession):
     length = len(ttm)
     for i in range(length - 1,-1,-1):
         if ttm[i]['sourcetweetid'] == tweet_id:
-            await session.send(config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(tweet_id) + '.png' +"\n" + \
+            await session.send(config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(ttm[i]['tasktype']) + '.png' +"\n" + \
                     str('[CQ:image,timeout=' + config.img_time_out + \
-                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(tweet_id) + '.png' + ']'))
+                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(ttm[i]['tasktype']) + '.png' + ']'))
             return
     await session.send("此推文不存在翻译")
 
 @on_command('transabout',aliases=['ta','烤推帮助'],only_to_me = False)
 async def transabout(session: CommandSession):
-    msg = '当前版本为烤推机测试版V1.0' + "\n" + \
+    msg = '当前版本为烤推机测试版V2.0' + "\n" + \
         '!ts -切换烤推授权' + "\n" + \
         '!t 推文ID 翻译 -合成翻译' + "\n" + \
         '!tl -已翻译推文列表' + "\n" + \

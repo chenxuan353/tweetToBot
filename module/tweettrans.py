@@ -27,13 +27,13 @@ class TweetTrans:
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('-lang=zh-cn')
-        chrome_options.add_argument('--accept-language="zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6"')
-        chrome_options.add_argument('--x-twitter-active-user=yes')
-        chrome_options.add_argument('--dnt=1')
-        chrome_options.add_argument('--x-twitter-client-language=zh-cn')
+        chrome_options.add_argument('accept-language="zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6"')
+        chrome_options.add_argument('x-twitter-active-user=yes')
+        chrome_options.add_argument('dnt=1')
+        chrome_options.add_argument('x-twitter-client-language=zh-cn')
         #chrome_options.add_argument('--disk-cache-dir=./cache/chromecache')
         chrome_options.add_argument(
-        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36")
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36")
         self.driver = webdriver.Chrome(options=chrome_options)
     def __del__(self):
         self.driver.close()

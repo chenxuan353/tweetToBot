@@ -60,26 +60,7 @@ pushunit_default_config = {
     'change_description':0, #描述修改(默认关闭)
     'change_headimgchange':1, #头像更改(默认开启)
 }
-
-notification_config = {
-    #当有新成员加入时的欢迎语
-    'Welcome':'''
-    Welcome New member![CQ:at,qq={NEWMEMBER}]
-    ''',
-    #提供工具链一件呼出(群便签)
-    'SiteLink':'''
-    ''',
-    #TODO 留言模板
-    'LeaveMessage':'''
-    {FOR}, {FROM}left a message for you:{MESSAGE}
-    ''',
-    
-}
-entertainment_config = {
-    #是否开启娱乐插件
-    'valid':True,
-    #设置重复N次后复读
-    'repeat_rate':5,
-    #随机生草概率(%)
-    'kusa_rate':5,
+#自定义烤推标识
+transtemplate = {
+    12345:'<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>',
 }
