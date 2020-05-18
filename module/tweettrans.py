@@ -448,7 +448,7 @@ class TweetTrans:
             s = traceback.format_exc(limit=10)
             logger.warning(s+"\n filename="+error_save_filename + ';url=' + driver.current_url)
             return (False,error_save_filename,'更改渲染宽高时异常')
-        filepath = os.path.join('cache','transtweet','transimg',TweetID+'.png')
+        filepath = os.path.join('cache','transtweet','transimg',tasktype+'.png')
         try:
             file = open(filepath,'wb')
             file.write(elem.screenshot_as_png)

@@ -56,7 +56,7 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
                 tweet_sname = tweet['user']['screen_name']
                 break
         trans = deal_trans(arg2)
-        res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(tweet_id))
+        res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(session.event['group_id'])+'-'+str(tweet_id))
         if res[0]:
             if session.event['message_type'] == 'group':
                 nick = None
@@ -64,9 +64,9 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
                     nick = session.event.sender['nickname']
                 trans_tmemory.join({'id':tweet_id,'mintrans':arg2[0:15],'tweetid':arg1,'sourcetweetid':tweet_id,'trans':arg2,'op':session.event['user_id'],'opnick':nick,'group':session.event['group_id']})
             send_msg(session,
-                    config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' +"\n" + \
+                    config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tweet_id) + '.png' +"\n" + \
                     str('[CQ:image,timeout=' + config.img_time_out + \
-                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' + ']'))
+                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(session.event['group_id'])+'-'+str(tweet_id) + '.png' + ']'))
         else:
             send_msg(session,"错误，"+res[2])
         logger.info(CQsessionToStr(session))
@@ -152,8 +152,8 @@ async def gettrans(session: CommandSession):
     length = len(ttm)
     for i in range(length - 1,-1,-1):
         if ttm[i]['sourcetweetid'] == tweet_id:
-            await session.send(config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' +"\n" + \
+            await session.send(config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(tweet_id) + '.png' +"\n" + \
                     str('[CQ:image,timeout=' + config.img_time_out + \
-                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' + ']'))
+                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(tweet_id) + '.png' + ']'))
             return
     await session.send("此推文不存在翻译")
