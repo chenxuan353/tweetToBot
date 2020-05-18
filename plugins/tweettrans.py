@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession,NoticeSession,on_notice,permission as perm
 from helper import commandHeadtail,keepalive,getlogger,msgSendToBot,CQsessionToStr,TempMemory
-from module.twitter import decode_b64,encode_b64,tmemory
+from module.twitter import decode_b64,encode_b64,tmemory,data_read,data_save
 from module.tweettrans import TweetTrans
 import nonebot
 import time
@@ -18,6 +18,24 @@ __plugin_usage__ = r"""
 from concurrent.futures import ThreadPoolExecutor
 pool = ThreadPoolExecutor(max_workers=64)
 trans_tmemory = TempMemory('trans.json',limit=300,autoload=True,autosave=True)
+group_list = []
+res = data_read('transwhilelist.json')
+if res[0]:
+    group_list = res[2]
+
+@on_command('transswitch',aliases=['ts','烤推授权'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
+def transswitch(session: CommandSession):
+    if session.event['message_type'] != 'group':
+        return
+    if session.event['group_id'] in group_list:
+        group_list.remove(session.event['group_id'])
+        await session.send('烤推授权关闭')
+        data_save('transwhilelist.json',group_list)
+    else:
+        group_list.append(session.event['group_id'])
+        await session.send('烤推授权开启')
+        data_save('transwhilelist.json',group_list)
+
 def deal_trans(arg,type_html:str='<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>') -> dict:
     trans = {
         'type_html':type_html,
@@ -75,8 +93,11 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
         s = traceback.format_exc(limit=10)
         logger.error(s)
         send_msg(session,"错误，服务器异常")
-@on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
+@on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
 async def trans(session: CommandSession):
+    if session.event['message_type'] == 'group' and session.event['group_id'] not in group_list:
+        await session.send("烤推未授权")
+        return
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         await session.send("缺少参数")
@@ -112,10 +133,13 @@ def getlist(groupid:int,page:int=1):
     totalpage = (cout-1)//5 + (0 if cout%5 == 0 else 1)
     s = s + '页数:'+str(page)+'/'+str(totalpage)+'总记录数：'+str(cout)
     return s
-@on_command('translist',aliases=['tl','烤推列表'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
+@on_command('translist',aliases=['tl','烤推列表'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
 async def translist(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
+    if session.event['group_id'] not in group_list:
+        await session.send("烤推未授权")
+    return
     page = 1
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg != '':
@@ -130,10 +154,13 @@ async def translist(session: CommandSession):
     await session.send(s)
     logger.info(CQsessionToStr(session))
 
-@on_command('gettrans',aliases=['gt','获取翻译'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
+@on_command('gettrans',aliases=['gt','获取翻译'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = True)
 async def gettrans(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
+    if session.event['group_id'] not in group_list:
+        await session.send("烤推未授权")
+    return
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         await session.send("缺少参数")
