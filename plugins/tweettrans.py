@@ -3,6 +3,7 @@ from nonebot import on_command, CommandSession,NoticeSession,on_notice,permissio
 from helper import commandHeadtail,keepalive,getlogger,msgSendToBot,CQsessionToStr,TempMemory
 from module.twitter import decode_b64,encode_b64,tmemory
 from module.tweettrans import TweetTrans
+import nonebot
 import time
 import asyncio
 import os
@@ -13,6 +14,9 @@ __plugin_name__ = '烤推'
 __plugin_usage__ = r"""
 烤推指令前端
 """
+#线程池
+from concurrent.futures import ThreadPoolExecutor
+pool = ThreadPoolExecutor(max_workers=64)
 trans_tmemory = TempMemory('trans.json',limit=300,autoload=True,autosave=True)
 def deal_trans(arg,type_html:str='<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>') -> dict:
     trans = {
@@ -40,6 +44,37 @@ def deal_trans(arg,type_html:str='<p dir="auto" style="color:#1DA1F2;font-size:0
             if kvc[2] != '':
                 trans['text'][kv[0]].append(kvc[2])
     return trans
+def send_msg(session: CommandSession,msg):
+    session.bot.sync.send_msg_rate_limited(self_id=session.self_id,group_id=session.event['group_id'],message=msg)
+def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
+    try:
+        tt = TweetTrans()
+        for tweet in tmemory.tm:
+            if tweet['id'] == tweet_id:
+                logger.info('检测到缓存')
+                logger.info(tweet)
+                tweet_sname = tweet['user']['screen_name']
+                break
+        trans = deal_trans(arg2)
+        res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(tweet_id))
+        if res[0]:
+            if session.event['message_type'] == 'group':
+                nick = None
+                if 'nickname' in session.event.sender:
+                    nick = session.event.sender['nickname']
+                trans_tmemory.join({'id':tweet_id,'mintrans':arg2[0:15],'tweetid':arg1,'sourcetweetid':tweet_id,'trans':arg2,'op':session.event['user_id'],'opnick':nick,'group':session.event['group_id']})
+            send_msg(session,
+                    config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' +"\n" + \
+                    str('[CQ:image,timeout=' + config.img_time_out + \
+                    ',file='+config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' + ']'))
+        else:
+            send_msg(session,"错误，"+res[2])
+        logger.info(CQsessionToStr(session))
+        del tt
+    except:
+        s = traceback.format_exc(limit=10)
+        logger.error(s)
+        send_msg(session,"错误，服务器异常")
 @on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
 async def trans(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
@@ -62,28 +97,8 @@ async def trans(session: CommandSession):
             await session.send("推特ID不正确")
             return
         tweet_id = res
-    tt = TweetTrans()
-    for tweet in tmemory.tm:
-        if tweet['id'] == tweet_id:
-            logger.info('检测到缓存')
-            logger.info(tweet)
-            tweet_sname = tweet['user']['screen_name']
-            break
-    trans = deal_trans(arg2)
-    res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(tweet_id))
-    if res[0]:
-        if session.event['message_type'] == 'group':
-            nick = None
-            if 'nickname' in session.event.sender:
-                nick = session.event.sender['nickname']
-            trans_tmemory.join({'id':tweet_id,'mintrans':arg2[0:15],'tweetid':arg1,'sourcetweetid':tweet_id,'trans':arg2,'op':session.event['user_id'],'opnick':nick,'group':session.event['group_id']})
-        await session.send(config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' +"\n" + \
-                str('[CQ:image,timeout=' + config.img_time_out + \
-                ',file='+config.trans_img_path+'/transtweet/transimg/' + str(tweet_id) + '.png' + ']'))
-    else:
-        await session.send("错误，"+res[2])
-    logger.info(CQsessionToStr(session))
-    del tt
+    pool.submit(send_res,session,tweet_id,tweet_sname,arg1,arg2)
+    await session.send("图片合成中...")
 def getlist(groupid:int,page:int=1):
     ttm = trans_tmemory.tm.copy()
     length = len(ttm)
