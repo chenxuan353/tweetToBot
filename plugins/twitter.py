@@ -67,11 +67,11 @@ async def getpushlist(session: CommandSession):
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg != '':
         if not stripped_arg.isdecimal():
-            await session.send("参数不正确")
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
             return
         page = int(stripped_arg)
         if page < 1:
-            await session.send("参数不正确")
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
             return
     message_type = session.event['message_type']
     sent_id = 0
@@ -113,7 +113,7 @@ def getPushToSetting(message_type:str,pushTo:int) -> str:
     res = ''
     attrs = push_list.getAttrLitsFromPushTo(message_type,pushTo)
     if attrs == {}:
-        return '全局设置未初始化，至少添加一个监测来初始化设置。'
+        return 'BOT酱还没有初始化哦 请至少添加一个检测对象来开始使用我吧~'
     for key,value in attrs.items():
         res = res + attrlist[key] + ':'  + \
             (value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]) + '\n'
@@ -194,14 +194,14 @@ async def getSetting(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     #处理用户ID
     tweet_user_id : int = -1
     if stripped_arg.isdecimal():
         tweet_user_id = int(stripped_arg)
     else:
-        await session.send("用户ID错误")
+        await session.send("用户ID似乎有点问题，请再次检查ヽ(；´Д｀)ﾉ")
         return
     res = getPushUnitSetting(
         session.event['message_type'],
@@ -217,7 +217,7 @@ async def setGroupAttr(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     Pushunit_allowEdit = {
         #携带图片发送
@@ -256,7 +256,7 @@ async def setGroupAttr(session: CommandSession):
         2:cs[2].strip()
     }
     if cs[0] == '' or cs[2] == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     if cs[0] not in Pushunit_allowEdit:
         await session.send('属性值不存在！')
@@ -304,7 +304,7 @@ async def setAttr(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     cs = commandHeadtail(stripped_arg)
     cs = {
@@ -313,7 +313,7 @@ async def setAttr(session: CommandSession):
         2:cs[2].strip()
     }
     if cs[0] == '' or cs[2] == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     #处理用户ID
     tweet_user_id : int = -1
@@ -323,7 +323,7 @@ async def setAttr(session: CommandSession):
         await session.send("用户ID错误")
         return
     if cs[2].strip() == '':
-        await session.send("缺少参数")
+        await session.send("还没有添加参数哦~")
         return
     tcs = commandHeadtail(cs[2])
     cs[2] = tcs[0]
@@ -421,7 +421,7 @@ async def globalRemove(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("似乎少了点什么!?试着添加QQ号或群号作为参数吧~")
         return
     cs = commandHeadtail(stripped_arg)
     cs = {
@@ -429,10 +429,10 @@ async def globalRemove(session: CommandSession):
         'pushto':cs[2].strip()
     }
     if cs['pushto'] == '' or cs['messagetype'] == '':
-        await session.send("缺少参数")
+        await session.send("似乎少了点什么!?请检查参数是否正确(／_＼)")
         return
     if not cs['pushto'].isdecimal():
-        await session.send("Q号或群号不合法:"+cs['pushto'])
+        await session.send("QQ号或群号似乎怪怪的？请再次检查:"+cs['pushto'])
         return
     messagetype_list = {
         '私聊':'private',
@@ -456,7 +456,7 @@ async def globalRemove(session: CommandSession):
         return
 
 #推特ID编码解码
-@on_command('detweetid',aliases=['推特ID解压'],only_to_me = False)
+@on_command('detweetid',aliases=['推特ID解压','解压ID'],only_to_me = False)
 async def decodetweetid(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
@@ -464,29 +464,29 @@ async def decodetweetid(session: CommandSession):
         return
     res = decode_b64(stripped_arg)
     if res == -1:
-        await session.send("缩写推特ID不正确")
+        await session.send("唔orz似乎没有这个推特ID的缩写呢")
         return
     logger.info(CQsessionToStr(session))
-    await session.send("推特ID为："+str(res))
+    await session.send("推特ID的真身已判明(ﾟ▽ﾟ)/其名为："+str(res))
 
-@on_command('entweetid',aliases=['推特ID压缩'],only_to_me = False)
+@on_command('entweetid',aliases=['推特ID压缩','压缩ID'],only_to_me = False)
 async def encodetweetid(session: CommandSession):
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
         return
     if not stripped_arg.isdecimal():
-        await session.send("推特ID不正确")
+        await session.send("推特ID似乎搞错了呢(￣▽￣)\"请仔细检查")
         return
     res = encode_b64(int(stripped_arg))
     logger.info(CQsessionToStr(session))
-    await session.send("推特ID缩写为："+res)
+    await session.send("推特ID压缩好了(oﾟ▽ﾟ)o请使用："+res)
 
 @on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
 async def about(session: CommandSession):
     logger.info(CQsessionToStr(session))
     msg = 'http://uee.me/dfRwA'
-    await session.send(msg)
+    await session.send("想了解我的全部，就来{}这里看看吧~".format(msg))
 """
 	'font': , 
     'message': [{'type': 'text', 'data': {'text': '!getpushlist'}}], 

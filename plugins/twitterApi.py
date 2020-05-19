@@ -24,10 +24,10 @@ https://github.com/chenxuan353/tweetToQQbot
 async def runTweetListener(session: CommandSession):
     await asyncio.sleep(0.2)
     if keepalive['tewwtlistener_alive'] == True or keepalive['reboot_tewwtlistener'] == True:
-        await session.send('推特监听仍在运行中，无法二次启动！')
+        await session.send('推特监听仍在运行中，不可以二次启动的哦ヽ(｀Д´)ﾉ')
         return
     keepalive['reboot_tweetListener_cout'] = 0
-    await session.send('尝试启动中...')
+    await session.send('监听启动中...')
     logger.info(CQsessionToStr(session))
     keepalive['reboot_tewwtlistener'] = True
 
@@ -43,8 +43,8 @@ async def getuserinfo(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
     except TweepError:
         s = traceback.format_exc(limit=5)
-        logger.error('tweepy错误:'+s)
-        await session.send("查询不到信息")
+        logger.error('tweepy发生错误:'+s)
+        await session.send("查询不到这位V哦~复制都能弄歪来┐(ﾟ～ﾟ)┌")
         return
 
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
@@ -67,7 +67,7 @@ async def getuserinfo(session: CommandSession):
 async def delOne(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("在？为什么看别的女人连单推的名字都忘了写？")
         return
     if stripped_arg == re.match('[A-Za-z0-9_]+', stripped_arg, flags=0):
         await session.send("用户名/用户ID 只能包含字母、数字或下划线")
@@ -79,8 +79,8 @@ async def delOne(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
     except TweepError:
         s = traceback.format_exc(limit=5)
-        logger.error('tweepy错误:'+s)
-        await session.send("查询不到信息,bksn")
+        logger.error('tweepy发生错误:'+s)
+        await session.send("查询不到信息，不愧是你(๑´ㅂ`๑)")
         return
         
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
@@ -95,7 +95,7 @@ async def delOne(session: CommandSession):
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
         '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
-        ('此用户已移出监听列表' if res[0] == True else '移除失败:'+res[1])
+        ('已经从监听列表中叉出去了哦' if res[0] == True else '移除失败了Σ（ﾟдﾟlll）:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))
     await session.send(s)
@@ -104,7 +104,7 @@ async def delOne(session: CommandSession):
 async def addOne(session: CommandSession):
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("你D谁呢妹妹")
         return
     if stripped_arg == re.match('[A-Za-z0-9_]+', stripped_arg, flags=0):
         await session.send("用户名/用户ID 只能包含字母、数字或下划线")
@@ -117,8 +117,8 @@ async def addOne(session: CommandSession):
             userinfo = tweetListener.api.get_user(screen_name = cs[0])
     except TweepError:
         s = traceback.format_exc(limit=5)
-        logger.error('tweepy错误:'+s)
-        await session.send("查询不到信息,你D都能D歪来")
+        logger.error('tweepy发生错误:'+s)
+        await session.send("查询不到信息，你D都能D歪来!?(･_･;?")
         return
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
     #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
@@ -142,7 +142,7 @@ async def addOne(session: CommandSession):
         '用户ID:' + userinfo.screen_name + "\n" + \
         '用户昵称:' + userinfo.name + "\n" + \
         '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
-        ('此用户已添加至监听列表' if res[0] == True else '添加失败:'+res[1])
+        ('已经加入了DD名单了哦' if res[0] == True else '没 D 到:'+res[1])
     push_list.savePushList()
     logger.info(CQsessionToStr(session))
     await session.send(s)

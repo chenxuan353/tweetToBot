@@ -98,7 +98,7 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
     except:
         s = traceback.format_exc(limit=10)
         logger.error(s)
-        send_msg(session,"错误，服务器异常")
+        send_msg(session,"错误 服务器发生异常!BOT酱摸鱼中~")
 @on_command('trans',aliases=['t','烤推'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def trans(session: CommandSession):
     if session.event['message_type'] != 'group':
@@ -108,11 +108,11 @@ async def trans(session: CommandSession):
         return
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("烤啥呢弟弟 告诉我要烤哪条哇")
         return
     cs = commandHeadtail(stripped_arg)
     if cs[2] == '':
-        await session.send("缺少参数")
+        await session.send("不 翻 了？")
         return
     arg1 = cs[0] #推文ID
     arg2 = cs[2] #翻译
@@ -123,7 +123,7 @@ async def trans(session: CommandSession):
     else:
         res = decode_b64(arg1)
         if res == -1:
-            await session.send("推特ID不正确")
+            await session.send("推特ID似乎不太对呢 请再次检查")
             return
         tweet_id = res
     pool.submit(send_res,session,tweet_id,tweet_sname,arg1,arg2)
@@ -146,17 +146,17 @@ async def translist(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
     if session.event['group_id'] not in group_list:
-        await session.send("烤推未授权")
+        await session.send("烤推还没有获得授权哦~")
         return
     page = 1
     stripped_arg = session.current_arg_text.strip().lower()
     if stripped_arg != '':
         if not stripped_arg.isdecimal():
-            await session.send("参数不正确")
+            await session.send("这个页数...你这是在为难我胖BOT.jpg")
             return
         page = int(stripped_arg)
         if page < 1:
-            await session.send("参数不正确")
+            await session.send("反向翻页日神仙 不要乱玩咱啦~")
             return
     s = getlist(session.event['group_id'],page)
     await session.send(s)
@@ -167,11 +167,11 @@ async def gettrans(session: CommandSession):
     if session.event['message_type'] != 'group':
         return
     if session.event['group_id'] not in group_list:
-        await session.send("烤推未授权")
+        await session.send("烤推还没有授权哦~")
         return
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
-        await session.send("缺少参数")
+        await session.send("没有参数 BOT也不知道要哪一条哇(泪)")
         return
     arg1 = stripped_arg #推文ID
     tweet_id : int = -1
@@ -180,7 +180,7 @@ async def gettrans(session: CommandSession):
     else:
         res = decode_b64(arg1)
         if res == -1:
-            await session.send("推特ID不正确")
+            await session.send("推特ID似乎不太对呢 请再次检查")
             return
         tweet_id = res
     ttm = trans_tmemory.tm.copy()
@@ -191,7 +191,7 @@ async def gettrans(session: CommandSession):
                     str('[CQ:image,timeout=' + config.img_time_out + \
                     ',file='+config.trans_img_path+'/transtweet/transimg/' + str(ttm[i]['group'])+'-'+str(ttm[i]['tasktype']) + '.png' + ']'))
             return
-    await session.send("此推文不存在翻译")
+    await session.send("这条推文似乎还没有被翻译过哦~")
 
 @on_command('transabout',aliases=['ta','烤推帮助'],only_to_me = False)
 async def transabout(session: CommandSession):
