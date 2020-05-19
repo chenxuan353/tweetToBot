@@ -55,7 +55,7 @@ class TweetTrans:
         JS_get_errormsg = """
             elem = document.querySelector('[data-testid="error-detail"]')
             if(elem)return elem.innerText
-            return "未查找到错误信息"
+            return "未查找到错误信息，可能是网络波动造成的"
         """
         #等待主元素出现
         try:
@@ -290,17 +290,240 @@ class TweetTrans:
         driver = self.driver
         error_save_filename = os.path.join('cache','transtweet','error','getSingelTweet-'+tasktype+'.png')
         JS = """
+            var twemoji = function() {
+                "use strict";
+                var twemoji = {
+                    base: "https://twemoji.maxcdn.com/",
+                    ext: ".png",
+                    size: "72x72",
+                    className: "emoji",
+                    convert: {
+                        fromCodePoint: fromCodePoint,
+                        toCodePoint: toCodePoint
+                    },
+                    onerror: function onerror() {
+                        if (this.parentNode) {
+                            this.parentNode.replaceChild(createText(this.alt), this)
+                        }
+                    },
+                    parse: parse,
+                    replace: replace,
+                    test: test
+                },
+                escaper = {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "'": "&#39;",
+                    '"': "&quot;"
+                },
+                re = /(?:[9876543210#])️?⃣|🇨🇳|🇩🇪|🇪🇸|🇫🇷|🇬🇧|🇮🇹|🇯🇵|🇰🇷|🇷🇺|🇺🇸|�[�-���-��-��-��-��-��-��-�]|�[���-��-���-��-����-��-��-��-��-��-��-�]|[➿➰➗➖➕❕❔❓❎❌✨✋✊✅⛎⏳⏰⏬⏫⏪⏩]|(?:�[���������]|[㊙㊗〽〰⭕⭐⬜⬛⬇⬆⬅⤵⤴➡❤❗❇❄✴✳✖✔✒✏✌✉✈✂⛽⛺⛵⛳⛲⛪⛔⛅⛄⚾⚽⚫⚪⚡⚠⚓♿♻♨♦♥♣♠♓♒♑♐♏♎♍♌♋♊♉♈☺☝☕☔☑☎☁☀◾◽◼◻◀▶▫▪Ⓜ⌛⌚↪↩↙↘↗↖↕↔ℹ™⁉‼®©])(?:️|(?!︎))/g,
+                UFE0Fg = /\uFE0F/g,
+                U200D = String.fromCharCode(8205),
+                rescaper = /[&<>'"]/g,
+                shouldntBeParsed = /IFRAME|NOFRAMES|NOSCRIPT|SCRIPT|SELECT|STYLE|TEXTAREA|[a-z]/,
+                fromCharCode = String.fromCharCode;
+                return twemoji;
+                function createText(text) {
+                    return document.createTextNode(text)
+                }
+                function escapeHTML(s) {
+                    return s.replace(rescaper, replacer)
+                }
+                function defaultImageSrcGenerator(icon, options) {
+                    return "".concat(options.base, options.size, "/", icon, options.ext)
+                }
+                function grabAllTextNodes(node, allText) {
+                    var childNodes = node.childNodes,
+                    length = childNodes.length,
+                    subnode, nodeType;
+                    while (length--) {
+                        subnode = childNodes[length];
+                        nodeType = subnode.nodeType;
+                        if (nodeType === 3) {
+                            allText.push(subnode)
+                        } else if (nodeType === 1 && !shouldntBeParsed.test(subnode.nodeName)) {
+                            grabAllTextNodes(subnode, allText)
+                        }
+                    }
+                    return allText
+                }
+                function grabTheRightIcon(rawText) {
+                    return toCodePoint(rawText.indexOf(U200D) < 0 ? rawText.replace(UFE0Fg, "") : rawText)
+                }
+                function parseNode(node, options) {
+                    var allText = grabAllTextNodes(node, []),
+                    length = allText.length,
+                    attrib,
+                    attrname,
+                    modified,
+                    fragment,
+                    subnode,
+                    text,
+                    match,
+                    i,
+                    index,
+                    img,
+                    rawText,
+                    iconId,
+                    src;
+                    while (length--) {
+                        modified = false;
+                        fragment = document.createDocumentFragment();
+                        subnode = allText[length];
+                        text = subnode.nodeValue;
+                        i = 0;
+                        while (match = re.exec(text)) {
+                            index = match.index;
+                            if (index !== i) {
+                                fragment.appendChild(createText(text.slice(i, index)))
+                            }
+                            rawText = match[0];
+                            iconId = grabTheRightIcon(rawText);
+                            i = index + rawText.length;
+                            src = options.callback(iconId, options);
+                            if (src) {
+                                img = new Image;
+                                img.onerror = options.onerror;
+                                img.setAttribute("draggable", "false");
+                                attrib = options.attributes(rawText, iconId);
+                                for (attrname in attrib) {
+                                    if (attrib.hasOwnProperty(attrname) && attrname.indexOf("on") !== 0 && !img.hasAttribute(attrname)) {
+                                        img.setAttribute(attrname, attrib[attrname])
+                                    }
+                                }
+                                img.className = options.className;
+                                img.alt = rawText;
+                                img.src = src;
+                                modified = true;
+                                fragment.appendChild(img)
+                            }
+                            if (!img) fragment.appendChild(createText(rawText));
+                            img = null
+                        }
+                        if (modified) {
+                            if (i < text.length) {
+                                fragment.appendChild(createText(text.slice(i)))
+                            }
+                            subnode.parentNode.replaceChild(fragment, subnode)
+                        }
+                    }
+                    return node
+                }
+                function parseString(str, options) {
+                    return replace(str,
+                    function(rawText) {
+                        var ret = rawText,
+                        iconId = grabTheRightIcon(rawText),
+                        src = options.callback(iconId, options),
+                        attrib,
+                        attrname;
+                        if (src) {
+                            ret = "<img ".concat('class="', options.className, '" ', 'draggable="false" ', 'alt="', rawText, '"', ' src="', src, '"');
+                            attrib = options.attributes(rawText, iconId);
+                            for (attrname in attrib) {
+                                if (attrib.hasOwnProperty(attrname) && attrname.indexOf("on") !== 0 && ret.indexOf(" " + attrname + "=") === -1) {
+                                    ret = ret.concat(" ", attrname, '="', escapeHTML(attrib[attrname]), '"')
+                                }
+                            }
+                            ret = ret.concat(">")
+                        }
+                        return ret
+                    })
+                }
+                function replacer(m) {
+                    return escaper[m]
+                }
+                function returnNull() {
+                    return null
+                }
+                function toSizeSquaredAsset(value) {
+                    return typeof value === "number" ? value + "x" + value: value
+                }
+                function fromCodePoint(codepoint) {
+                    var code = typeof codepoint === "string" ? parseInt(codepoint, 16) : codepoint;
+                    if (code < 65536) {
+                        return fromCharCode(code)
+                    }
+                    code -= 65536;
+                    return fromCharCode(55296 + (code >> 10), 56320 + (code & 1023))
+                }
+                function parse(what, how) {
+                    if (!how || typeof how === "function") {
+                        how = {
+                            callback: how
+                        }
+                    }
+                    return (typeof what === "string" ? parseString: parseNode)(what, {
+                        callback: how.callback || defaultImageSrcGenerator,
+                        attributes: typeof how.attributes === "function" ? how.attributes: returnNull,
+                        base: typeof how.base === "string" ? how.base: twemoji.base,
+                        ext: how.ext || twemoji.ext,
+                        size: how.folder || toSizeSquaredAsset(how.size || twemoji.size),
+                        className: how.className || twemoji.className,
+                        onerror: how.onerror || twemoji.onerror
+                    })
+                }
+                function replace(text, callback) {
+                    return String(text).replace(re, callback)
+                }
+                function test(text) {
+                    re.lastIndex = 0;
+                    var result = re.test(text);
+                    re.lastIndex = 0;
+                    return result
+                }
+                function toCodePoint(unicodeSurrogates, sep) {
+                    var r = [],
+                    c = 0,
+                    p = 0,
+                    i = 0;
+                    while (i < unicodeSurrogates.length) {
+                        c = unicodeSurrogates.charCodeAt(i++);
+                        if (p) {
+                            r.push((65536 + (p - 55296 << 10) + (c - 56320)).toString(16));
+                            p = 0
+                        } else if (55296 <= c && c <= 56319) {
+                            p = c
+                        } else {
+                            r.push(c.toString(16))
+                        }
+                    }
+                    return r.join(sep || "-")
+                }
+            } ();
+
+        """
+        JS = JS + """
             let translist=arguments[0]
             //多重回复终止定位
             try {
+                function attributesCallback(icon, variant) {
+                    return {
+                        title: 'Emoji: ' + icon + variant,
+                        style: 'height: 1em;width: 1em;margin: 0.05em 0.1em;vertical-align: -0.1em;'
+                    };
+                }
+                function textparse(text){
+                    text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
+                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/,'<a style="color:#1DA1F2;">$1</a>')
+                    return twemoji.parse(text,{
+                        attributes:attributesCallback,
+                        base:'https://abs-0.twimg.com/emoji/v2/',
+                        folder: 'svg',
+                        ext: '.svg'
+                    });
+                }
+                var shotelem = document.createElement('div')
+                shotelem.id = 'shot_elem'
                 //可翻译推文的列表
                 var tweets = []
                 //推文主元素
-                let mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n>div>div')
+                let mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
                 if(!mainelem){
                     return [false,"推文不存在"]
                 }
-                let elems = mainelem.children
+                let elems = mainelem.querySelectorAll('article')
                 var lastelem = null
                 if(elems.length == 0){
                     return [false,"未发现推文，请重试"]
@@ -312,33 +535,47 @@ class TweetTrans:
                         return [false,"未搜索到推文结束位置，请联系制作者反馈！"]
                     }
                     //搜索推文
-                    let elart = elems[i].querySelector('article')
+                    let elart = elems[i]
+                    console.log(elart)
                     if(elart){
-                            let trans = []
-                            let elemet = elart.querySelector('[aria-expanded]')
-                            if(elemet)elemet.style.visibility="hidden" //隐藏翻译蓝链
-                            let elemtexts = elart.querySelectorAll('div[lang][dir="auto"]')
-                            for(var j = 0;j<elemtexts.length;j++){
-                                trans.push({
-                                    elem:elemtexts[j],
-                                    text:elemtexts[j].innerText
-                                })
-                            }
-                            tweets.push(trans)
-                            //检测推文是否结束
-                            //转推
-                            let rt = elart.querySelector('a[dir][role="link"][href$="retweets"]')
-                            if(rt){
-                                lastelem = elems[i]
-                                //跳出
-                                break;
-                            }
-                            //喜欢 lk = elart.querySelector('a[dir][role="link"][href$="likes"]')
-                            //时间检测(有危险) t = elart.querySelector('a[rel][role="link"][target="_blank"]')[0]
+                        elart = elart.cloneNode(true)
+                        shotelem.append(elart);
+                        let trans = []
+                        let elemet = elart.querySelector('[aria-expanded]')
+                        if(elemet)elemet.style.visibility="hidden" //隐藏翻译蓝链
+                        let elemtexts = elart.querySelectorAll('div[lang][dir="auto"]')
+                        for(var j = 0;j<elemtexts.length;j++){
+                            trans.push({
+                                elem:elemtexts[j],
+                                text:elemtexts[j].innerText
+                            })
+                        }
+                        tweets.push(trans)
+                        //检测推文是否结束
+                        //转推
+                        let rt = elart.querySelector('a[dir][role="link"][href$="retweets"]')
+                        if(rt){
+                            //跳出
+                            break;
+                        }
+                        //喜欢
+                        let lk = elart.querySelector('a[dir][role="link"][href$="likes"]')
+                        if(lk){
+                            //跳出
+                            break;
+                        }
+                        //时间
+                        let t = elart.querySelector('a[href$="how-to-tweet#source-labels"]')
+                        if(t){
+                            //跳出
+                            break;
+                        }
+                        //喜欢 lk = document.querySelectorAll('a[dir][role="link"][href$="likes"]')
+                        //时间检测(有危险) t = document.querySelectorAll('a[rel][role="link"][target="_blank"][href="https://help.twitter.com/using-twitter/how-to-tweet#source-labels"]')[0]
                     }
                 }
                 //翻译用的class transclass = elems[0].querySelector('div[lang][dir="auto"]>span').className
-                let transclass = 'css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0'
+                let transclass = 'tweetadd css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0'
                 //翻译标识
                 let node_type = document.createElement('span')
                 node_type.className = transclass
@@ -363,43 +600,42 @@ class TweetTrans:
                             tweets[i][0].elem.innerHTML = "" //存在翻译则清空节点
                         }
                     }
-                    if(tran_text[0]){
-                        let node_trans = document.createElement('span');//翻译节点
-                        //注 入 样 式
-                        node_trans.className = transclass
-                        //置入推文主节点的翻译
-                        node_trans.innerText = tran_text[0]
-                        tweets[i][0].elem.appendChild(node_trans)
-                    }
-                    //次节点的翻译与次节点同时存在时
-                    if(tran_text[1] && tweets[i][1]){
-                        let node_trans = document.createElement('span');//翻译节点
-                        //注 入 样 式
-                        node_trans.className = transclass
-                        //清空次节点
-                        tweets[i][1].elem.innerHTML = ""
-                        //置入推文次节点的翻译
-                        node_trans.innerText = tran_text[1]
-                        tweets[i][1].elem.appendChild(node_trans)
+                    console.log(tran_text)
+                    if(tran_text){
+                        if(tran_text[0]){
+                            let node_trans = document.createElement('div');//翻译节点
+                            //注 入 样 式
+                            node_trans.className = transclass
+                            //置入推文主节点的翻译
+                            node_trans.innerHTML = textparse(tran_text[0],transclass)
+                            tweets[i][0].elem.appendChild(node_trans)
+
+                        }
+                        //次节点的翻译与次节点同时存在时
+                        if(tran_text[1] && tweets[i][1]){
+                            let node_trans = document.createElement('div');//翻译节点
+                            //注 入 样 式
+                            node_trans.className = transclass
+                            //清空次节点
+                            tweets[i][1].elem.innerHTML = ""
+                            //置入推文次节点的翻译
+                            node_trans.innerHTML = textparse(tran_text[1],transclass)
+                            tweets[i][1].elem.appendChild(node_trans)
+
+                        }
                     }
                 }
                 //锁定推文高度以便截取元素
                 //overflow:hidden;min-height:xxpx;
-                //推文相对高度
-                function deallast(lastelem){
-                    let elemy = parseInt(lastelem.style.transform.slice(11,-3))
-                    mainelem.parentElement.style.overflow = "hidden"
-                    mainelem.parentElement.style.maxHeight = (elemy + lastelem.offsetHeight) + "px"
-                    mainelem.parentElement.style.height = (elemy + lastelem.offsetHeight) + "px"
-                }
-                setInterval(deallast,100,lastelem)
+                mainelem.innerHTML = ""
+                mainelem.append(shotelem)
             } catch (e) {
                 //返回错误
                 console.log(tweets)
                 console.log(e)
                 return [false,"推文分析出现异常，请联系作者"]
             }
-            return [true,tweets,lastelem,arguments]
+            return [true,tweets,lastelem]
         """
         res = None
         try:
@@ -408,7 +644,7 @@ class TweetTrans:
             driver.save_screenshot(error_save_filename)
             s = traceback.format_exc(limit=10)
             logger.warning(s+"\n filename="+error_save_filename + ';url=' + driver.current_url)
-            return (False,error_save_filename,'更改渲染宽高时异常')
+            return (False,error_save_filename,'页面调度异常')
         if res == None:
             res = (False,"推文分析未返回数据")
         if res[0] == False:

@@ -80,8 +80,8 @@ def send_res(session: CommandSession,tweet_id,tweet_sname,arg1,arg2):
         tasktype = int(time.time())
         trans = deal_trans(arg2,type_html=type_html)
         res = tt.getTransFromTweetID(str(tweet_id),trans,tweet_sname,str(session.event['group_id'])+'-'+str(tasktype))
-        time.sleep(0.5)
         if res[0]:
+            time.sleep(1)
             if session.event['message_type'] == 'group':
                 nick = None
                 if 'nickname' in session.event.sender:

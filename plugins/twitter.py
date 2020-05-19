@@ -23,14 +23,6 @@ else:
     raise Exception('暂不支持的更新检测(UPDATA_METHOD)方法：'+config.UPDATA_METHOD)
 tweet_event_deal = tweetListener.tweet_event_deal
 
-@on_notice('group_decrease')
-async def group_increase_leave_me(session: NoticeSession):
-    await asyncio.sleep(0.3)
-    if session.event['sub_type'] == 'kick_me' or int(session.event['self_id']) == int(session.event['user_id']):
-        push_list.delPushunitFromPushTo("group",int(session.event['group_id']),self_id = int(session.event['self_id']))
-        push_list.savePushList()
-        msgSendToBot(logger,'已被移出或退出 '+str(session.event['group_id'])+' 群组，相关侦听已移除')
-
 @on_command('delall',aliases=['这里单推bot'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
 async def delalltest(session: CommandSession):
     await asyncio.sleep(0.2)

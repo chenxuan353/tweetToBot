@@ -305,7 +305,7 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-tmemory = TempMemory('tweets.json',limit = 150,autosave = True,autoload = True)
+tmemory = TempMemory('tweets.json',limit = 150,autosave = False,autoload = False)
 class tweetEventDeal:
     #用户信息维护列表
     userinfolist = {}
@@ -363,7 +363,7 @@ class tweetEventDeal:
                 self.userinfolist[userinfo['id']] = userinfo
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
-        if event_type in ('retweet','quoted','reply_to_status','reply_to_user','none'):
+        if event_type in ('quoted','reply_to_status','reply_to_user','none'):
             tmemory.join(event_data)
         eventunit = {
             'type':event_type,
