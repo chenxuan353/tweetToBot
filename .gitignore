@@ -3,6 +3,7 @@ cache/
 config.py
 test.py
 chromedriver.exe
+*.DS_Store
 img/
 # Byte-compiled / optimized / DLL files
 __pycache__/
