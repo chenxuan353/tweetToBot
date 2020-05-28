@@ -487,6 +487,40 @@ async def about(session: CommandSession):
     logger.info(CQsessionToStr(session))
     msg = 'http://uee.me/dfRwA'
     await session.send("想了解我的全部，就来{}这里看看吧~".format(msg))
+
+#获取全局监听推送列表
+def get_tweeallpushlist(page:int):
+    table = push_list.spylist
+    s = ''
+    unit_cout = 0
+    for item in table:
+        if ((unit_cout//5)+1) == page:
+            s = s + item + '\n'
+        unit_cout = unit_cout + 1
+    totalpage = (unit_cout-1)//5 + (0 if unit_cout%5 == 0 else 1)
+    if unit_cout > 5 or page != 1:
+        s = s + '页数：' + str(page) + '/' + str(totalpage) + ' '
+    s = s + '总监测数：' + str(unit_cout)
+    return s
+@on_command('tweeallpushlist',permission=perm.SUPERUSER,only_to_me = False)
+async def tweeallpushlist(session: CommandSession):
+    await asyncio.sleep(0.1)
+    page = 1
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg != '':
+        if not stripped_arg.isdecimal():
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
+            return
+        page = int(stripped_arg)
+        if page < 1:
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
+            return
+    s = get_tweeallpushlist(page)
+    await session.send(s)
+    logger.info(CQsessionToStr(session))
+
+
+
 """
 	'font': , 
     'message': [{'type': 'text', 'data': {'text': '!getpushlist'}}], 

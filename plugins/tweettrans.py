@@ -202,7 +202,7 @@ async def transabout(session: CommandSession):
         '!gt 推文ID -获取翻译' + "\n" + \
         '多层回复翻译:' + "\n" + \
         '##1 第一层翻译' + "\n" + \
-        '#i 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
+        '#! 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
         '##2 第二层翻译' + "\n" + \
         '##main 主翻译'
     await session.send(msg)

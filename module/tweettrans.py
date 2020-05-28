@@ -31,7 +31,7 @@ class TweetTrans:
         chrome_options.add_argument('x-twitter-active-user=yes')
         chrome_options.add_argument('dnt=1')
         chrome_options.add_argument('x-twitter-client-language=zh-cn')
-        #chrome_options.add_argument('--disk-cache-dir=./cache/chromecache')
+        #chrome_options.add_argument('--disk-cache-dir='+os.path.join('.','cache','chromecache'))
         chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36")
         self.driver = webdriver.Chrome(options=chrome_options)
@@ -507,7 +507,7 @@ class TweetTrans:
                 }
                 function textparse(text){
                     text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
-                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/,'<a style="color:#1DA1F2;">$1</a>')
+                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/g,'<a style="color:#1DA1F2;">$1</a>')
                     return twemoji.parse(text,{
                         attributes:attributesCallback,
                         base:'https://abs-0.twimg.com/emoji/v2/',
