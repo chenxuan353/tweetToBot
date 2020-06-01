@@ -11,7 +11,7 @@ import config
 #日志输出
 from helper import getlogger,msgSendToBot
 logger = getlogger(__name__)
-TLlogger = getlogger(__name__+'.tl',printCMD = False)
+TLlogger = getlogger('twitterApi.tl',printCMD = False)
 #引入推送列表、推送处理模版
 from module.twitter import push_list,tweetEventDeal
 
