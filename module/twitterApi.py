@@ -11,7 +11,7 @@ import config
 #日志输出
 from helper import getlogger,msgSendToBot
 logger = getlogger(__name__)
-
+TLlogger = getlogger(__name__+'.tl',False)
 #引入推送列表、推送处理模版
 from module.twitter import push_list,tweetEventDeal
 
@@ -195,7 +195,6 @@ class MyStreamListener(tweepy.StreamListener):
         try:
             #重新组织推特数据
             tweetinfo = tweet_event_deal.deal_tweet(status)
-            logger.debug('接收到推文:' +  tweetinfo['id_str'])
             #只有值得关注的推文才会推送处理,降低处理压力(能降一大截……)
             if tweetinfo['tweetNotable']:
                 try:
@@ -204,6 +203,13 @@ class MyStreamListener(tweepy.StreamListener):
                     s = traceback.format_exc(limit=5)
                     msgSendToBot(logger,'推特监听处理队列溢出，请检查队列！')
                     logger.error(s)
+                tweetinfo['status'] = None
+                TLlogger.warning(status)
+                tweetinfo['status'] = status
+            else:
+                tweetinfo['status'] = None
+                TLlogger.info(status)
+                tweetinfo['status'] = status
         except:
             s = traceback.format_exc(limit=5)
             logger.error(s)
