@@ -57,7 +57,7 @@ def getlogger(name,printCMD:bool = True) -> logging.Logger:
     reslogger = logging.getLogger(name)
     reslogger.setLevel(logging.INFO)
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
-    if printCMD:
+    if printCMD == True:
         sh = logging.StreamHandler(stream=sys.stdout)
         sh.setFormatter(logformat)
         reslogger.addHandler(sh)
