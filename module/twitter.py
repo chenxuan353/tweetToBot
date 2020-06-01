@@ -378,7 +378,10 @@ class tweetEventDeal:
                 if mintweetID.tm != []:
                     count = mintweetID.tm[-1][1]+1
                 mintweetID.join([event_data['id'],count])
-            tmemory.join(event_data)
+            sdata = event_data.copy()
+            if 'status' in sdata:
+                del sdata['status']
+            tmemory.join(sdata)
         eventunit = {
             'type':event_type,
             'user_id':int(user_id),
@@ -463,7 +466,7 @@ class tweetEventDeal:
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
                 if mis != '':
-                    mis = "\n媒体：" + len(tweetinfo['extended_entities']) + "个\n" + mis
+                    mis = "\n媒体：" + str(len(tweetinfo['extended_entities'])) + "个\n" + mis
             template_value['media_img'] = mis
         #生成模版类
         s = ""
