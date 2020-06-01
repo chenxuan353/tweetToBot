@@ -1,10 +1,12 @@
 .vscode/
 cache/
 config.py
-test.py
+dbtest.py
 chromedriver.exe
 *.DS_Store
 img/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

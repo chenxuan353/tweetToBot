@@ -1,11 +1,12 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession,NoticeSession,on_notice,permission as perm
-from helper import commandHeadtail,keepalive,getlogger,msgSendToBot,CQsessionToStr
-from module.twitter import push_list,decode_b64,encode_b64
+from helper import getlogger,msgSendToBot,CQsessionToStr,argDeal
+from module.twitter import push_list,decode_b64,encode_b64,tmemory,mintweetID
 import time
 import asyncio
 import os
 import traceback
+import module.permissiongroup as permissiongroup
 import config
 logger = getlogger(__name__)
 __plugin_name__ = '通用推特监听指令'
@@ -16,29 +17,214 @@ https://github.com/chenxuan353/tweetToQQbot
 """
 
 #推特事件处理对象，由启动调用的更新检测方法有关
-#allow_start_method = ('twitter_api','socket_api','twint')
-if config.UPDATA_METHOD == 'twitter_api':
+#allow_start_method = ('TweetApi','RSShub','Twint')
+if config.UPDATA_METHOD == 'TweetApi':
     import module.twitterApi as tweetListener
+elif config.UPDATA_METHOD == 'RSShub':
+    import module.RSShub_twitter as tweetListener
 else:
     raise Exception('暂不支持的更新检测(UPDATA_METHOD)方法：'+config.UPDATA_METHOD)
 tweet_event_deal = tweetListener.tweet_event_deal
+#转推权限
+permgroupname = 'tweetListener'
+permissiongroup.perm_addLegalPermGroup(__name__,'转推模块',permgroupname)
+permissiongroup.perm_addLegalPermUnit(permgroupname,'listener') #监听权限
+
+def perm_check(session: CommandSession,permunit:str,Remotely:dict = None,user:bool = False):
+    if Remotely != None:
+        return permissiongroup.perm_check(
+            Remotely['message_type'],
+            Remotely['sent_id'],
+            permgroupname,
+            permunit
+            )
+    elif user:
+        return permissiongroup.perm_check(
+            'private',
+            session.event['user_id'],
+            permgroupname,
+            permunit
+            )
+    return permissiongroup.perm_check(
+        session.event['message_type'],
+        (session.event['group_id'] if session.event['message_type'] == 'group' else session.event['user_id']),
+        permgroupname,
+        permunit
+        )
+def perm_del(session: CommandSession,permunit:str,Remotely:dict = None):
+    if Remotely != None:
+        return permissiongroup.perm_del(
+            Remotely['message_type'],
+            Remotely['sent_id'],
+            Remotely['op_id'],
+            permgroupname,
+            permunit
+            )
+    return permissiongroup.perm_del(
+        session.event['message_type'],
+        (session.event['group_id'] if session.event['message_type'] == 'group' else session.event['user_id']),
+        session.event['user_id'],
+        permgroupname,
+        permunit
+        )
+def perm_add(session: CommandSession,permunit:str,Remotely:dict = None):
+    if Remotely != None:
+        return permissiongroup.perm_add(
+            Remotely['message_type'],
+            Remotely['sent_id'],
+            Remotely['op_id'],
+            permgroupname,
+            permunit
+            )
+    return permissiongroup.perm_add(
+        session.event['message_type'],
+        (session.event['group_id'] if session.event['message_type'] == 'group' else session.event['user_id']),
+        session.event['user_id'],
+        permgroupname,
+        permunit
+        )
+
+#预处理
+def headdeal(session: CommandSession):
+    if session.event['message_type'] == "group" and session.event.sub_type != 'normal':
+        return False
+    return True
+
+@on_command('tweetListenerDeny',aliases=['转推禁用'], permission=perm.SUPERUSER,only_to_me = True)
+async def tweetListenerDeny(session: CommandSession):
+    if not headdeal(session):
+        return
+    message_type = session.event['message_type']
+    #group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    if message_type != 'private':
+        return
+    #if perm_check(session,'-listener',user = True):
+    #    await session.send('操作被拒绝，权限不足(p)')
+    #    return
+    logger.info(CQsessionToStr(session))
+    arglimit = [
+        {
+            'name':'msgtype', #参数名
+            'des':'消息类型', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':True, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示允许任意字符串,值不为空时任意字符串将被转变为这个值
+                '私聊':'private',
+                'private':'private',
+                '群聊':'group',
+                'group':'group',
+                '好友':'private',
+                '群':'group',
+            }
+        },
+        {
+            'name':'send_id', #参数名
+            'des':'对象ID', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    res = argDeal(session.current_arg_text.strip(),arglimit)
+    if not res[0]:
+        await session.send(res[1]+'=>'+res[2])
+        return
+    args = res[1]
+    if perm_check(session,'-listener',{
+            'message_type':'group',
+            'sent_id':args['sendid'],
+            'op_id':user_id
+        }):
+        perm_del(session,'-listener',{
+                'message_type':'group',
+                'sent_id':args['sendid'],
+                'op_id':user_id
+            })
+        await session.send('转推配置取消锁定')
+    else:
+        perm_add(session,'-listener',{
+                'message_type':'group',
+                'sent_id':args['sendid'],
+                'op_id':user_id
+            })
+        await session.send('转推配置已锁定')
+
+async def privateswitch(session: CommandSession):
+    #转推操作可以在私聊进行，操作将对当前聊天进行操作
+    if perm_check(session,'-listener',user = True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
+    if perm_check(session,'*'):
+        await session.send('操作无效，存在“*”权限(g)')
+        return
+    if perm_check(session,'listener'):
+        perm_del(session,'listener')
+        await session.send('烤推操作已禁用')
+    else:
+        perm_add(session,'listener',)
+        await session.send('烤推操作已启用')
+async def groupswitch(session: CommandSession):
+    if perm_check(session,'-listener',user = True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
+    if perm_check(session,'-listener'):
+        await session.send('操作被拒绝，权限不足(g)')
+        return
+    if perm_check(session,'listener'):
+        perm_del(session,'listener')
+        await session.send('转推操作已禁用')
+    else:
+        perm_add(session,'listener')
+        await session.send('转推操作已启用')
+@on_command('tweetListenerSwitch',aliases=['tls','转推授权'], permission=perm.SUPERUSER,only_to_me = True)
+async def tweetListenerSwitch(session: CommandSession):
+    if not headdeal(session):
+        return
+    message_type = session.event['message_type']
+    logger.info(CQsessionToStr(session))
+    if message_type == 'group':
+        await groupswitch(session)
+    elif message_type == 'private':
+        await privateswitch(session)
 
 @on_command('delall',aliases=['这里单推bot'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER,only_to_me = True)
 async def delalltest(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
     message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
     sent_id = 0
     if message_type == 'private':
-        sent_id = session.event['user_id']
+        sent_id = user_id
     elif message_type == 'group':
-        sent_id = session.event['group_id']
+        if not perm_check(session,'listener'):
+            await session.send('操作被拒绝，权限不足(g)')
+            return
+        sent_id = group_id
     else:
         await session.send('未收录的消息类型:'+message_type)
         return
+    logger.info(CQsessionToStr(session))
     sent_id = str(sent_id)
     res = push_list.delPushunitFromPushTo(message_type,int(sent_id),self_id=int(session.event['self_id']))
     push_list.savePushList()
-    logger.info(CQsessionToStr(session))
     await session.send('已移除此地所有监测' if res[0] == True else res[1])
 
 #获取指定推送对象的推送列表（推送标识，推送对象ID）
@@ -49,11 +235,11 @@ def get_pushTo_spylist(message_type:str,pushTo:int,page:int):
     s = ''
     unit_cout = 0
     for key in table:
-        if ((unit_cout//5)+1) == page:
+        if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
             s = s + (table[key]['nick'] if table[key]['nick'] != '' else tweet_event_deal.tryGetNick(key,"未定义昵称")) + \
                 "," + str(key) + ',' + table[key]['des'] + "\n"
         unit_cout = unit_cout + 1
-    totalpage = (unit_cout-1)//5 + (0 if unit_cout%5 == 0 else 1)
+    totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
     if unit_cout > 5 or page != 1:
         s = s + '页数：' + str(page) + '/' + str(totalpage) + ' '
     s = s + '总监测数：' + str(unit_cout)
@@ -62,29 +248,49 @@ def get_pushTo_spylist(message_type:str,pushTo:int,page:int):
     return s
 @on_command('getpushlist',aliases=['DD列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = False)
 async def getpushlist(session: CommandSession):
-    await asyncio.sleep(0.1)
-    page = 1
-    stripped_arg = session.current_arg_text.strip().lower()
-    if stripped_arg != '':
-        if not stripped_arg.isdecimal():
-            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
-            return
-        page = int(stripped_arg)
-        if page < 1:
-            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
-            return
+    if not headdeal(session):
+        return
+    await asyncio.sleep(0.2)
     message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
     sent_id = 0
     if message_type == 'private':
-        sent_id = session.event['user_id']
+        sent_id = user_id
     elif message_type == 'group':
-        sent_id = session.event['group_id']
+        sent_id = group_id
     else:
         await session.send('未收录的消息类型:'+message_type)
         return
+    logger.info(CQsessionToStr(session))
+
+    arglimit = [
+        {
+            'name':'page', #参数名
+            'des':'页码', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':1, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
+    page = args['page']
+    if page < 1:
+        await session.send("页码不能为负")
+        return
+
     s = get_pushTo_spylist(message_type,sent_id,page)
     await session.send(s)
-    logger.info(CQsessionToStr(session))
 
 #获取推送对象总属性设置
 def getPushToSetting(message_type:str,pushTo:int) -> str:
@@ -120,6 +326,8 @@ def getPushToSetting(message_type:str,pushTo:int) -> str:
     return res
 @on_command('getGroupSetting',aliases=['全局设置列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setGroupSetting(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
     logger.info(CQsessionToStr(session))
     res = getPushToSetting(
@@ -191,22 +399,46 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
     return (True,res)
 @on_command('getSetting',aliases=['对象设置列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def getSetting(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
-    stripped_arg = session.current_arg_text.strip().lower()
-    if stripped_arg == '':
-        await session.send("还没有添加参数哦~")
-        return
-    #处理用户ID
-    tweet_user_id : int = -1
-    if stripped_arg.isdecimal():
-        tweet_user_id = int(stripped_arg)
+    message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    sent_id = 0
+    if message_type == 'private':
+        sent_id = user_id
+    elif message_type == 'group':
+        sent_id = group_id
     else:
-        await session.send("用户ID似乎有点问题，请再次检查ヽ(；´Д｀)ﾉ")
+        await session.send('未收录的消息类型:'+message_type)
         return
+    logger.info(CQsessionToStr(session))
+
+    arglimit = [
+        {
+            'name':'tweet_user_id', #参数名
+            'des':'推特用户ID', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        },
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
     res = getPushUnitSetting(
-        session.event['message_type'],
-        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
-        tweet_user_id
+        message_type,
+        sent_id,
+        args['tweet_user_id']
     )
     logger.info(CQsessionToStr(session))
     await session.send(res[1])
@@ -214,34 +446,99 @@ async def getSetting(session: CommandSession):
 #推送对象总属性设置
 @on_command('setGroupAttr',aliases=['全局设置'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setGroupAttr(session: CommandSession):
-    await asyncio.sleep(0.2)
-    stripped_arg = session.current_arg_text.strip().lower()
-    if stripped_arg == '':
-        await session.send("还没有添加参数哦~")
+    if not headdeal(session):
         return
-    Pushunit_allowEdit = {
-        #携带图片发送
-        'upimg':'upimg','图片':'upimg','img':'upimg',
-        #昵称设置
-        #'nick':'nick','昵称':'nick',
-        #消息模版
-        'retweet_template':'retweet_template','转推模版':'retweet_template',
-        'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
-        'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
-        'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
-        'none_template':'none_template','发推模版':'none_template',
-        #推特转发各类型开关
-        'retweet':'retweet','转推':'retweet',
-        'quoted':'quoted','转推并评论':'quoted',
-        'reply_to_status':'reply_to_status','回复':'reply_to_status',
-        'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
-        'none':'none','发推':'none',
-        #推特个人信息变动推送开关
-        'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
-        'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name',
-        'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
-        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
+    await asyncio.sleep(0.2)
+    message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
+    sent_id = 0
+    if message_type == 'private':
+        sent_id = user_id
+    elif message_type == 'group':
+        if not perm_check(session,'listener'):
+            await session.send('操作被拒绝，权限不足(g)')
+            return
+        sent_id = group_id
+    else:
+        await session.send('未收录的消息类型:'+message_type)
+        return
+    logger.info(CQsessionToStr(session))
+    """
+            {
+                'name':'tweet_user_id', #参数名
+                'des':'推特用户ID', #参数错误描述
+                'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+                'strip':True, #是否strip
+                'lower':False, #是否转换为小写
+                'default':None, #默认值
+                'func':None, #函数，当存在时使用函数进行二次处理
+                're':None, #正则表达式匹配(match函数)
+                'vlimit':{ 
+                    #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                }
+            },
+    """
+    arglimit = [
+        {
+            'name':'key', #参数名
+            'des':'设置名称', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                #携带图片发送
+                'upimg':'upimg','图片':'upimg','img':'upimg',
+                #昵称设置
+                #'nick':'nick','昵称':'nick',
+                #消息模版
+                'retweet_template':'retweet_template','转推模版':'retweet_template',
+                'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
+                'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
+                'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
+                'none_template':'none_template','发推模版':'none_template',
+                #推特转发各类型开关
+                'retweet':'retweet','转推':'retweet',
+                'quoted':'quoted','转推并评论':'quoted',
+                'reply_to_status':'reply_to_status','回复':'reply_to_status',
+                'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+                'none':'none','发推':'none',
+                #推特个人信息变动推送开关
+                'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
+                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
+                'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
+                'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
+            }
+        },
+        {
+            'name':'value', #参数名
+            'des':'设置值', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':'', #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                'true':'1','开':'1','打开':'1','开启':'1',
+                'false':'0','关':'0','关闭':'0',
+                '*':''
+            }
         }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
     template_attr = (
         'retweet_template',
         'quoted_template',
@@ -249,119 +546,122 @@ async def setGroupAttr(session: CommandSession):
         'reply_to_user_template',
         'none_template'
     )
-    cs = commandHeadtail(stripped_arg)
-    cs = {
-        0:cs[0],
-        1:cs[1],
-        2:cs[2].strip()
-    }
-    if cs[0] == '' or cs[2] == '':
-        await session.send("还没有添加参数哦~")
-        return
-    if cs[0] not in Pushunit_allowEdit:
-        await session.send('属性值不存在！')
-        return
-    PushTo : int = 0
-    if session.event['message_type'] == 'group':
-        PushTo = int(session.event['group_id'])
-    elif session.event['message_type'] == 'private':
-        PushTo = int(session.event['user_id'])
-    else:
-        await session.send('不支持的消息类型!')
-        return
-    if cs[2] != '' and Pushunit_allowEdit[cs[0]] in template_attr:
-        cs[2] = cs[2].replace("\\n","\n")
+    attr = args['key']
+    attrv = args['value']
+    if attr in template_attr:
         res = push_list.PushTo_setAttr(
-            session.event['message_type'],
-            PushTo,
-            Pushunit_allowEdit[cs[0]],
-            cs[2]
+            message_type,sent_id,
+            attr,attrv
         )
-    elif cs[2] in ('true','开','打开','开启','1'):
+    elif attrv in ('0','1'):
         res = push_list.PushTo_setAttr(
-            session.event['message_type'],
-            PushTo,
-            Pushunit_allowEdit[cs[0]],
-            1
-        )
-    elif cs[2] in ('false','关','关闭','0'):
-        res = push_list.PushTo_setAttr(
-            session.event['message_type'],
-            PushTo,
-            Pushunit_allowEdit[cs[0]],
-            0
+            message_type,
+            sent_id,
+            attr,
+            int(attrv)
         )
     else:
         res = (False,'属性的值不合法！')
-        await session.send(res[1])
         return
     push_list.savePushList()
-    logger.info(CQsessionToStr(session))
     await session.send(res[1])
 #推送对象的监测对象属性设置
 @on_command('setAttr',aliases=['对象设置'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setAttr(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
-    stripped_arg = session.current_arg_text.strip().lower()
-    if stripped_arg == '':
-        await session.send("还没有添加参数哦~")
+    message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
         return
-    cs = commandHeadtail(stripped_arg)
-    cs = {
-        0:cs[0],
-        1:cs[1],
-        2:cs[2].strip()
-    }
-    if cs[0] == '' or cs[2] == '':
-        await session.send("还没有添加参数哦~")
-        return
-    #处理用户ID
-    tweet_user_id : int = -1
-    if cs[0].isdecimal():
-        tweet_user_id = int(cs[0])
+    sent_id = 0
+    if message_type == 'private':
+        sent_id = user_id
+    elif message_type == 'group':
+        if not perm_check(session,'listener'):
+            await session.send('操作被拒绝，权限不足(g)')
+            return
+        sent_id = group_id
     else:
-        await session.send("用户ID错误")
+        await session.send('未收录的消息类型:'+message_type)
         return
-    if cs[2].strip() == '':
-        await session.send("还没有添加参数哦~")
-        return
-    tcs = commandHeadtail(cs[2])
-    cs[2] = tcs[0]
-    cs[3] = tcs[1]
-    cs[4] = tcs[2].strip()
-    PushTo : int = 0
-    if session.event['message_type'] == 'group':
-        PushTo = int(session.event['group_id'])
-    elif session.event['message_type'] == 'private':
-        PushTo = int(session.event['user_id'])
-    else:
-        await session.send('不支持的消息类型!')
-        return
-    Pushunit_allowEdit = {
-        #携带图片发送
-        'upimg':'upimg','图片':'upimg','img':'upimg',
-        #昵称设置
-        'nick':'nick','昵称':'nick',
-        #描述设置
-        'des':'des','描述':'des',
-        #消息模版
-        'retweet_template':'retweet_template','转推模版':'retweet_template',
-        'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
-        'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
-        'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
-        'none_template':'none_template','发推模版':'none_template',
-        #推特转发各类型开关
-        'retweet':'retweet','转推':'retweet',
-        'quoted':'quoted','转推并评论':'quoted',
-        'reply_to_status':'reply_to_status','回复':'reply_to_status',
-        'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
-        'none':'none','发推':'none',
-        #推特个人信息变动推送开关
-        'change_id':'change_ID','ID改变':'change_ID',
-        'change_name':'change_name','名称改变':'change_name',
-        'change_description':'change_description','描述改变':'change_description',
-        'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange'
+    logger.info(CQsessionToStr(session))
+
+    arglimit = [
+        {
+            'name':'tweet_user_id', #参数名
+            'des':'推特用户ID', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        },
+        {
+            'name':'key', #参数名
+            'des':'设置名称', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                #携带图片发送
+                'upimg':'upimg','图片':'upimg','img':'upimg',
+                #描述设置
+                'des':'des','描述':'des',
+                #昵称设置
+                'nick':'nick','昵称':'nick',
+                #消息模版
+                'retweet_template':'retweet_template','转推模版':'retweet_template',
+                'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
+                'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
+                'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
+                'none_template':'none_template','发推模版':'none_template',
+                #推特转发各类型开关
+                'retweet':'retweet','转推':'retweet',
+                'quoted':'quoted','转推并评论':'quoted',
+                'reply_to_status':'reply_to_status','回复':'reply_to_status',
+                'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+                'none':'none','发推':'none',
+                #推特个人信息变动推送开关
+                'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
+                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
+                'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
+                'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
+            }
+        },
+        {
+            'name':'value', #参数名
+            'des':'设置值', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':'', #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                'true':'1','开':'1','打开':'1','开启':'1',
+                'false':'0','关':'0','关闭':'0',
+                '*':''
+            }
         }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
     template_attr = (
         'retweet_template',
         'quoted_template',
@@ -369,95 +669,101 @@ async def setAttr(session: CommandSession):
         'reply_to_user_template',
         'none_template'
     )
+    tweet_user_id = args['tweet_user_id']
+    attr = args['key']
+    attrv = args['value']
     if str(tweet_user_id) not in push_list.spylist:
         await session.send("用户不在监测列表内！")
         return
-    if cs[2] not in Pushunit_allowEdit:
-        await session.send('属性值不存在！')
-        return
-    if Pushunit_allowEdit[cs[2]] == 'des' or Pushunit_allowEdit[cs[2]] == 'nick':
+    if attr == 'des' or attr == 'nick' or attr in template_attr:
         res = push_list.setPushunitAttr(
-            session.event['message_type'],
-            PushTo,
+            message_type,sent_id,
             tweet_user_id,
-            Pushunit_allowEdit[cs[2]],
-            cs[4]
+            attr,attrv
         )
-    elif cs[4] != '' and Pushunit_allowEdit[cs[2]] in template_attr:
+    elif attrv in ('0','1'):
         res = push_list.setPushunitAttr(
-            session.event['message_type'],
-            PushTo,
+            message_type,sent_id,
             tweet_user_id,
-            Pushunit_allowEdit[cs[2]],
-            cs[4]
-        )
-    elif cs[4] in ('true','开','打开','开启','1'):
-        res = push_list.setPushunitAttr(
-            session.event['message_type'],
-            PushTo,
-            tweet_user_id,
-            Pushunit_allowEdit[cs[2]],
-            1
-        )
-    elif cs[4] in ('false','关','关闭','0'):
-        res = push_list.setPushunitAttr(
-            session.event['message_type'],
-            PushTo,
-            tweet_user_id,
-            Pushunit_allowEdit[cs[2]],
-            0
+            attr,int(attrv)
         )
     else:
         res = (False,'属性的值不合法！')
-        await session.send(res[1])
         return
     push_list.savePushList()
     await session.send(res[1])
-    logger.info(CQsessionToStr(session))
+    
 
 #移除某个人或某个群的所有监测，用于修复配置错误(退出群/删除好友时不在线)
 @on_command('globalRemove',aliases=['全局移除'],permission=perm.SUPERUSER,only_to_me = True)
 async def globalRemove(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
-    stripped_arg = session.current_arg_text.strip().lower()
-    if stripped_arg == '':
-        await session.send("似乎少了点什么!?试着添加QQ号或群号作为参数吧~")
+    message_type = session.event['message_type']
+    #group_id = (session.event['group_id'] if message_type == 'group' else None)
+    #user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
         return
-    cs = commandHeadtail(stripped_arg)
-    cs = {
-        'messagetype':cs[0],
-        'pushto':cs[2].strip()
-    }
-    if cs['pushto'] == '' or cs['messagetype'] == '':
-        await session.send("似乎少了点什么!?请检查参数是否正确(／_＼)")
+    if message_type == 'group' and not perm_check(session,'listener'):
+        await session.send('操作被拒绝，权限不足(g)')
         return
-    if not cs['pushto'].isdecimal():
-        await session.send("QQ号或群号似乎怪怪的？请再次检查:"+cs['pushto'])
+    logger.info(CQsessionToStr(session))
+
+    arglimit = [
+        {
+            'name':'msgtype', #参数名
+            'des':'消息类型', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':True, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示允许任意字符串,值不为空时任意字符串将被转变为这个值
+                '私聊':'private',
+                'private':'private',
+                '群聊':'group',
+                'group':'group',
+                '好友':'private',
+                '群':'group',
+            }
+        },
+        {
+            'name':'send_id', #参数名
+            'des':'对象ID', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    res = argDeal(session.current_arg_text.strip(),arglimit)
+    if not res[0]:
+        await session.send(res[1]+'=>'+res[2])
         return
-    messagetype_list = {
-        '私聊':'private',
-        'private':'private',
-        '群聊':'group',
-        'group':'group',
-        '好友':'private',
-        '群':'group',
-    }
-    if cs['messagetype'] in messagetype_list:
-        res = push_list.delPushunitFromPushTo(
-            messagetype_list[cs['messagetype']],
-            int(cs['pushto']),
-            self_id=int(session.event['self_id'])
-        )
-        push_list.savePushList()
-        logger.info(CQsessionToStr(session))
-        await session.send(res[1])
-    else:
-        await session.send("此消息类型不支持:"+cs['messagetype'])
-        return
+    args = res[1]
+    res = push_list.delPushunitFromPushTo(
+        args['message_type'],
+        args['send_id'],
+        self_id=int(session.event['self_id'])
+    )
+    push_list.savePushList()
+    await session.send(res[1])
+
 
 #推特ID编码解码
-@on_command('detweetid',aliases=['推特ID解压','解压ID'],only_to_me = False)
+@on_command('detweetid',aliases=['推特ID解压'],only_to_me = False)
 async def decodetweetid(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -469,8 +775,10 @@ async def decodetweetid(session: CommandSession):
     logger.info(CQsessionToStr(session))
     await session.send("推特ID的真身已判明(ﾟ▽ﾟ)/其名为："+str(res))
 
-@on_command('entweetid',aliases=['推特ID压缩','压缩ID'],only_to_me = False)
+@on_command('entweetid',aliases=['推特ID压缩'],only_to_me = False)
 async def encodetweetid(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.2)
     stripped_arg = session.current_arg_text.strip()
     if stripped_arg == '':
@@ -478,32 +786,100 @@ async def encodetweetid(session: CommandSession):
     if not stripped_arg.isdecimal():
         await session.send("推特ID似乎搞错了呢(￣▽￣)\"请仔细检查")
         return
-    res = encode_b64(int(stripped_arg))
+    n = int(stripped_arg)
+    if n < 1253881609540800000:
+        await session.send("推特ID的值过小！")
+        return
+    res = encode_b64(n)
     logger.info(CQsessionToStr(session))
     await session.send("推特ID压缩好了(oﾟ▽ﾟ)o请使用："+res)
 
+#获取推文
+@on_command('gettweettext',aliases=['获取推文'],permission=perm.SUPERUSER,only_to_me = False)
+async def gettweettext(session: CommandSession):
+    if not headdeal(session):
+        return
+    message_type = session.event['message_type']
+    #group_id = (session.event['group_id'] if message_type == 'group' else None)
+    #user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
+    if message_type == 'group' and not perm_check(session,'listener'):
+        await session.send('操作被拒绝，权限不足(g)')
+        return
+    logger.info(CQsessionToStr(session))
+    def checkTweetId(a,ad):
+        if a[:1] == '#':
+            ta = a[1:]
+            if not ta.isdecimal():
+                return None
+            res = mintweetID.find(lambda item,val:item[1]==val,int(ta))
+            if res == None:
+                return None
+            return res[0]
+        elif a.isdecimal() and int(a) > 1253881609540800000:
+            return a
+        else:
+            res = decode_b64(a)
+            if res == -1:
+                return None
+            return res
+    arglimit = [
+        {
+            'name':'tweet_id', #参数名
+            'des':'推特ID', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':checkTweetId, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
+    tweet_id = args['tweet_id']
+    tweet = tmemory.find((lambda item,val:item['id'] == val),tweet_id)
+    if tweet == None:
+        await session.send("未从缓存中查找到该推文！")
+        return
+    msg = "推文 " + encode_b64(tweet_id) + " 的内容如下：\n"
+    msg = msg + tweet_event_deal.tweetToStr(tweet,'',1,'')
+    await session.send(msg)
+
 @on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
 async def about(session: CommandSession):
+    if not headdeal(session):
+        return
     logger.info(CQsessionToStr(session))
     msg = 'http://uee.me/dfRwA'
     await session.send("想了解我的全部，就来{}这里看看吧~".format(msg))
 
-#获取全局监听推送列表
+#获取全局监听推送列表(非正式查错命令)
 def get_tweeallpushlist(page:int):
     table = push_list.spylist
     s = ''
     unit_cout = 0
     for item in table:
-        if ((unit_cout//5)+1) == page:
+        if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
             s = s + item + '\n'
         unit_cout = unit_cout + 1
-    totalpage = (unit_cout-1)//5 + (0 if unit_cout%5 == 0 else 1)
+    totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
     if unit_cout > 5 or page != 1:
         s = s + '页数：' + str(page) + '/' + str(totalpage) + ' '
     s = s + '总监测数：' + str(unit_cout)
     return s
 @on_command('tweeallpushlist',permission=perm.SUPERUSER,only_to_me = False)
 async def tweeallpushlist(session: CommandSession):
+    if not headdeal(session):
+        return
     await asyncio.sleep(0.1)
     page = 1
     stripped_arg = session.current_arg_text.strip().lower()
@@ -518,7 +894,6 @@ async def tweeallpushlist(session: CommandSession):
     s = get_tweeallpushlist(page)
     await session.send(s)
     logger.info(CQsessionToStr(session))
-
 
 
 """

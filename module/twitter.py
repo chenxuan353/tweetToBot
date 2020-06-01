@@ -3,6 +3,7 @@ import string
 import nonebot
 import urllib
 import traceback
+import json
 import os
 #引入配置
 import config
@@ -10,23 +11,27 @@ import config
 from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory
 logger = getlogger(__name__)
 #引入测试方法
-test = None
 try:
-    import test
+    import dbtest as test
 except:
-    pass
+    test = None
 '''
 推送列表维护，及推送处理模版类定义
+
+推送列表维护三个映射数组
+推送关联表(加速推送转发) __push_list
+对象关联表(加速对象搜索) __spy_relate
+监测流列表(更新监听列表-包含所有需要监听的对象) spylist
 '''
 
 PushList_config_name = 'PushListData.json'
-base_tweet_id = config.base_tweet_id
-
+def_puth_method : str = config.UPDATA_METHOD
+base_tweet_id : str = "1109751762733301760" #TweetApi需要至少一个监测对象(默认 nekomataokayu)
 #10进制转64进制
-def encode_b64(n:int) -> str:
+def encode_b64(n:int,offset:int = 1253881609540800000) -> str:
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
     result = []
-    temp = n - 1253881609540800000
+    temp = n - offset
     if 0 == temp:
         result.append('0')
     else:
@@ -34,7 +39,7 @@ def encode_b64(n:int) -> str:
             result.append(table[int(temp) % 64])
             temp = int(temp)//64
     return ''.join([x for x in reversed(result)])
-def decode_b64(str) -> int:
+def decode_b64(str,offset:int = 1253881609540800000) -> int:
     table = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
                 "6": 6, "7": 7, "8": 8, "9": 9,
                 "a": 10, "b": 11, "c": 12, "d": 13, "e": 14, "f": 15, "g": 16,
@@ -52,19 +57,14 @@ def decode_b64(str) -> int:
         if str[i] not in table:
             return -1
         result += table[str[i]]
-    return result + 1253881609540800000
+    return result + offset
 #推送列表
 class PushList:
-    #映射推送关联(推送对象(type:str,ID:int)->推送单元)
-    __push_list = {
-        'private':{},
-        'group':{}
-    } 
-    __spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
-    spylist = [str(base_tweet_id)] #流监测列表
-    
-    #支持的消息类型
-    message_type_list = ('private','group') 
+    puth_method = '' #推送方法 TweetApi、RSShub、Twint
+    __push_list = {'private':{},'group':{}} 
+    __spy_relate = {}
+    spylist = []
+    message_type_list = ('private','group') #支持的消息类型
     #推送单元允许编辑的配置_布尔类型
     Pushunit_allowEdit = (
         #携带图片发送
@@ -79,19 +79,19 @@ class PushList:
         'change_ID','change_name','change_description',
         'change_headimgchange'
         )
-    """
-        推送列表-》推送列表、监测人信息关联表及监测人单的列表-》推送单元
-        注：每个推送单元绑定一个推特用户ID以及一个推送对象(群或QQ)
-        注：推送单元的配置由其推送对象全局配置以及自身DIY设置共同完成
-    """
-    #清空推送设置
+    def __init__(self,puth_method:str = def_puth_method):
+        self.puth_method = puth_method
+        if self.puth_method == 'TweetApi':
+            self.spylist.append(base_tweet_id)
+
+    #重置推送
     def clear(self):
-        self.__push_list = {
-            'private':{},
-            'group':{}
-        } 
-        self.__spy_relate = {} #映射对象关联(监测ID(ID:int)->推送单元)
-        self.spylist = [str(base_tweet_id)] #流监测列表
+        self.__push_list = {'private':{},'group':{}} 
+        self.__spy_relate = {}
+        self.spylist = []
+        if self.puth_method == 'TweetApi':
+            self.spylist.append(base_tweet_id)
+    
     #获取所有推送单元
     def getAllPushUnit(self) -> list:
         sourcedata = self.__spy_relate.copy()
@@ -121,7 +121,7 @@ class PushList:
         PushUnits = self.getAllPushUnit()
         PushToAttrList = self.getAllPushTo()
         return data_save(
-            PushList_config_name,
+            self.puth_method + '_' + PushList_config_name,
             {
                 'PushUnits':PushUnits,
                 'PushToAttrList':PushToAttrList
@@ -129,7 +129,7 @@ class PushList:
             'config'
             )
     def readPushList(self) -> tuple:
-        data = data_read(PushList_config_name,'config')
+        data = data_read(self.puth_method + '_' + PushList_config_name,'config')
         if data[0] != False:
             self.clear()
             for PushUnit in data[2]['PushUnits']:
@@ -145,8 +145,11 @@ class PushList:
                         pushtype:str,
                         pushID:int,
                         tweet_user_id:int,
+                        create_opid:int,
+                        lastedit_opid:int,
                         des:str,
-                        nick:str='',**config):
+                        nick:str='',
+                        **config):
         Pushunit = {}
         if not config:
             config = {}
@@ -155,6 +158,8 @@ class PushList:
         Pushunit['type'] = pushtype #group/private
         Pushunit['pushTo'] = pushID #QQ号或者群号
         Pushunit['tweet_user_id'] = tweet_user_id #监测ID
+        Pushunit['create_opid'] = create_opid #创建人Q号
+        Pushunit['lastedit_opid'] = lastedit_opid #最后一次操作人Q号
         Pushunit['nick'] = nick #推送昵称(默认推送昵称为推特screen_name)
         Pushunit['des'] = des #单元描述
         Pushunit['config'] = config
@@ -305,7 +310,10 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-tmemory = TempMemory('tweets.json',limit = 150,autosave = False,autoload = False)
+#缩写推特ID(缓存500条)
+mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 500,autosave = True,autoload = True)
+#推文缓存(200条)
+tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 200,autosave = True,autoload = True)
 class tweetEventDeal:
     #用户信息维护列表
     userinfolist = {}
@@ -331,31 +339,32 @@ class tweetEventDeal:
         if userinfo['id'] in self.userinfolist:
             old_userinfo = self.userinfolist[userinfo['id']]
             data = {}
-            str = ''
+            s = ''
             if old_userinfo['name'] != userinfo['name']:
                 data['type'] = 'change_name'
-                str = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + \
+                s = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + \
                 ' 的昵称已更新为 ' + userinfo['name'] + "(" + userinfo['screen_name'] + ")"
                 old_userinfo['name'] = userinfo['name']
             if old_userinfo['description'] != userinfo['description']:
                 data['type'] = 'change_description'
-                str = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + ' 的描述已更新为 ' + userinfo['description']
+                s = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + ' 的描述已更新为 ' + userinfo['description']
                 old_userinfo['description'] = userinfo['description']
             if old_userinfo['screen_name'] != userinfo['screen_name']:
                 data['type'] = 'change_ID'
-                str = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + \
+                s = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + \
                     ' 的ID已更新为 ' + userinfo['name'] + "(" + userinfo['screen_name'] + ")"
                 old_userinfo['screen_name'] = userinfo['screen_name']
             if old_userinfo['profile_image_url_https'] != userinfo['profile_image_url_https']:
                 data['type'] = 'change_headimgchange'
-                str = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + '的头像已更新'
+                s = old_userinfo['name'] + "(" + old_userinfo['screen_name'] + ")" + '的头像已更新'
                 old_userinfo['profile_image_url'] = userinfo['profile_image_url']
                 old_userinfo['profile_image_url_https'] = userinfo['profile_image_url_https']
+                s = s + "\n" + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo['profile_image_url_https'] + ']'
 
-            if str != '':
+            if s != '':
                 data['user_id'] = userinfo['id']
                 data['user_id_str'] = userinfo['id_str']
-                data['str'] = str
+                data['str'] = s
                 eventunit = self.bale_event(data['type'],data['user_id'],data)
                 self.deal_event(eventunit)
         else:
@@ -364,10 +373,15 @@ class tweetEventDeal:
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
         if event_type in ('quoted','reply_to_status','reply_to_user','none'):
+            if mintweetID.find((lambda item,val:item[0]==val),event_data['id']) == None:
+                count = 0
+                if mintweetID.tm != []:
+                    count = mintweetID.tm[-1][1]+1
+                mintweetID.join([event_data['id'],count])
             tmemory.join(event_data)
         eventunit = {
             'type':event_type,
-            'user_id':user_id,
+            'user_id':int(user_id),
             'data':event_data
         }
         return eventunit
@@ -401,15 +415,19 @@ class tweetEventDeal:
             return '发推' #未分类(估计是主动发推)
     #将推特数据应用到模版
     def tweetToStr(self, tweetinfo, nick, upimg=config.pushunit_default_config['upimg'], template_text=''):
+        global mintweetID
         if nick == '':
             if tweetinfo['user']['name']:
                 nick = tweetinfo['user']['name']
             else:
                 nick = tweetinfo['user']['screen_name']
+        temptweetID = mintweetID.find(lambda item,val:item[0] == val,tweetinfo['id'])
+        
         #模版变量初始化
         template_value = {
             'tweet_id':tweetinfo['id_str'], #推特ID
             'tweet_id_min':encode_b64(tweetinfo['id']),#压缩推特id
+            'tweet_id_temp':('未生成' if temptweetID == None else ('#' + str(temptweetID[1]))),#临时推特id
             'tweet_nick':nick, #操作人昵称
             'tweet_user_id':tweetinfo['user']['screen_name'], #操作人ID
             'tweet_text':tweetinfo['text'], #发送推特的完整内容
@@ -437,13 +455,15 @@ class tweetEventDeal:
                     template_value['related_user_name'] = tweetinfo['Related_user']['screen_name']
         #组装图片
         if upimg == 1:
-            mis = ''
             if 'extended_entities' in tweetinfo:
+                mis = ''
                 for media_unit in tweetinfo['extended_entities']:
                     #组装CQ码
                     #file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
+                if mis != '':
+                    mis = "\n媒体：" + len(tweetinfo['extended_entities']) + "个\n" + mis
             template_value['media_img'] = mis
         #生成模版类
         s = ""
@@ -451,16 +471,16 @@ class tweetEventDeal:
         if template_text == '':
             #默认模版
             if tweetinfo['type'] == 'none':
-                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
+                deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
             else:
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
         else:
             #自定义模版
