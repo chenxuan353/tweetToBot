@@ -195,6 +195,7 @@ class MyStreamListener(tweepy.StreamListener):
         try:
             #重新组织推特数据
             tweetinfo = tweet_event_deal.deal_tweet(status)
+            logger.info('接收到推文:' +  tweetinfo['id_str'])
             #只有值得关注的推文才会推送处理,降低处理压力(能降一大截……)
             if tweetinfo['tweetNotable']:
                 try:
@@ -260,13 +261,16 @@ def Run():
             run_info['apiStream'] = tweepy.Stream(auth = api.auth, listener=myStreamListener)
             run_info['apiStream'].filter(follow=push_list.spylist,is_async=False)
         except:
-            msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
             s = traceback.format_exc(limit=10)
             logger.error(s)
-            time.sleep(10)
-        else:
-            run_info['isRun'] = False
-            logger.info('推特流正常停止')
+        msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
+        time.sleep(10)
+        """        
+            else:
+                run_info['isRun'] = False
+                msgSendToBot(logger,'推特流已停止...')
+                logger.info('推特流正常停止')
+        """
         if run_info['error_cout'] > 0 and time.time() - last_reboot > 300:
             last_reboot = int(time.time()) #两次重启间隔五分钟以上视为重启成功
             run_info['error_cout'] = 0 #重置计数
