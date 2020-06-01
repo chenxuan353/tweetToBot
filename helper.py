@@ -55,6 +55,7 @@ initNonebotLogger()
 def getlogger(name,printCMD:bool = True) -> logging.Logger:
     reslogger = logging.getLogger(name)
     reslogger.setLevel(logging.INFO)
+    reslogger.handler = []
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     sh = logging.StreamHandler()
     sh.setFormatter(logformat)
