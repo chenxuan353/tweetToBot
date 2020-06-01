@@ -346,7 +346,7 @@ class TweetTrans:
                 }
                 function textparse(text){
                     text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
-                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/g,'<a style="color:#1DA1F2;">$1</a>')
+                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/,'<a style="color:#1DA1F2;">$1</a>')
                     return twemoji.parse(text,{
                         attributes:attributesCallback,
                         base:'https://abs-0.twimg.com/emoji/v2/',
@@ -376,14 +376,11 @@ class TweetTrans:
                     }
                     //搜索推文
                     let elart = elems[i]
-                    console.log(elart)
                     if(elart){
                         elart = elart.cloneNode(true)
                         shotelem.append(elart);
                         let trans = []
-                        let elemet = elart.querySelector('[aria-expanded]')
-                        if(elemet)elemet.style.visibility="hidden" //隐藏翻译蓝链
-                        let elemtexts = elart.querySelectorAll('div[lang][dir="auto"]')
+                        let elemtexts = elart.querySelectorAll('div.r-bnwqim')
                         for(var j = 0;j<elemtexts.length;j++){
                             trans.push({
                                 elem:elemtexts[j],
@@ -392,28 +389,19 @@ class TweetTrans:
                         }
                         tweets.push(trans)
                         //检测推文是否结束
-                        //转推
-                        let rt = elart.querySelector('a[dir][role="link"][href$="retweets"]')
-                        if(rt){
+                        //转推喜欢
+                        let rtlk = elart.querySelector('div.r-1w6e6rj.r-1h2hfjv.r-9qu9m4')
+                        if(rtlk){
                             //跳出
-                            rt.parentNode.parentNode.remove()
-                            break;
-                        }
-                        //喜欢
-                        let lk = elart.querySelector('a[dir][role="link"][href$="likes"]')
-                        if(lk){
-                            //跳出
-                            lk.parentNode.parentNode.remove()
+                            rtlk.remove()
                             break;
                         }
                         //时间
-                        let t = elart.querySelector('a[href$="how-to-tweet#source-labels"]')
+                        let t = elart.querySelector('div.r-vpgt9t')
                         if(t){
                             //跳出
                             break;
                         }
-                        //喜欢 lk = document.querySelectorAll('a[dir][role="link"][href$="likes"]')
-                        //时间检测(有危险) t = document.querySelectorAll('a[rel][role="link"][target="_blank"][href="https://help.twitter.com/using-twitter/how-to-tweet#source-labels"]')[0]
                     }
                 }
                 //翻译用的class transclass = elems[0].querySelector('div[lang][dir="auto"]>span').className
@@ -443,7 +431,6 @@ class TweetTrans:
                             tweets[i][0].elem.innerHTML = "" //存在翻译则清空节点
                         }
                     }
-                    console.log(tran_text)
                     if(tran_text){
                         if(tran_text[0]){
                             let node_trans = document.createElement('div');//翻译节点
@@ -466,7 +453,6 @@ class TweetTrans:
                             //置入推文次节点的翻译
                             node_trans.innerHTML = textparse(tran_text[1],transclass)
                             tweets[i][1].elem.appendChild(node_trans)
-
                         }
                     }
                 }
