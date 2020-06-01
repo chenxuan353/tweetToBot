@@ -51,16 +51,18 @@ check_path(os.path.join('log'))
 initNonebotLogger()
 
 
-
 #获取日志对象(记录名，是否输出到控制台)
 def getlogger(name,printCMD:bool = True) -> logging.Logger:
     reslogger = logging.getLogger(name)
     reslogger.setLevel(logging.INFO)
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
-    if printCMD == True:
-        sh = logging.StreamHandler()
-        sh.setFormatter(logformat)
-        reslogger.addHandler(sh)
+    sh = logging.StreamHandler()
+    sh.setFormatter(logformat)
+    if printCMD != True:
+        sh.setLevel(logging.CRITICAL)
+    else:
+        sh.setLevel(logging.INFO)
+    reslogger.addHandler(sh)
     trf = logging.handlers.TimedRotatingFileHandler(
                 filename=os.path.join(file_base_path,log_file_base_path,name+".log"),
                 encoding="utf-8",
