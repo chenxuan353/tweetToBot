@@ -195,7 +195,7 @@ class MyStreamListener(tweepy.StreamListener):
         try:
             #重新组织推特数据
             tweetinfo = tweet_event_deal.deal_tweet(status)
-            logger.info('接收到推文:' +  tweetinfo['id_str'])
+            logger.debug('接收到推文:' +  tweetinfo['id_str'])
             #只有值得关注的推文才会推送处理,降低处理压力(能降一大截……)
             if tweetinfo['tweetNotable']:
                 try:
