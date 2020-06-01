@@ -204,11 +204,11 @@ class MyStreamListener(tweepy.StreamListener):
                     msgSendToBot(logger,'推特监听处理队列溢出，请检查队列！')
                     logger.error(s)
                 tweetinfo['status'] = None
-                #TLlogger.warning(tweetinfo)
+                TLlogger.warning(tweetinfo)
                 tweetinfo['status'] = status
             else:
                 tweetinfo['status'] = None
-                #TLlogger.info(tweetinfo)
+                TLlogger.info(tweetinfo)
                 tweetinfo['status'] = status
         except:
             s = traceback.format_exc(limit=5)
