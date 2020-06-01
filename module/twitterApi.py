@@ -231,7 +231,7 @@ def init():
         logger.info('侦听配置读取成功')
     else:
         logger.error('侦听配置读取失败:' + res[1])
-init()
+
 run_info = {
     'DealDataThread':None,
     'queque':dealTweetsQueue,
@@ -298,6 +298,7 @@ def dealTweetData():
 
 #运行推送线程
 def runTwitterApiThread():
+    init()
     run_info['Thread'] = threading.Thread(
         group=None, 
         target=Run, 

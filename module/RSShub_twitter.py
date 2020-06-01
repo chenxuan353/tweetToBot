@@ -278,14 +278,6 @@ class twitterListener(tweetEventDeal):
 
 tweet_event_deal = twitterListener()
 
-def init():
-    #读取推送侦听配置
-    res = push_list.readPushList()
-    if res[0] == True:
-        logger.info('侦听配置读取成功')
-    else:
-        logger.error('侦听配置读取失败:' + res[1])
-init()
 run_info = {
     'DealDataThread':None,
     'queque':dealTweetsQueue,
@@ -295,7 +287,16 @@ run_info = {
 def setStreamOpen(b:bool):
     run_info['keepRun'] = b
 
+
+def init():
+    #读取推送侦听配置
+    res = push_list.readPushList()
+    if res[0] == True:
+        logger.info('侦听配置读取成功')
+    else:
+        logger.error('侦听配置读取失败:' + res[1])
 def Run():
+    init()
     #使用RSS推送源接收更新
     logger.info("RSS_push")
     spylist = push_list.spylist

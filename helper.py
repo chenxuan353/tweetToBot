@@ -58,7 +58,7 @@ def getlogger(name,printCMD:bool = True) -> logging.Logger:
     reslogger.setLevel(logging.INFO)
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     if printCMD == True:
-        sh = logging.StreamHandler(stream=sys.stdout)
+        sh = logging.StreamHandler()
         sh.setFormatter(logformat)
         reslogger.addHandler(sh)
     trf = logging.handlers.TimedRotatingFileHandler(
