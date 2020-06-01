@@ -390,7 +390,7 @@ def getlist(groupid:int,page:int=1):
     totalpage = (cout)//5 + (0 if cout%5 == 0 else 1)
     s = s + '页数:'+str(page)+'/'+str(totalpage)+'总记录数：'+str(cout) + '\n'
     s = s + '使用!tgt 任务标识 获取指定任务图片' + "\n"
-    s = s + '使用!gt 推文标识 获取指定推文最后的译文图片' + "\n"
+    s = s + '使用!gt 推文标识 获取指定推文最后的译文图片'
     return s
 @on_command('translist',aliases=['tl','烤推列表'], permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_OWNER | perm.GROUP,only_to_me = False)
 async def translist(session: CommandSession):

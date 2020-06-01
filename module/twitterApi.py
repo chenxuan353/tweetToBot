@@ -159,7 +159,7 @@ class tweetApiEventDeal(tweetEventDeal):
                     media_obj['media_url'] = media_unit['media_url']
                     media_obj['media_url_https'] = media_unit['media_url_https']
                     tweetinfo['extended_entities'].append(media_obj)
-        if hasattr(status,'entities'):
+        elif hasattr(status,'entities'):
             #图片来自推特时将处于这个位置
             if 'media' in status.entities:
                 for media_unit in status.entities['media']:
