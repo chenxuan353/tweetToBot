@@ -795,7 +795,7 @@ async def encodetweetid(session: CommandSession):
     await session.send("推特ID压缩好了(oﾟ▽ﾟ)o请使用："+res)
 
 #获取推文
-@on_command('gettweettext',aliases=['获取推文'],permission=perm.SUPERUSER,only_to_me = False)
+@on_command('gettweettext',aliases=['获取推文','gtt'],permission=perm.SUPERUSER,only_to_me = False)
 async def gettweettext(session: CommandSession):
     if not headdeal(session):
         return

@@ -465,7 +465,7 @@ class tweetEventDeal:
                     #file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
-                if mis != '':
+                if mis != '' and len(tweetinfo['extended_entities']) > 1:
                     mis = "\n媒体：" + str(len(tweetinfo['extended_entities'])) + "个\n" + mis
             template_value['media_img'] = mis
         #生成模版类
