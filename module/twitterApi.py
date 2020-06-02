@@ -90,7 +90,7 @@ class tweetApiEventDeal(tweetEventDeal):
         if not user['default_profile_image'] and \
             not user['default_profile'] and \
             not user['protected'] and \
-            (int(user['followers_count'] / user['friends_count']) > 5000 or user['verified']):
+            (int(user['followers_count'] / (user['friends_count']+1)) > 5000 or user['verified']):
             return True
         return False
     #重新包装推特信息
@@ -172,7 +172,7 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['Related_user'] = tweetinfo['quoted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['quoted']
             tweetinfo['Related_notable'] = tweetinfo['quoted']['notable']
-            tweetinfo['Related_extended_entities'] = tweetinfo['retweeted']['extended_entities']
+            tweetinfo['Related_extended_entities'] = tweetinfo['quoted']['extended_entities']
         elif tweetinfo['type'] != 'none':
             tweetinfo['Related_user'] = {}
             tweetinfo['Related_user']['id'] = status.in_reply_to_user_id
@@ -201,7 +201,13 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['text'] = status.extended_tweet['full_text']
         else:
             tweetinfo['text'] = status.text
-
+        #补正监测对象,用于智能推送
+        if tweetinfo['id'] in push_list.spylist:
+            tweetinfo['trigger_user'] = tweetinfo['id']
+            tweetinfo['trigger_remote'] = False #监测重定向标识
+        else:
+            tweetinfo['trigger_user'] = tweetinfo['Related_user']['id']
+            tweetinfo['trigger_remote'] = True #监测重定向标识
         return tweetinfo
 #推特事件处理对象
 tweet_event_deal = tweetApiEventDeal()
@@ -314,7 +320,7 @@ def dealTweetData():
         tweetinfo = run_info['queque'].get()
         try:
             #推送事件处理，输出到酷Q
-            eventunit = tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['user']['id'],tweetinfo)
+            eventunit = tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['trigger_user'],tweetinfo)
             tweet_event_deal.deal_event(eventunit)
             #控制台输出
             tweet_event_deal.statusPrintToLog(tweetinfo)

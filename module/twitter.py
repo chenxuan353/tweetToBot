@@ -76,6 +76,14 @@ class PushList:
         #推特转发各类型开关
         'retweet','quoted','reply_to_status',
         'reply_to_user','none',
+
+        #智能推送(仅限推送单元设置，无法全局设置)
+        'ai_retweet',
+        'ai_reply_to_status',
+        'ai_passive_reply_to_status',
+        'ai_passive_quoted',
+        'ai_passive_reply_to_user',
+
         #推特个人信息变动推送开关
         'change_ID','change_name','change_description',
         'change_headimgchange'
@@ -400,12 +408,25 @@ class tweetEventDeal:
         for Pushunit in table:
             #获取属性判断是否可以触发事件
             res = push_list.getPuslunitAttr(Pushunit,event['type'])
-            #res_n = push_list.getPuslunitAttr(Pushunit,'none')
             if res[0] == False:
                 raise Exception("获取Pushunit属性值失败",Pushunit)
             if res[1] == 1:
-                #or (res_n == 1 and event['type'] in ('reply_to_status','reply_to_user') and event['data']['user']['id'] == event['data']['Related_user']['id'])
                 self.deal_event_unit(event,Pushunit)
+            elif event['type'] in ('retweet','quoted','reply_to_status','reply_to_user'):
+                tweetinfo = event['data']
+                if event['type'] in ('quoted','reply_to_status','reply_to_user') and tweetinfo['trigger_remote']:
+                    res = push_list.getPuslunitAttr(Pushunit,'ai_passive_' + event['type'])
+                    if res[0] == False:
+                        raise Exception("获取Pushunit属性值失败",Pushunit)
+                    if res[1] == 1:
+                        self.deal_event_unit(event,Pushunit)
+                elif event['type'] in ('retweet','reply_to_status'):
+                    res = push_list.getPuslunitAttr(Pushunit,'ai_' + event['type'])
+                    if res[0] == False:
+                        raise Exception("获取Pushunit属性值失败",Pushunit)
+                    if res[1] == 1:
+                        self.deal_event_unit(event,Pushunit)
+
     def deal_event_unit(self,event,Pushunit):
         raise Exception('未定义事件处理单元')
     #推特标识到中文
@@ -472,7 +493,7 @@ class tweetEventDeal:
                     #file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
-                if mis != '' and len(tweetinfo['extended_entities']) > 1:
+                if mis != '':
                     mis = "\n媒体：" + str(len(tweetinfo['extended_entities'])) + "个\n" + mis
             template_value['media_img'] = mis
 
@@ -483,7 +504,7 @@ class tweetEventDeal:
                     #file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
-                if mis != '' and len(tweetinfo['Related_extended_entities']) > 1:
+                if mis != '':
                     mis = "\n依赖媒体：" + str(len(tweetinfo['Related_extended_entities'])) + "个\n" + mis
             template_value['related_media_img'] = mis
 
@@ -496,7 +517,7 @@ class tweetEventDeal:
                 deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
                 deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n$media_img\n====================\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
