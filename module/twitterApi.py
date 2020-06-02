@@ -157,6 +157,8 @@ class tweetApiEventDeal(tweetEventDeal):
                 userinfo = self.tryGetUserInfo(status.in_reply_to_user_id)
                 if userinfo != {}:
                     tweetinfo['Related_notable'] = self.isNotableUser(userinfo,False)
+                else:
+                    tweetinfo['Related_notable'] = False
         else:
             tweetinfo['Related_notable'] = True
         
