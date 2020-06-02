@@ -141,7 +141,7 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status,True)
             tweetinfo['Related_user'] = tweetinfo['retweeted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['retweeted']
-            tweetinfo['Related_notable'] = tweetinfo['retweeted']['notable']
+            tweetinfo['Related_notable'] = (tweetinfo['notable'] and tweetinfo['retweeted']['notable'])
         elif tweetinfo['type'] == 'quoted':
             tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status,True)
             tweetinfo['Related_user'] = tweetinfo['quoted']['user']
