@@ -311,9 +311,9 @@ class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
 #缩写推特ID(缓存500条)
-mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 500,autosave = True,autoload = True)
+mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 1000,autosave = True,autoload = True)
 #推文缓存(200条)
-tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 200,autosave = True,autoload = True)
+tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 500,autosave = True,autoload = True)
 class tweetEventDeal:
     #用户信息维护列表
     userinfolist = {}
@@ -377,6 +377,8 @@ class tweetEventDeal:
                 count = 0
                 if mintweetID.tm != []:
                     count = mintweetID.tm[-1][1]+1
+                    if count > 5000:
+                        count = 0
                 mintweetID.join([event_data['id'],count])
             sdata = event_data.copy()
             if 'status' in sdata:

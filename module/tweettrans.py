@@ -183,69 +183,73 @@ class TweetTrans:
         error_save_filename = os.path.join('cache','transtweet','error','getTweets-'+tasktype+'.png')
         JS_getTweets = r"""
             try{
-                let limitHeight = arguments[0]
+                let limitHeight = 10000
                 let tweets = []
                 //推文主元素
-                let mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
+                var mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
                 if(!mainelem){
                     return [false,"推文不存在"]
                 }
                 let elems = mainelem.querySelectorAll('article')
-                let getoffsetHeight = function (elem){
+                function getoffsetTop(elem,relem){
                     let resH = 0
                     let nowelem = elem
-                    while(nowelem != mainelem && nowelem != null){
-                        console.log(nowelem)
+                    while(nowelem != relem && nowelem != null){
                         resH = resH + nowelem.offsetTop
                         nowelem = nowelem.parentNode
                     }
+                    if(nowelem == null)return 0;//不存在匹配的上级元素时返回0
                     return resH
                 }
                 for (var i = 0;i<elems.length;i++) {
                     let elart = elems[i]
                     if(elart){
                         try {
-                            let uie = elart.querySelector('div[data-testid="tweet"]>div')
+                            //let uie = elart.querySelector('div[data-testid="tweet"]>div')
+                            let uid = elart.querySelector('div.r-18kxxzh>div.r-18kxxzh')
                             //头像
-                            let headimg = uie.querySelector('img').getAttribute('src')
+                            let headimg = uid.querySelector('img').getAttribute('src')
 
-                            //昵称
-                            uie = uie.nextSibling.querySelector('a>div>div')
-                            let nick = uie.innerText
                             //用户ID
-                            let userid = uie.nextSibling.innerText
+                            //let userid = uie.nextSibling.innerText
+                            let userid = uid.querySelector('a').getAttribute('href').slice(1)
+                            //昵称
+                            //uie = uie.nextSibling.querySelector('a>div>div')
+                            //let nick = uie.innerText
+                            let nick = elart.querySelector('div.r-vw2c0b').innerText
+
                             //推文内容表
-                            let elemtexts = elart.querySelectorAll('div[dir][lang]')
+                            let elemtexts = elart.querySelectorAll('div.r-bnwqim')
                             let tweettexts = []
                             let tweettext = ""
                             for(var j = 0;j<elemtexts.length;j++){
                                 tweettext += elemtexts[j].innerText + "\u000A"
                                 tweettexts.push({
                                     elem:elemtexts[j],
+                                    elemy:getoffsetTop(elemtexts[j],elart),//文字内容相对于推文的高度
+                                    elemh:elemtexts[j].offsetHeight,//文字内容相对于推文的高度
                                     text:elemtexts[j].innerText
                                 })
                             }
-                            tweettext = tweettext
+                            let time = ''
+                            let t = elart.querySelector('div.r-vpgt9t')
+                            if(t){
+                                time = t.innerText
+                            }
                             //推文相对高度
-                            let elemy = getoffsetHeight(elems[i])
+                            let elemy = getoffsetTop(elems[i],mainelem)
                             //推文宽度
                             let elemh = elems[i].offsetHeight
-                            //推文翻译截断部分
-                            let elemEnd = elart.querySelector('div[data-testid="tweet"]').querySelector('div[aria-label][role="group"]') //回复转推喜欢
-                            if(!elemEnd)
-                                elemEnd = elems[i].querySelector('div[aria-label][role="group"]') //回复转推喜欢
-                            elemEnd = elemEnd.offsetTop
-
                             //隐藏翻译蓝链
                             //let elemet = elart.querySelector('[class="css-18t94o4 css-901oao r-1n1174f r-6koalj r-1w6e6rj r-1qd0xha r-n6v787 r-16dba41 r-1sf4r6n r-1g94qm0 r-bcqeeo r-qvutc0"]')
                             //if(elemet)elemet.style.visibility="hidden"
                             tweets.push({
                                 code:0,
                                 elem:elems[i],//主体元素
-                                elemEnd:elemEnd,//推文翻译隔断线
                                 elemy:elemy,
                                 elemh:elemh,
                                 headimg:headimg,
+                                time:time,
                                 nick:nick,
                                 userid:userid,
                                 tweettexts:tweettexts,

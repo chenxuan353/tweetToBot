@@ -55,15 +55,11 @@ initNonebotLogger()
 def getlogger(name,printCMD:bool = True) -> logging.Logger:
     reslogger = logging.getLogger(name)
     reslogger.setLevel(logging.INFO)
-    reslogger.handler = []
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
-    sh = logging.StreamHandler()
-    sh.setFormatter(logformat)
-    if printCMD != True:
-        sh.setLevel(logging.CRITICAL)
-    else:
-        sh.setLevel(logging.INFO)
-    reslogger.addHandler(sh)
+    if printCMD == True:
+        sh = logging.StreamHandler()
+        sh.setFormatter(logformat)
+        reslogger.addHandler(sh)
     trf = logging.handlers.TimedRotatingFileHandler(
                 filename=os.path.join(file_base_path,log_file_base_path,name+".log"),
                 encoding="utf-8",
