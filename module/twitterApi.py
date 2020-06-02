@@ -207,7 +207,7 @@ class tweetApiEventDeal(tweetEventDeal):
 
         #补正监测对象,用于智能推送
         if tweetinfo['user']['id_str'] in push_list.spylist:
-            tweetinfo['trigger_user'] = tweetinfo['id']
+            tweetinfo['trigger_user'] = tweetinfo['user']['id']
             tweetinfo['trigger_remote'] = False #监测重定向标识
         else:
             tweetinfo['trigger_user'] = tweetinfo['Related_user']['id']
