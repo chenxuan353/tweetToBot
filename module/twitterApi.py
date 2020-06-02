@@ -206,7 +206,7 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['trigger_user'] = tweetinfo['id']
             tweetinfo['trigger_remote'] = False #监测重定向标识
         else:
-            tweetinfo['trigger_user'] = tweetinfo['Related_user']['id']
+            tweetinfo['trigger_user'] = tweetinfo['Related_tweet']['id']
             tweetinfo['trigger_remote'] = True #监测重定向标识
         return tweetinfo
 #推特事件处理对象
