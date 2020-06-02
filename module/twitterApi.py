@@ -207,9 +207,7 @@ class MyStreamListener(tweepy.StreamListener):
                 TLlogger.warning(tweetinfo)
                 tweetinfo['status'] = status
             else:
-                tweetinfo['status'] = None
-                TLlogger.info(tweetinfo)
-                tweetinfo['status'] = status
+                TLlogger.info("接收到推文:"+tweetinfo['id_str'])
         except:
             s = traceback.format_exc(limit=5)
             logger.error(s)
