@@ -12,6 +12,7 @@ from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory
 logger = getlogger(__name__)
 #引入测试方法
 try:
+    #event_push
     import dbtest as test
 except:
     test = None
@@ -75,6 +76,14 @@ class PushList:
         #推特转发各类型开关
         'retweet','quoted','reply_to_status',
         'reply_to_user','none',
+
+        #智能推送(仅限推送单元设置，无法全局设置)
+        'ai_retweet',
+        'ai_reply_to_status',
+        'ai_passive_reply_to_status',
+        'ai_passive_quoted',
+        'ai_passive_reply_to_user',
+
         #推特个人信息变动推送开关
         'change_ID','change_name','change_description',
         'change_headimgchange'
@@ -310,15 +319,16 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-#缩写推特ID(缓存500条)
+#缩写推特ID(缓存1000条)
 mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 1000,autosave = True,autoload = True)
-#推文缓存(200条)
+#推文缓存(500条)
 tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 500,autosave = True,autoload = True)
+#推特用户缓存(1000条)
+userinfolist = TempMemory(def_puth_method + '_' + 'userinfolist.json',limit = 1000,autosave = False,autoload = False)
 class tweetEventDeal:
-    #用户信息维护列表
-    userinfolist = {}
     #检测个人信息更新
-    def check_userinfo(self, userinfo):
+    def check_userinfo(self, userinfo, isnotable = False):
+        global userinfolist
         """
             运行数据比较
             用于监测用户的信息修改
@@ -336,8 +346,8 @@ class tweetEventDeal:
             tweetinfo['user']['profile_image_url'] = tweet.user.profile_image_url
             tweetinfo['user']['profile_image_url_https'] = tweet.user.profile_image_url_https
         """
-        if userinfo['id'] in self.userinfolist:
-            old_userinfo = self.userinfolist[userinfo['id']]
+        old_userinfo = userinfolist.find((lambda item,val:item['id'] == val),userinfo['id'])
+        if old_userinfo != None:
             data = {}
             s = ''
             if old_userinfo['name'] != userinfo['name']:
@@ -368,8 +378,8 @@ class tweetEventDeal:
                 eventunit = self.bale_event(data['type'],data['user_id'],data)
                 self.deal_event(eventunit)
         else:
-            if userinfo['id_str'] in push_list.spylist:
-                self.userinfolist[userinfo['id']] = userinfo
+            if isnotable or userinfo['id_str'] in push_list.spylist:
+                userinfolist.join(userinfo)
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
         if event_type in ('quoted','reply_to_status','reply_to_user','none'):
@@ -398,12 +408,27 @@ class tweetEventDeal:
         for Pushunit in table:
             #获取属性判断是否可以触发事件
             res = push_list.getPuslunitAttr(Pushunit,event['type'])
-            #res_n = push_list.getPuslunitAttr(Pushunit,'none')
             if res[0] == False:
                 raise Exception("获取Pushunit属性值失败",Pushunit)
             if res[1] == 1:
-                #or (res_n == 1 and event['type'] in ('reply_to_status','reply_to_user') and event['data']['user']['id'] == event['data']['Related_user']['id'])
                 self.deal_event_unit(event,Pushunit)
+            elif event['type'] in ('retweet','quoted','reply_to_status','reply_to_user'):
+                tweetinfo = event['data']
+                if event['type'] in ('quoted','reply_to_status','reply_to_user') and tweetinfo['trigger_remote']:
+                    if tweetinfo['notable']:
+                        res = push_list.getPuslunitAttr(Pushunit,'ai_passive_' + event['type'])
+                        if res[0] == False:
+                            raise Exception("获取Pushunit属性值失败",Pushunit)
+                        if res[1] == 1:
+                            self.deal_event_unit(event,Pushunit)
+                elif event['type'] in ('retweet','reply_to_status') and not tweetinfo['trigger_remote']:
+                    if tweetinfo['Related_notable']:
+                        res = push_list.getPuslunitAttr(Pushunit,'ai_' + event['type'])
+                        if res[0] == False:
+                            raise Exception("获取Pushunit属性值失败",Pushunit)
+                        if res[1] == 1:
+                            self.deal_event_unit(event,Pushunit)
+
     def deal_event_unit(self,event,Pushunit):
         raise Exception('未定义事件处理单元')
     #推特标识到中文
@@ -421,6 +446,7 @@ class tweetEventDeal:
     #将推特数据应用到模版
     def tweetToStr(self, tweetinfo, nick, upimg=config.pushunit_default_config['upimg'], template_text=''):
         global mintweetID
+        global userinfolist
         if nick == '':
             if tweetinfo['user']['name']:
                 nick = tweetinfo['user']['name']
@@ -442,6 +468,7 @@ class tweetEventDeal:
             'related_tweet_id_min':'', #关联推特ID的压缩(被评论/被转发)
             'related_tweet_text':'', #关联推特内容(被转发或被转发并评论时存在)
             'media_img':'', #媒体
+            'related_media_img':'' #依赖推文的媒体
         }
         
         if tweetinfo['type'] != 'none':
@@ -451,8 +478,9 @@ class tweetEventDeal:
 
         if tweetinfo['type'] != 'none':
             template_value['related_user_id'] = tweetinfo['Related_user']['screen_name']
-            if tweetinfo['Related_user']['id'] in self.userinfolist:
-                template_value['related_user_name'] = self.userinfolist[tweetinfo['Related_user']['id']]['name']
+            tu = self.tryGetNick(tweetinfo['Related_user']['id'],'')
+            if tu != '':
+                template_value['related_user_name'] = tu
             else:
                 if hasattr(tweetinfo['Related_user'],'name'):
                     template_value['related_user_name'] = tweetinfo['Related_user']['name']
@@ -467,9 +495,21 @@ class tweetEventDeal:
                     #file_suffix = os.path.splitext(media_unit['media_url'])[1]
                     #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
                     mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
-                if mis != '' and len(tweetinfo['extended_entities']) > 1:
+                if mis != '':
                     mis = "\n媒体：" + str(len(tweetinfo['extended_entities'])) + "个\n" + mis
             template_value['media_img'] = mis
+
+            if 'Related_extended_entities' in tweetinfo:
+                mis = ''
+                for media_unit in tweetinfo['Related_extended_entities']:
+                    #组装CQ码
+                    #file_suffix = os.path.splitext(media_unit['media_url'])[1]
+                    #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
+                    mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
+                if mis != '':
+                    mis = "\n依赖媒体：" + str(len(tweetinfo['Related_extended_entities'])) + "个\n" + mis
+            template_value['related_media_img'] = mis
+
         #生成模版类
         s = ""
         t = None
@@ -479,10 +519,10 @@ class tweetEventDeal:
                 deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n$media_img\n====================\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
             else:
                 deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
@@ -497,13 +537,17 @@ class tweetEventDeal:
         return s
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):
-        if tweet_user_id in self.userinfolist:
-            return self.userinfolist[tweet_user_id]['name']
+        global userinfolist
+        tu = userinfolist.find((lambda item,val:item['id'] == val),tweet_user_id)
+        if tu != None:
+            return tu['name']
         return nick
     #尝试从缓存中获取用户信息,返回用户信息表
-    def tryGetUserInfo(self, tweet_user_id) -> list:
-        if tweet_user_id in self.userinfolist:
-            return self.userinfolist[tweet_user_id]
+    def tryGetUserInfo(self, tweet_user_id:int) -> list:
+        global userinfolist
+        tu = userinfolist.find((lambda item,val:item['id'] == val),int(tweet_user_id))
+        if tu != None:
+            return tu
         return {}
     #消息发送(消息类型，消息发送到，消息内容)
     def send_msg(self, message_type:str, send_id:int, message:str,bindCQID:int = config.default_bot_QQ):

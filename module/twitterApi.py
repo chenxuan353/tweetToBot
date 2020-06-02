@@ -11,7 +11,6 @@ import config
 #日志输出
 from helper import getlogger,msgSendToBot
 logger = getlogger(__name__)
-TLlogger = getlogger('twitterApi.tl',printCMD = False)
 #引入推送列表、推送处理模版
 from module.twitter import push_list,tweetEventDeal
 
@@ -19,8 +18,14 @@ from module.twitter import push_list,tweetEventDeal
 推特API监听更新的实现类
 '''
 
-#事件处理类
+#引入测试方法
+try:
+    #on_status
+    import dbtest as test
+except:
+    test = None
 
+#事件处理类
 #推特API的事件处理类
 class tweetApiEventDeal(tweetEventDeal):
     #事件到达
@@ -79,23 +84,51 @@ class tweetApiEventDeal(tweetEventDeal):
             else:
                 logger.info(str)
     #用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或处于观测列表中)
-    def isNotableUser(self,user):
-        if user.id_str in push_list.spylist:
+    def isNotableUser(self,user,checkspy):
+        if checkspy and user['id_str'] in push_list.spylist:
             return True
-        if not user.default_profile_image and \
-            not user.default_profile and \
-            not user.protected and \
-            (int(user.followers_count / user.friends_count) > 5000 or user.verified):
+        if not user['default_profile_image'] and \
+            not user['default_profile'] and \
+            not user['protected'] and \
+            (int(user['followers_count'] / (user['friends_count']+1)) > 500 or user['friends_count'] > 20000):
             return True
         return False
     #重新包装推特信息
-    def get_tweet_info(self, tweet):
+    def get_tweet_info(self, tweet,checkspy = False):
         tweetinfo = {}
         tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
-        tweetinfo['text'] = tweet.text
-        tweetinfo['notable'] = self.isNotableUser(tweet.user) #值得注意的用户(用户的影响力比较高)
+        #尝试获取全文
+        if hasattr(tweet,'extended_tweet'):
+            tweetinfo['text'] = tweet.extended_tweet['full_text'].replace('&lt;','<').replace('&gt;','>')
+        else:
+            tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&gt;','>')
+
+        #处理媒体信息
+        tweetinfo['extended_entities'] = []
+        if hasattr(tweet,'extended_entities'):
+            #图片来自本地媒体时将处于这个位置
+            if 'media' in tweet.extended_entities:
+                for media_unit in tweet.extended_entities['media']:
+                    media_obj = {}
+                    media_obj['id'] = media_unit['id']
+                    media_obj['id_str'] = media_unit['id_str']
+                    media_obj['type'] = media_unit['type']
+                    media_obj['media_url'] = media_unit['media_url']
+                    media_obj['media_url_https'] = media_unit['media_url_https']
+                    tweetinfo['extended_entities'].append(media_obj)
+        elif hasattr(tweet,'entities'):
+            #图片来自推特时将处于这个位置
+            if 'media' in tweet.entities:
+                for media_unit in tweet.entities['media']:
+                    media_obj = {}
+                    media_obj['id'] = media_unit['id']
+                    media_obj['id_str'] = media_unit['id_str']
+                    media_obj['type'] = media_unit['type']
+                    media_obj['media_url'] = media_unit['media_url']
+                    media_obj['media_url_https'] = media_unit['media_url_https']
+                    tweetinfo['extended_entities'].append(media_obj)
         tweetinfo['user'] = {}
         tweetinfo['user']['id'] = tweet.user.id
         tweetinfo['user']['id_str'] = tweet.user.id_str
@@ -104,7 +137,16 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['user']['screen_name'] = tweet.user.screen_name
         tweetinfo['user']['profile_image_url'] = tweet.user.profile_image_url
         tweetinfo['user']['profile_image_url_https'] = tweet.user.profile_image_url_https
-        self.check_userinfo(tweetinfo['user']) #检查用户信息
+
+        tweetinfo['user']['default_profile_image'] = tweet.user.default_profile_image
+        tweetinfo['user']['default_profile'] = tweet.user.default_profile
+        tweetinfo['user']['protected'] = tweet.user.protected
+        tweetinfo['user']['followers_count'] = tweet.user.followers_count
+        tweetinfo['user']['friends_count'] = tweet.user.friends_count
+        tweetinfo['user']['verified'] = tweet.user.verified
+
+        tweetinfo['notable'] = self.isNotableUser(tweetinfo['user'],checkspy) #值得注意的用户(用户的影响力比较高)
+        self.check_userinfo(tweetinfo['user'],tweetinfo['notable']) #检查用户信息
         return tweetinfo
     def deal_tweet_type(self, status):
         if hasattr(status, 'retweeted_status'):
@@ -118,58 +160,58 @@ class tweetApiEventDeal(tweetEventDeal):
         else:
             return 'none' #未分类(主动发推)
     def deal_tweet(self, status):
-        tweetinfo = self.get_tweet_info(status)
+        #监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
+        tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
         tweetinfo['status'] = status #原始数据
-        tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文是否值得关注
-        if tweetinfo['type'] == 'retweet':
-            tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status)
-            if tweetinfo['retweeted']['notable']:
-                tweetinfo['tweetNotable'] = True
+        #tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文发布用户是否值得关注
+        if tweetinfo['type'] == 'retweet':#大多数情况是被转推
+            #转推时被转推对象与转推对象同时值得关注时视为值得关注
+            tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status,True)
             tweetinfo['Related_user'] = tweetinfo['retweeted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['retweeted']
+            tweetinfo['Related_notable'] = (tweetinfo['notable'] and tweetinfo['retweeted']['notable'])
+            tweetinfo['Related_extended_entities'] = tweetinfo['retweeted']['extended_entities']
         elif tweetinfo['type'] == 'quoted':
-            tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status)
+            tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status,True)
             tweetinfo['Related_user'] = tweetinfo['quoted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['quoted']
+            tweetinfo['Related_notable'] = tweetinfo['quoted']['notable']
+            tweetinfo['Related_extended_entities'] = tweetinfo['quoted']['extended_entities']
         elif tweetinfo['type'] != 'none':
             tweetinfo['Related_user'] = {}
             tweetinfo['Related_user']['id'] = status.in_reply_to_user_id
             tweetinfo['Related_user']['id_str'] = status.in_reply_to_user_id_str
             tweetinfo['Related_user']['screen_name'] = status.in_reply_to_screen_name
+            tweetinfo['Related_extended_entities'] = []
             tweetinfo['Related_tweet'] = {}
             tweetinfo['Related_tweet']['id'] = status.in_reply_to_status_id
             tweetinfo['Related_tweet']['id_str'] = status.in_reply_to_status_id_str
             tweetinfo['Related_tweet']['text'] = ''
-        #尝试获取全文
-        if hasattr(status,'extended_tweet'):
-            tweetinfo['text'] = status.extended_tweet['full_text']
+            if tweetinfo['Related_user']['id_str'] in push_list.spylist:
+                tweetinfo['Related_notable'] = True
+            else:
+                userinfo = self.tryGetUserInfo(tweetinfo['Related_user']['id'])
+                if userinfo != {}:
+                    tweetinfo['Related_notable'] = self.isNotableUser(userinfo,False)
+                else:
+                    tweetinfo['Related_notable'] = False
         else:
-            tweetinfo['text'] = status.text
-        #处理媒体信息
-        tweetinfo['extended_entities'] = []
-        if hasattr(status,'extended_entities'):
-            #图片来自本地媒体时将处于这个位置
-            if 'media' in status.extended_entities:
-                for media_unit in status.extended_entities['media']:
-                    media_obj = {}
-                    media_obj['id'] = media_unit['id']
-                    media_obj['id_str'] = media_unit['id_str']
-                    media_obj['type'] = media_unit['type']
-                    media_obj['media_url'] = media_unit['media_url']
-                    media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
-        elif hasattr(status,'entities'):
-            #图片来自推特时将处于这个位置
-            if 'media' in status.entities:
-                for media_unit in status.entities['media']:
-                    media_obj = {}
-                    media_obj['id'] = media_unit['id']
-                    media_obj['id_str'] = media_unit['id_str']
-                    media_obj['type'] = media_unit['type']
-                    media_obj['media_url'] = media_unit['media_url']
-                    media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
+            tweetinfo['Related_notable'] = True
+        
+        #推文是否值得关注
+        if tweetinfo['user']['id_str'] in push_list.spylist:
+            tweetinfo['tweetNotable'] = True
+        else:
+            tweetinfo['tweetNotable'] = tweetinfo['Related_notable'] and tweetinfo['notable']
+
+        #补正监测对象,用于智能推送
+        if tweetinfo['user']['id_str'] in push_list.spylist:
+            tweetinfo['trigger_user'] = tweetinfo['user']['id']
+            tweetinfo['trigger_remote'] = False #监测重定向标识
+        else:
+            tweetinfo['trigger_user'] = tweetinfo['Related_user']['id']
+            tweetinfo['trigger_remote'] = True #监测重定向标识
         return tweetinfo
 #推特事件处理对象
 tweet_event_deal = tweetApiEventDeal()
@@ -203,11 +245,8 @@ class MyStreamListener(tweepy.StreamListener):
                     s = traceback.format_exc(limit=5)
                     msgSendToBot(logger,'推特监听处理队列溢出，请检查队列！')
                     logger.error(s)
-                tweetinfo['status'] = None
-                TLlogger.warning(tweetinfo)
-                tweetinfo['status'] = status
-            else:
-                TLlogger.info("接收到推文:"+tweetinfo['id_str'])
+            if test != None:
+                test.on_status(tweetinfo,status)
         except:
             s = traceback.format_exc(limit=5)
             logger.error(s)
@@ -267,16 +306,14 @@ def Run():
         except:
             s = traceback.format_exc(limit=10)
             logger.error(s)
-        msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
-        time.sleep(10)
-        """        
-            else:
-                run_info['isRun'] = False
-                msgSendToBot(logger,'推特流已停止...')
-                logger.info('推特流正常停止')
-        """
-        if run_info['error_cout'] > 0 and time.time() - last_reboot > 300:
-            last_reboot = int(time.time()) #两次重启间隔五分钟以上视为重启成功
+            msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
+            time.sleep(10)
+        else:
+            run_info['isRun'] = False
+            msgSendToBot(logger,'推特流已停止...')
+            logger.info('推特流正常停止')
+        if run_info['error_cout'] > 0 and int(time.time()) - run_info['last_reboot'] > 300:
+            run_info['last_reboot'] = int(time.time()) #两次重启间隔五分钟以上视为重启成功
             run_info['error_cout'] = 0 #重置计数
         run_info['error_cout'] = run_info['error_cout'] + 1
 #处理推特数据(独立线程)
@@ -285,7 +322,7 @@ def dealTweetData():
         tweetinfo = run_info['queque'].get()
         try:
             #推送事件处理，输出到酷Q
-            eventunit = tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['user']['id'],tweetinfo)
+            eventunit = tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['trigger_user'],tweetinfo)
             tweet_event_deal.deal_event(eventunit)
             #控制台输出
             tweet_event_deal.statusPrintToLog(tweetinfo)

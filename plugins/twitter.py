@@ -293,36 +293,50 @@ async def getpushlist(session: CommandSession):
     await session.send(s)
 
 #获取推送对象总属性设置
-def getPushToSetting(message_type:str,pushTo:int) -> str:
+def getPushToSetting(message_type:str,pushTo:int,kind:str='basic') -> str:
     attrlist = {    
-        'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
-        #推特推送模版
-        'retweet_template':'转推模版',
-        'quoted_template':'转推并评论模版',
-        'reply_to_status_template':'回复模版',
-        'reply_to_user_template':'提及模版', 
-        'none_template':'发推模版',
-        
-        #推特推送开关
-        'retweet':'转推',#转推(默认不开启)
-        'quoted':'转推并评论',#带评论转推(默认开启)
-        'reply_to_status':'回复',#回复(默认开启)
-        'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
-        'none':'发推',#发推(默认开启)
-
-        #个人信息变化推送(非实时)
-        'change_ID':'ID修改', #ID修改(默认关闭)
-        'change_name':'昵称修改', #昵称修改(默认开启)
-        'change_description':'描述修改', #描述修改(默认关闭)
-        'change_headimgchange':'头像修改', #头像更改(默认开启)
+        'basic':{
+            'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+            
+            #推特推送开关
+            'retweet':'转推',#转推(默认不开启)
+            'quoted':'转推并评论',#带评论转推(默认开启)
+            'reply_to_status':'回复',#回复(默认开启)
+            'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+            'none':'发推',#发推(默认开启)
+        },
+        'template':{
+            #推特推送模版
+            'retweet_template':'转推模版',
+            'quoted_template':'转推并评论模版',
+            'reply_to_status_template':'回复模版',
+            'reply_to_user_template':'提及模版', 
+            'none_template':'发推模版',
+        },
+        'ai':{
+            #智能
+            'ai_retweet':'智能转推',
+            'ai_reply_to_status':'智能转发回复',
+            'ai_passive_reply_to_status':'智能转发被回复',
+            'ai_passive_quoted':'智能转发被转推并评论',
+            'ai_passive_reply_to_user':'智能转发被提及',
+        },
+        'userinfo':{
+            #个人信息变化推送(非实时)
+            'change_ID':'ID修改', #ID修改(默认关闭)
+            'change_name':'昵称修改', #昵称修改(默认开启)
+            'change_description':'描述修改', #描述修改(默认关闭)
+            'change_headimgchange':'头像修改', #头像更改(默认开启)
+        }
     }
     res = ''
     attrs = push_list.getAttrLitsFromPushTo(message_type,pushTo)
     if attrs == {}:
         return 'BOT酱还没有初始化哦 请至少添加一个检测对象来开始使用我吧~'
     for key,value in attrs.items():
-        res = res + attrlist[key] + ':'  + \
-            (value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]) + '\n'
+        if key in attrlist[kind]:
+            res = res + attrlist[kind][key] + ':'  + \
+                (value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]) + '\n'
     return res
 @on_command('getGroupSetting',aliases=['全局设置列表'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
 async def setGroupSetting(session: CommandSession):
@@ -330,40 +344,80 @@ async def setGroupSetting(session: CommandSession):
         return
     await asyncio.sleep(0.2)
     logger.info(CQsessionToStr(session))
+
+    arglimit = [
+        {
+            'name':'kind', #参数名
+            'des':'kind', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':'basic', #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                'basic':'basic','基础':'basic',
+                'template':'template','模版':'template',
+                'ai':'ai','智能':'ai','智能推送':'ai',
+                'userinfo':'userinfo','用户信息':'userinfo','用户':'userinfo','个人资料':'userinfo'
+            }
+        }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
+
     res = getPushToSetting(
         session.event['message_type'],
-        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')]
+        session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
+        args['kind']
     )
     await session.send(res)
 #获取某个单元的推送设置列表
 def userinfoToStr(userinfo):
     if userinfo:
         res = "\n" + '用户名：' + userinfo['name'] + "\n" +\
-            '用户昵称：' + userinfo['screen_name'] + "\n"
+            '用户昵称：' + userinfo['screen_name']
         return res
     return ''
-def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
+def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int,kind:str = 'basic') -> str:
     attrlist = {    
-        'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
-        #推特推送模版
-        'retweet_template':'转推模版',
-        'quoted_template':'转推并评论模版',
-        'reply_to_status_template':'回复模版',
-        'reply_to_user_template':'提及模版', 
-        'none_template':'发推模版',
-        
-        #推特推送开关
-        'retweet':'转推',#转推(默认不开启)
-        'quoted':'转推并评论',#带评论转推(默认开启)
-        'reply_to_status':'回复',#回复(默认开启)
-        'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
-        'none':'发推',#发推(默认开启)
-
-        #个人信息变化推送(非实时)
-        'change_ID':'ID修改', #ID修改(默认关闭)
-        'change_name':'昵称修改', #昵称修改(默认开启)
-        'change_description':'描述修改', #描述修改(默认关闭)
-        'change_headimgchange':'头像修改', #头像更改(默认开启)
+        'basic':{
+            'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+            
+            #推特推送开关
+            'retweet':'转推',#转推(默认不开启)
+            'quoted':'转推并评论',#带评论转推(默认开启)
+            'reply_to_status':'回复',#回复(默认开启)
+            'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+            'none':'发推',#发推(默认开启)
+        },
+        'template':{
+            #推特推送模版
+            'retweet_template':'转推模版',
+            'quoted_template':'转推并评论模版',
+            'reply_to_status_template':'回复模版',
+            'reply_to_user_template':'提及模版', 
+            'none_template':'发推模版',
+        },
+        'ai':{
+            #智能
+            'ai_retweet':'智能转推',
+            'ai_reply_to_status':'智能转发回复',
+            'ai_passive_reply_to_status':'智能转发被回复',
+            'ai_passive_quoted':'智能转发被转推并评论',
+            'ai_passive_reply_to_user':'智能转发被提及',
+        },
+        'userinfo':{
+            #个人信息变化推送(非实时)
+            'change_ID':'ID修改', #ID修改(默认关闭)
+            'change_name':'昵称修改', #昵称修改(默认开启)
+            'change_description':'描述修改', #描述修改(默认关闭)
+            'change_headimgchange':'头像修改', #头像更改(默认开启)
+        }
     }
     res = push_list.getPushunit(message_type,pushTo,tweet_user_id)
     if res[0]:
@@ -388,11 +442,12 @@ def getPushUnitSetting(message_type:str,pushTo:int,tweet_user_id:int) -> str:
     """
     if tweetListener:
         userinfo = tweet_event_deal.tryGetUserInfo(tweet_user_id)
-    res = '用户ID:' + str(tweet_user_id) + "\n" + \
-        '自定义的昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + "\n" +\
-        '描述:' + Pushunit['des'].replace("\\n","\n") + \
-        userinfoToStr(userinfo)
-    for attrname,attrdisplayname in attrlist.items():
+    res = '用户ID:' + str(tweet_user_id)
+    if kind == 'basic':
+        res = res + "\n" + '自定义昵称:' + (Pushunit['nick'] if Pushunit['nick'] != '' else '未定义') + "\n" +\
+                '描述:' + Pushunit['des'].replace("\\n","\n") + \
+                userinfoToStr(userinfo)
+    for attrname,attrdisplayname in attrlist[kind].items():
         value = push_list.getPuslunitAttr(Pushunit,attrname)
         res = res + '\n' + attrdisplayname + ':' + \
             (value[1] if value[1] not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value[1]])
@@ -429,6 +484,23 @@ async def getSetting(session: CommandSession):
                 #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
             }
         },
+        {
+            'name':'kind', #参数名
+            'des':'kind', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':'basic', #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+                'basic':'basic','基础':'basic',
+                'template':'template','模版':'template',
+                'ai':'ai','智能':'ai','智能推送':'ai',
+                'userinfo':'userinfo','用户信息':'userinfo','用户':'userinfo','个人资料':'userinfo'
+            }
+        }
     ]
     args = argDeal(session.current_arg_text.strip(),arglimit)
     if not args[0]:
@@ -438,7 +510,8 @@ async def getSetting(session: CommandSession):
     res = getPushUnitSetting(
         message_type,
         sent_id,
-        args['tweet_user_id']
+        args['tweet_user_id'],
+        args['kind']
     )
     logger.info(CQsessionToStr(session))
     await session.send(res[1])
@@ -508,8 +581,14 @@ async def setGroupAttr(session: CommandSession):
                 'retweet':'retweet','转推':'retweet',
                 'quoted':'quoted','转推并评论':'quoted',
                 'reply_to_status':'reply_to_status','回复':'reply_to_status',
-                'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+                'reply_to_user':'reply_to_user','被提及':'reply_to_user',
                 'none':'none','发推':'none',
+                #智能推送开关
+                'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
+                'ai_reply_to_status':'ai_reply_to_status','智能转发回复':'ai_reply_to_status',
+                'ai_passive_reply_to_status':'ai_passive_reply_to_status','智能转发被回复':'ai_passive_reply_to_status',
+                'ai_passive_quoted':'ai_passive_quoted','智能转发被转推并评论':'ai_passive_quoted',
+                'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
                 #推特个人信息变动推送开关
                 'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
                 'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
@@ -631,8 +710,14 @@ async def setAttr(session: CommandSession):
                 'retweet':'retweet','转推':'retweet',
                 'quoted':'quoted','转推并评论':'quoted',
                 'reply_to_status':'reply_to_status','回复':'reply_to_status',
-                'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
+                'reply_to_user':'reply_to_user','被提及':'reply_to_user',
                 'none':'none','发推':'none',
+                #智能推送开关
+                'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
+                'ai_reply_to_status':'ai_reply_to_status','智能转发回复':'ai_reply_to_status',
+                'ai_passive_reply_to_status':'ai_passive_reply_to_status','智能转发被回复':'ai_passive_reply_to_status',
+                'ai_passive_quoted':'ai_passive_quoted','智能转发被转推并评论':'ai_passive_quoted',
+                'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
                 #推特个人信息变动推送开关
                 'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
                 'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
