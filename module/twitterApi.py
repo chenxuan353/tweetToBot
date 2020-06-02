@@ -79,8 +79,8 @@ class tweetApiEventDeal(tweetEventDeal):
             else:
                 logger.info(str)
     #用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或处于观测列表中)
-    def isNotableUser(self,user):
-        if user.id_str in push_list.spylist:
+    def isNotableUser(self,user,is_head):
+        if is_head and user.id_str in push_list.spylist:
             return True
         if not user.default_profile_image and \
             not user.default_profile and \
@@ -89,13 +89,13 @@ class tweetApiEventDeal(tweetEventDeal):
             return True
         return False
     #重新包装推特信息
-    def get_tweet_info(self, tweet):
+    def get_tweet_info(self, tweet,is_head = False):
         tweetinfo = {}
         tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
         tweetinfo['text'] = tweet.text
-        tweetinfo['notable'] = self.isNotableUser(tweet.user) #值得注意的用户(用户的影响力比较高)
+        tweetinfo['notable'] = self.isNotableUser(tweet.user,is_head) #值得注意的用户(用户的影响力比较高)
         tweetinfo['user'] = {}
         tweetinfo['user']['id'] = tweet.user.id
         tweetinfo['user']['id_str'] = tweet.user.id_str
@@ -118,7 +118,7 @@ class tweetApiEventDeal(tweetEventDeal):
         else:
             return 'none' #未分类(主动发推)
     def deal_tweet(self, status):
-        tweetinfo = self.get_tweet_info(status)
+        tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
         tweetinfo['status'] = status #原始数据
         tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文是否值得关注
