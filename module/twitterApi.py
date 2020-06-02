@@ -99,7 +99,12 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
-        tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&rt;','>')
+        #尝试获取全文
+        if hasattr(tweet,'extended_tweet'):
+            tweetinfo['text'] = tweet.extended_tweet['full_text'].replace('&lt;','<').replace('&gt;','>')
+        else:
+            tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&gt;','>')
+
         #处理媒体信息
         tweetinfo['extended_entities'] = []
         if hasattr(tweet,'extended_entities'):
@@ -199,11 +204,7 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['tweetNotable'] = True
         else:
             tweetinfo['tweetNotable'] = tweetinfo['Related_notable'] and tweetinfo['notable']
-        #尝试获取全文
-        if hasattr(status,'extended_tweet'):
-            tweetinfo['text'] = status.extended_tweet['full_text']
-        else:
-            tweetinfo['text'] = status.text
+
         #补正监测对象,用于智能推送
         if tweetinfo['user']['id_str'] in push_list.spylist:
             tweetinfo['trigger_user'] = tweetinfo['id']
