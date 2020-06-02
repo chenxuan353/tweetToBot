@@ -583,6 +583,12 @@ async def setGroupAttr(session: CommandSession):
                 'reply_to_status':'reply_to_status','回复':'reply_to_status',
                 'reply_to_user':'reply_to_user','被提及':'reply_to_user_template',
                 'none':'none','发推':'none',
+                #智能推送开关
+                'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
+                'ai_reply_to_status':'ai_reply_to_status','智能转发回复':'ai_reply_to_status',
+                'ai_passive_reply_to_status':'ai_passive_reply_to_status','智能转发被回复':'ai_passive_reply_to_status',
+                'ai_passive_quoted':'ai_passive_quoted','智能转发被转推并评论':'ai_passive_quoted',
+                'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_quoted',
                 #推特个人信息变动推送开关
                 'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
                 'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
