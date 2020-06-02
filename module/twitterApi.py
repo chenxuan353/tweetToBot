@@ -90,7 +90,7 @@ class tweetApiEventDeal(tweetEventDeal):
         if not user['default_profile_image'] and \
             not user['default_profile'] and \
             not user['protected'] and \
-            (int(user['followers_count'] / (user['friends_count']+1)) > 5000 or user['verified']):
+            (int(user['followers_count'] / (user['friends_count']+1)) > 5000):
             return True
         return False
     #重新包装推特信息

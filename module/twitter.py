@@ -414,18 +414,20 @@ class tweetEventDeal:
                 self.deal_event_unit(event,Pushunit)
             elif event['type'] in ('retweet','quoted','reply_to_status','reply_to_user'):
                 tweetinfo = event['data']
-                if event['type'] in ('quoted','reply_to_status','reply_to_user') and tweetinfo['trigger_remote'] and tweetinfo['notable']:
-                    res = push_list.getPuslunitAttr(Pushunit,'ai_passive_' + event['type'])
-                    if res[0] == False:
-                        raise Exception("获取Pushunit属性值失败",Pushunit)
-                    if res[1] == 1:
-                        self.deal_event_unit(event,Pushunit)
-                elif event['type'] in ('retweet','reply_to_status') and tweetinfo['Related_notable']:
-                    res = push_list.getPuslunitAttr(Pushunit,'ai_' + event['type'])
-                    if res[0] == False:
-                        raise Exception("获取Pushunit属性值失败",Pushunit)
-                    if res[1] == 1:
-                        self.deal_event_unit(event,Pushunit)
+                if event['type'] in ('quoted','reply_to_status','reply_to_user') and tweetinfo['trigger_remote']:
+                    if tweetinfo['notable']:
+                        res = push_list.getPuslunitAttr(Pushunit,'ai_passive_' + event['type'])
+                        if res[0] == False:
+                            raise Exception("获取Pushunit属性值失败",Pushunit)
+                        if res[1] == 1:
+                            self.deal_event_unit(event,Pushunit)
+                elif event['type'] in ('retweet','reply_to_status') and not tweetinfo['trigger_remote']:
+                    if tweetinfo['Related_notable']:
+                        res = push_list.getPuslunitAttr(Pushunit,'ai_' + event['type'])
+                        if res[0] == False:
+                            raise Exception("获取Pushunit属性值失败",Pushunit)
+                        if res[1] == 1:
+                            self.deal_event_unit(event,Pushunit)
 
     def deal_event_unit(self,event,Pushunit):
         raise Exception('未定义事件处理单元')
