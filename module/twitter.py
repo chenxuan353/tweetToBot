@@ -541,9 +541,9 @@ class tweetEventDeal:
             return tu['name']
         return nick
     #尝试从缓存中获取用户信息,返回用户信息表
-    def tryGetUserInfo(self, tweet_user_id) -> list:
+    def tryGetUserInfo(self, tweet_user_id:int) -> list:
         global userinfolist
-        tu = userinfolist.find((lambda item,val:item['id'] == val),tweet_user_id)
+        tu = userinfolist.find((lambda item,val:item['id'] == val),int(tweet_user_id))
         if tu != None:
             return tu
         return {}

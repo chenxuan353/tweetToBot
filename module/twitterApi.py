@@ -183,10 +183,10 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['Related_tweet']['id'] = status.in_reply_to_status_id
             tweetinfo['Related_tweet']['id_str'] = status.in_reply_to_status_id_str
             tweetinfo['Related_tweet']['text'] = ''
-            if tweetinfo['Related_user']['id'] in push_list.spylist:
+            if tweetinfo['Related_user']['id_str'] in push_list.spylist:
                 tweetinfo['Related_notable'] = True
             else:
-                userinfo = self.tryGetUserInfo(status.in_reply_to_user_id)
+                userinfo = self.tryGetUserInfo(tweetinfo['Related_user']['id'])
                 if userinfo != {}:
                     tweetinfo['Related_notable'] = self.isNotableUser(userinfo,False)
                 else:
