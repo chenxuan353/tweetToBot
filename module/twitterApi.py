@@ -159,7 +159,7 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
         tweetinfo['status'] = status #原始数据
-        tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文发布用户是否值得关注
+        #tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文发布用户是否值得关注
         if tweetinfo['type'] == 'retweet':#大多数情况是被转推
             #转推时被转推对象与转推对象同时值得关注时视为值得关注
             tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status,True)
@@ -194,8 +194,11 @@ class tweetApiEventDeal(tweetEventDeal):
         else:
             tweetinfo['Related_notable'] = True
         
-        if tweetinfo['Related_notable']:
+        #推文是否值得关注
+        if tweetinfo['user']['id_str'] in push_list.spylist:
             tweetinfo['tweetNotable'] = True
+        else:
+            tweetinfo['tweetNotable'] = tweetinfo['Related_notable'] and tweetinfo['notable']
         #尝试获取全文
         if hasattr(status,'extended_tweet'):
             tweetinfo['text'] = status.extended_tweet['full_text']
