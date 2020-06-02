@@ -109,7 +109,7 @@ async def getuserinfo(session: CommandSession):
         if not perm_check(session,'listener'):
             await session.send('操作被拒绝，权限不足(g)')
             return
-    else:
+    elif message_type != 'private':
         await session.send('未收录的消息类型:'+message_type)
         return
     logger.info(CQsessionToStr(session))
@@ -161,7 +161,7 @@ async def delOne(session: CommandSession):
         if not perm_check(session,'listener'):
             await session.send('操作被拒绝，权限不足(g)')
             return
-    else:
+    elif message_type != 'private':
         await session.send('未收录的消息类型:'+message_type)
         return
     logger.info(CQsessionToStr(session))
@@ -219,7 +219,7 @@ async def addOne(session: CommandSession):
             await session.send('操作被拒绝，权限不足(g)')
             return
         sent_id = group_id
-    else:
+    elif message_type != 'private':
         await session.send('未收录的消息类型:'+message_type)
         return
     logger.info(CQsessionToStr(session))

@@ -79,23 +79,22 @@ class tweetApiEventDeal(tweetEventDeal):
             else:
                 logger.info(str)
     #用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或处于观测列表中)
-    def isNotableUser(self,user,is_head):
-        if is_head and user.id_str in push_list.spylist:
+    def isNotableUser(self,user,checkspy):
+        if checkspy and user['id_str'] in push_list.spylist:
             return True
-        if not user.default_profile_image and \
-            not user.default_profile and \
-            not user.protected and \
-            (int(user.followers_count / user.friends_count) > 5000 or user.verified):
+        if not user['default_profile_image'] and \
+            not user['default_profile'] and \
+            not user['protected'] and \
+            (int(user['followers_count'] / user['friends_count']) > 5000 or user['verified']):
             return True
         return False
     #重新包装推特信息
-    def get_tweet_info(self, tweet,is_head = False):
+    def get_tweet_info(self, tweet,checkspy = False):
         tweetinfo = {}
         tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
-        tweetinfo['text'] = tweet.text
-        tweetinfo['notable'] = self.isNotableUser(tweet.user,is_head) #值得注意的用户(用户的影响力比较高)
+        tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&rt;','>')
         tweetinfo['user'] = {}
         tweetinfo['user']['id'] = tweet.user.id
         tweetinfo['user']['id_str'] = tweet.user.id_str
@@ -104,7 +103,16 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['user']['screen_name'] = tweet.user.screen_name
         tweetinfo['user']['profile_image_url'] = tweet.user.profile_image_url
         tweetinfo['user']['profile_image_url_https'] = tweet.user.profile_image_url_https
-        self.check_userinfo(tweetinfo['user']) #检查用户信息
+
+        tweetinfo['user']['default_profile_image'] = tweet.user.default_profile_image
+        tweetinfo['user']['default_profile'] = tweet.user.default_profile
+        tweetinfo['user']['protected'] = tweet.user.protected
+        tweetinfo['user']['followers_count'] = tweet.user.followers_count
+        tweetinfo['user']['friends_count'] = tweet.user.friends_count
+        tweetinfo['user']['verified'] = tweet.user.verified
+
+        tweetinfo['notable'] = self.isNotableUser(tweetinfo['user'],checkspy) #值得注意的用户(用户的影响力比较高)
+        self.check_userinfo(tweetinfo['user'],tweetinfo['notable']) #检查用户信息
         return tweetinfo
     def deal_tweet_type(self, status):
         if hasattr(status, 'retweeted_status'):
@@ -118,20 +126,22 @@ class tweetApiEventDeal(tweetEventDeal):
         else:
             return 'none' #未分类(主动发推)
     def deal_tweet(self, status):
+        #监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
         tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
         tweetinfo['status'] = status #原始数据
-        tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文是否值得关注
-        if tweetinfo['type'] == 'retweet':
-            tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status)
-            if tweetinfo['retweeted']['notable']:
-                tweetinfo['tweetNotable'] = True
+        tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文发布用户是否值得关注
+        if tweetinfo['type'] == 'retweet':#大多数情况是被转推
+            #转推时被转推对象与转推对象同时值得关注时视为值得关注
+            tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status,True)
             tweetinfo['Related_user'] = tweetinfo['retweeted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['retweeted']
+            tweetinfo['Related_notable'] = tweetinfo['retweeted']['notable']
         elif tweetinfo['type'] == 'quoted':
-            tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status)
+            tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status,True)
             tweetinfo['Related_user'] = tweetinfo['quoted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['quoted']
+            tweetinfo['Related_notable'] = tweetinfo['quoted']['notable']
         elif tweetinfo['type'] != 'none':
             tweetinfo['Related_user'] = {}
             tweetinfo['Related_user']['id'] = status.in_reply_to_user_id
@@ -141,6 +151,15 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['Related_tweet']['id'] = status.in_reply_to_status_id
             tweetinfo['Related_tweet']['id_str'] = status.in_reply_to_status_id_str
             tweetinfo['Related_tweet']['text'] = ''
+            if tweetinfo['Related_user']['id'] in push_list.spylist:
+                tweetinfo['Related_notable'] = True
+            else:
+                userinfo = self.tryGetUserInfo(status.in_reply_to_user_id)
+                if userinfo != {}:
+                    tweetinfo['Related_notable'] = self.isNotableUser(userinfo,False)
+        
+        if tweetinfo['Related_notable']:
+            tweetinfo['tweetNotable'] = True
         #尝试获取全文
         if hasattr(status,'extended_tweet'):
             tweetinfo['text'] = status.extended_tweet['full_text']

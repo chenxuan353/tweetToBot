@@ -310,15 +310,16 @@ class PushList:
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
     idpattern = '[a-z]+_[a-z_]+'
-#缩写推特ID(缓存500条)
+#缩写推特ID(缓存1000条)
 mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 1000,autosave = True,autoload = True)
-#推文缓存(200条)
+#推文缓存(500条)
 tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 500,autosave = True,autoload = True)
+#推特用户缓存(1000条)
+userinfolist = TempMemory(def_puth_method + '_' + 'userinfolist.json',limit = 1000,autosave = False,autoload = False)
 class tweetEventDeal:
-    #用户信息维护列表
-    userinfolist = {}
     #检测个人信息更新
-    def check_userinfo(self, userinfo):
+    def check_userinfo(self, userinfo, isnotable = False):
+        global userinfolist
         """
             运行数据比较
             用于监测用户的信息修改
@@ -336,8 +337,8 @@ class tweetEventDeal:
             tweetinfo['user']['profile_image_url'] = tweet.user.profile_image_url
             tweetinfo['user']['profile_image_url_https'] = tweet.user.profile_image_url_https
         """
-        if userinfo['id'] in self.userinfolist:
-            old_userinfo = self.userinfolist[userinfo['id']]
+        old_userinfo = userinfolist.find((lambda item,val:item['id'] == val),userinfo['id'])
+        if old_userinfo != None:
             data = {}
             s = ''
             if old_userinfo['name'] != userinfo['name']:
@@ -368,8 +369,8 @@ class tweetEventDeal:
                 eventunit = self.bale_event(data['type'],data['user_id'],data)
                 self.deal_event(eventunit)
         else:
-            if userinfo['id_str'] in push_list.spylist:
-                self.userinfolist[userinfo['id']] = userinfo
+            if isnotable or userinfo['id_str'] in push_list.spylist:
+                userinfolist.join(userinfo)
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
         if event_type in ('quoted','reply_to_status','reply_to_user','none'):
@@ -421,6 +422,7 @@ class tweetEventDeal:
     #将推特数据应用到模版
     def tweetToStr(self, tweetinfo, nick, upimg=config.pushunit_default_config['upimg'], template_text=''):
         global mintweetID
+        global userinfolist
         if nick == '':
             if tweetinfo['user']['name']:
                 nick = tweetinfo['user']['name']
@@ -451,8 +453,9 @@ class tweetEventDeal:
 
         if tweetinfo['type'] != 'none':
             template_value['related_user_id'] = tweetinfo['Related_user']['screen_name']
-            if tweetinfo['Related_user']['id'] in self.userinfolist:
-                template_value['related_user_name'] = self.userinfolist[tweetinfo['Related_user']['id']]['name']
+            tu = self.tryGetNick(tweetinfo['Related_user']['id'],'')
+            if tu != '':
+                template_value['related_user_name'] = tu['name']
             else:
                 if hasattr(tweetinfo['Related_user'],'name'):
                     template_value['related_user_name'] = tweetinfo['Related_user']['name']
@@ -497,13 +500,17 @@ class tweetEventDeal:
         return s
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):
-        if tweet_user_id in self.userinfolist:
-            return self.userinfolist[tweet_user_id]['name']
+        global userinfolist
+        tu = userinfolist.find((lambda item,val:item['id'] == val),tweet_user_id)
+        if tu != None:
+            return tu['name']
         return nick
     #尝试从缓存中获取用户信息,返回用户信息表
     def tryGetUserInfo(self, tweet_user_id) -> list:
-        if tweet_user_id in self.userinfolist:
-            return self.userinfolist[tweet_user_id]
+        global userinfolist
+        tu = userinfolist.find((lambda item,val:item['id'] == val),tweet_user_id)
+        if tu != None:
+            return tu
         return {}
     #消息发送(消息类型，消息发送到，消息内容)
     def send_msg(self, message_type:str, send_id:int, message:str,bindCQID:int = config.default_bot_QQ):
