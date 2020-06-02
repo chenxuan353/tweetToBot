@@ -12,6 +12,7 @@ from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory
 logger = getlogger(__name__)
 #引入测试方法
 try:
+    #event_push
     import dbtest as test
 except:
     test = None

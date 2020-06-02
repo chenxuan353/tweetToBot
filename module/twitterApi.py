@@ -11,7 +11,6 @@ import config
 #日志输出
 from helper import getlogger,msgSendToBot
 logger = getlogger(__name__)
-TLlogger = getlogger('twitterApi.tl',printCMD = False)
 #引入推送列表、推送处理模版
 from module.twitter import push_list,tweetEventDeal
 
@@ -19,8 +18,14 @@ from module.twitter import push_list,tweetEventDeal
 推特API监听更新的实现类
 '''
 
-#事件处理类
+#引入测试方法
+try:
+    #on_status
+    import dbtest as test
+except:
+    test = None
 
+#事件处理类
 #推特API的事件处理类
 class tweetApiEventDeal(tweetEventDeal):
     #事件到达
@@ -226,11 +231,8 @@ class MyStreamListener(tweepy.StreamListener):
                     s = traceback.format_exc(limit=5)
                     msgSendToBot(logger,'推特监听处理队列溢出，请检查队列！')
                     logger.error(s)
-                tweetinfo['status'] = None
-                TLlogger.warning(tweetinfo)
-                tweetinfo['status'] = status
-            else:
-                TLlogger.info("接收到推文:"+tweetinfo['id_str'])
+            if test != None:
+                test.on_status(tweetinfo,status)
         except:
             s = traceback.format_exc(limit=5)
             logger.error(s)
