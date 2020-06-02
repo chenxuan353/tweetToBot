@@ -445,6 +445,7 @@ class tweetEventDeal:
             'related_tweet_id_min':'', #关联推特ID的压缩(被评论/被转发)
             'related_tweet_text':'', #关联推特内容(被转发或被转发并评论时存在)
             'media_img':'', #媒体
+            'related_media_img':'' #依赖推文的媒体
         }
         
         if tweetinfo['type'] != 'none':
@@ -456,7 +457,7 @@ class tweetEventDeal:
             template_value['related_user_id'] = tweetinfo['Related_user']['screen_name']
             tu = self.tryGetNick(tweetinfo['Related_user']['id'],'')
             if tu != '':
-                template_value['related_user_name'] = tu['name']
+                template_value['related_user_name'] = tu
             else:
                 if hasattr(tweetinfo['Related_user'],'name'):
                     template_value['related_user_name'] = tweetinfo['Related_user']['name']
@@ -474,6 +475,18 @@ class tweetEventDeal:
                 if mis != '' and len(tweetinfo['extended_entities']) > 1:
                     mis = "\n媒体：" + str(len(tweetinfo['extended_entities'])) + "个\n" + mis
             template_value['media_img'] = mis
+
+            if 'Related_extended_entities' in tweetinfo:
+                mis = ''
+                for media_unit in tweetinfo['Related_extended_entities']:
+                    #组装CQ码
+                    #file_suffix = os.path.splitext(media_unit['media_url'])[1]
+                    #s = s + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'tweet/' + media_unit['id_str'] + file_suffix + ']'
+                    mis = mis + '[CQ:image,timeout='+config.img_time_out+',file='+ media_unit['media_url'] + ']'
+                if mis != '' and len(tweetinfo['Related_extended_entities']) > 1:
+                    mis = "\n依赖媒体：" + str(len(tweetinfo['Related_extended_entities'])) + "个\n" + mis
+            template_value['related_media_img'] = mis
+
         #生成模版类
         s = ""
         t = None
@@ -483,10 +496,10 @@ class tweetEventDeal:
                 deftemplate_none = "推特ID：$tweet_id_min，【$tweet_nick】发布了：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_none)
             elif tweetinfo['type'] == 'retweet':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转了【$related_user_name】的推特：\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
             elif tweetinfo['type'] == 'quoted':
-                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n====================\n$related_tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
+                deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】转发并评论了【$related_user_name】的推特：\n$tweet_text\n$media_img\n====================\n$related_tweet_text\n$related_media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"
                 t = tweetToStrTemplate(deftemplate_another)
             else:
                 deftemplate_another = "推特ID：$tweet_id_min，【$tweet_nick】回复了【$related_user_name】：\n$tweet_text\n$media_img\nhttps://twitter.com/$tweet_user_id/status/$tweet_id\n临时推文ID：$tweet_id_temp"

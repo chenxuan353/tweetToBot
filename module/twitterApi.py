@@ -100,6 +100,30 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
         tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&rt;','>')
+        #处理媒体信息
+        tweetinfo['extended_entities'] = []
+        if hasattr(tweet,'extended_entities'):
+            #图片来自本地媒体时将处于这个位置
+            if 'media' in tweet.extended_entities:
+                for media_unit in tweet.extended_entities['media']:
+                    media_obj = {}
+                    media_obj['id'] = media_unit['id']
+                    media_obj['id_str'] = media_unit['id_str']
+                    media_obj['type'] = media_unit['type']
+                    media_obj['media_url'] = media_unit['media_url']
+                    media_obj['media_url_https'] = media_unit['media_url_https']
+                    tweetinfo['extended_entities'].append(media_obj)
+        elif hasattr(tweet,'entities'):
+            #图片来自推特时将处于这个位置
+            if 'media' in tweet.entities:
+                for media_unit in tweet.entities['media']:
+                    media_obj = {}
+                    media_obj['id'] = media_unit['id']
+                    media_obj['id_str'] = media_unit['id_str']
+                    media_obj['type'] = media_unit['type']
+                    media_obj['media_url'] = media_unit['media_url']
+                    media_obj['media_url_https'] = media_unit['media_url_https']
+                    tweetinfo['extended_entities'].append(media_obj)
         tweetinfo['user'] = {}
         tweetinfo['user']['id'] = tweet.user.id
         tweetinfo['user']['id_str'] = tweet.user.id_str
@@ -142,16 +166,19 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['Related_user'] = tweetinfo['retweeted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['retweeted']
             tweetinfo['Related_notable'] = (tweetinfo['notable'] and tweetinfo['retweeted']['notable'])
+            tweetinfo['Related_extended_entities'] = tweetinfo['retweeted']['extended_entities']
         elif tweetinfo['type'] == 'quoted':
             tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status,True)
             tweetinfo['Related_user'] = tweetinfo['quoted']['user']
             tweetinfo['Related_tweet'] = tweetinfo['quoted']
             tweetinfo['Related_notable'] = tweetinfo['quoted']['notable']
+            tweetinfo['Related_extended_entities'] = tweetinfo['retweeted']['extended_entities']
         elif tweetinfo['type'] != 'none':
             tweetinfo['Related_user'] = {}
             tweetinfo['Related_user']['id'] = status.in_reply_to_user_id
             tweetinfo['Related_user']['id_str'] = status.in_reply_to_user_id_str
             tweetinfo['Related_user']['screen_name'] = status.in_reply_to_screen_name
+            tweetinfo['Related_extended_entities'] = []
             tweetinfo['Related_tweet'] = {}
             tweetinfo['Related_tweet']['id'] = status.in_reply_to_status_id
             tweetinfo['Related_tweet']['id_str'] = status.in_reply_to_status_id_str
@@ -174,30 +201,7 @@ class tweetApiEventDeal(tweetEventDeal):
             tweetinfo['text'] = status.extended_tweet['full_text']
         else:
             tweetinfo['text'] = status.text
-        #处理媒体信息
-        tweetinfo['extended_entities'] = []
-        if hasattr(status,'extended_entities'):
-            #图片来自本地媒体时将处于这个位置
-            if 'media' in status.extended_entities:
-                for media_unit in status.extended_entities['media']:
-                    media_obj = {}
-                    media_obj['id'] = media_unit['id']
-                    media_obj['id_str'] = media_unit['id_str']
-                    media_obj['type'] = media_unit['type']
-                    media_obj['media_url'] = media_unit['media_url']
-                    media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
-        elif hasattr(status,'entities'):
-            #图片来自推特时将处于这个位置
-            if 'media' in status.entities:
-                for media_unit in status.entities['media']:
-                    media_obj = {}
-                    media_obj['id'] = media_unit['id']
-                    media_obj['id_str'] = media_unit['id_str']
-                    media_obj['type'] = media_unit['type']
-                    media_obj['media_url'] = media_unit['media_url']
-                    media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
+
         return tweetinfo
 #推特事件处理对象
 tweet_event_deal = tweetApiEventDeal()
