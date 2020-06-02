@@ -420,7 +420,7 @@ class tweetEventDeal:
                         raise Exception("获取Pushunit属性值失败",Pushunit)
                     if res[1] == 1:
                         self.deal_event_unit(event,Pushunit)
-                elif event['type'] in ('retweet','reply_to_status') and tweetinfo['Related_notable']:
+                elif event['type'] in ('retweet','reply_to_status') and tweetinfo['notable']:
                     res = push_list.getPuslunitAttr(Pushunit,'ai_' + event['type'])
                     if res[0] == False:
                         raise Exception("获取Pushunit属性值失败",Pushunit)
