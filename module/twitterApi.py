@@ -307,13 +307,12 @@ def Run():
             s = traceback.format_exc(limit=10)
             logger.error(s)
             msgSendToBot(logger,'推特监听异常,将在10秒后尝试重启...')
-            time.sleep(10)     
+            time.sleep(10)
         else:
             run_info['isRun'] = False
             msgSendToBot(logger,'推特流已停止...')
             logger.info('推特流正常停止')
-
-        if run_info['error_cout'] > 0 and time.time() - run_info['last_reboot'] > 300:
+        if run_info['error_cout'] > 0 and int(time.time()) - run_info['last_reboot'] > 300:
             run_info['last_reboot'] = int(time.time()) #两次重启间隔五分钟以上视为重启成功
             run_info['error_cout'] = 0 #重置计数
         run_info['error_cout'] = run_info['error_cout'] + 1
