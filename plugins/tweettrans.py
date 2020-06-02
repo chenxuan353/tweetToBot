@@ -262,7 +262,7 @@ def send_res(session: CommandSession,args):
         for tweet in tmemory.tm:
             if tweet['id'] == tweet_id:
                 logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['user']['screen_name'] + ')')
-                logger.info(tweet)
+                #logger.info(tweet)
                 tweet_cache = tweet
                 tweet_sname = tweet_cache['user']['screen_name']
                 break
