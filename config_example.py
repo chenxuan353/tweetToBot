@@ -49,7 +49,7 @@ access_token_secret = 'ShW****************************************oy'
 #pollingTwitterApi可填写的多个应用密钥对 -> ['key','secret']
 #推特API应用轮询系统，可增加请求量
 polling_silent_start = False #静默启动，启动时不检测更新
-polling_interval = 60 #轮询监测间隔 单位秒，每对API速率限制约为1.5次每秒
+polling_interval = 60 #轮询监测间隔 单位秒，每对API速率限制约为1.5次每秒(建议60秒及以上)
 polling_consumers = [
     #示例 ['7*********************d','fIgX*****************************SJ'],
     [consumer_key,consumer_secret],#基础密钥对，删除影响运行
