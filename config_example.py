@@ -22,8 +22,8 @@ bot_waring_printID = '' #bot警告信息推送到的Q号，为None时不进行�
 feedback_push_switch : bool = True #推送反馈信息
 error_push_switch : bool = True #推送错误信息
 
-#推特更新检测方法(TweetApi,RSShub,Twint) - 暂不支持twint
-UPDATA_METHOD = "RSShub"
+#推特更新检测方法(TweetApi,RSShub,PollingTweetApi,Twint)-暂不支持Twint
+UPDATA_METHOD = "PollingTweetApi"
 
 #烤推图片路径(用于支持酷Q远程连接) 路径：{trans_img_path}/transtweet/transimg/file
 trans_img_path = 'pycache_test' #可以是本地路径 也可以是远程路径 本地路径时无法远程连接bot(需要软链接)
@@ -46,6 +46,27 @@ consumer_secret = 'fIgX******************************SJ'
 access_token = '848*************************************qapA'
 access_token_secret = 'ShW****************************************oy'
 
+#pollingTwitterApi可填写的多个应用密钥对 -> ['key','secret']
+#推特API应用轮询系统，可增加请求量
+polling_silent_start = False #静默启动，启动时不检测更新
+polling_interval = 60 #轮询监测间隔 单位秒，每对API速率限制约为1.5次每秒
+polling_consumers = [
+    #示例 ['7*********************d','fIgX*****************************SJ'],
+    [consumer_key,consumer_secret],
+    ['7y******************31d','fI********************************************SJ'],
+]#TweetApi同样需要填写，否则无法执行
+
+
+#机翻引擎配置(腾讯(tencent)->需要API,谷歌(google),)
+MachineTrans_default = 'tencent' #默认翻译引擎
+MachineTransApi = {
+    'tencent':{
+        "key":"AK****************************8KI",
+        "secret":"sW************************w8"
+        }
+}
+
+
 #推送开关默认设置(每个选项默认值不能缺失，否则将影响运行)
 pushunit_default_config = {
     'upimg':0,#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
@@ -64,6 +85,13 @@ pushunit_default_config = {
     #'reply_to_status_limit':0,#智能回复推送(默认关闭)-开启后仅推送监测人与有足够被关注数的人的回复
     'reply_to_user':1,#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
     'none':1,#发推(默认开启)
+
+    #智能推送(仅限推送单元设置，无法全局设置)
+    'ai_retweet':0,#智能推送本人转推(默认不开启)-转发值得关注的人的推特时推送
+    'ai_reply_to_status':0,#智能推送本人回复(默认不开启)-回复值得关注的人时推送
+    'ai_passive_reply_to_status':0,#智能推送 被 回复(默认不开启)-被值得关注的人回复时推送
+    'ai_passive_quoted':0,#智能推送 被 带评论转推(默认不开启)-被值得关注的人带评论转推时推送
+    'ai_passive_reply_to_user':0,#智能推送 被 提及(默认不开启)-被值得关注的人提及时推送
 
     #个人信息变化推送(非实时)
     'change_ID':0, #ID修改(默认关闭)
