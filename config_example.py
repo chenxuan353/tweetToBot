@@ -39,11 +39,11 @@ RSShub_silent_start = False #静默启动，启动时不检测更新
 
 #twitter_api需填写
 #推特API代理
-api_proxy = "127.0.0.1:10809"
+api_proxy = "" #127.0.0.1:10809
 #填写twitter提供的开发Key和secret
-consumer_key = '7yZj***************cN31d'
+consumer_key = '7yZj***************d'
 consumer_secret = 'fIgX******************************SJ'
-access_token = '848*************************************qapA'
+access_token = '848*************************************A'
 access_token_secret = 'ShW****************************************oy'
 
 #pollingTwitterApi可填写的多个应用密钥对 -> ['key','secret']
@@ -52,13 +52,13 @@ polling_silent_start = False #静默启动，启动时不检测更新
 polling_interval = 60 #轮询监测间隔 单位秒，每对API速率限制约为1.5次每秒
 polling_consumers = [
     #示例 ['7*********************d','fIgX*****************************SJ'],
-    [consumer_key,consumer_secret],
-    ['7y******************31d','fI********************************************SJ'],
-]#TweetApi同样需要填写，否则无法执行
+    [consumer_key,consumer_secret],#基础密钥对，删除影响运行
+    #['******************','********************************************'],
+]
 
 
-#机翻引擎配置(腾讯(tencent)->需要API,谷歌(google),)
-MachineTrans_default = 'tencent' #默认翻译引擎
+#机翻引擎配置(腾讯(tencent)->需要API 需要安装模块,谷歌(google))
+MachineTrans_default = 'google' #默认翻译引擎
 MachineTransApi = {
     'tencent':{
         "key":"AK****************************8KI",
