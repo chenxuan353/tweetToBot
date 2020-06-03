@@ -1,12 +1,13 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession,NoticeSession,on_notice,permission as perm
 from helper import getlogger,msgSendToBot,CQsessionToStr,argDeal
-from module.twitter import push_list,decode_b64,encode_b64,tmemory,mintweetID
+from module.twitter import push_list,decode_b64,encode_b64,mintweetID
 import time
 import asyncio
 import os
 import traceback
 import module.permissiongroup as permissiongroup
+import module.pollingTwitterApi as ptwitter
 import config
 logger = getlogger(__name__)
 __plugin_name__ = '通用推特监听指令'
@@ -22,6 +23,8 @@ if config.UPDATA_METHOD == 'TweetApi':
     import module.twitterApi as tweetListener
 elif config.UPDATA_METHOD == 'RSShub':
     import module.RSShub_twitter as tweetListener
+elif config.UPDATA_METHOD == 'PollingTweetApi':
+    import module.pollingTwitterApi as tweetListener
 else:
     raise Exception('暂不支持的更新检测(UPDATA_METHOD)方法：'+config.UPDATA_METHOD)
 tweet_event_deal = tweetListener.tweet_event_deal
@@ -171,10 +174,10 @@ async def privateswitch(session: CommandSession):
         return
     if perm_check(session,'listener'):
         perm_del(session,'listener')
-        await session.send('烤推操作已禁用')
+        await session.send('转推操作已禁用')
     else:
         perm_add(session,'listener',)
-        await session.send('烤推操作已启用')
+        await session.send('转推操作已启用')
 async def groupswitch(session: CommandSession):
     if perm_check(session,'-listener',user = True):
         await session.send('操作被拒绝，权限不足(p)')
@@ -581,7 +584,7 @@ async def setGroupAttr(session: CommandSession):
                 'retweet':'retweet','转推':'retweet',
                 'quoted':'quoted','转推并评论':'quoted',
                 'reply_to_status':'reply_to_status','回复':'reply_to_status',
-                'reply_to_user':'reply_to_user','被提及':'reply_to_user',
+                'reply_to_user':'reply_to_user','提及':'reply_to_user',
                 'none':'none','发推':'none',
                 #智能推送开关
                 'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
@@ -591,7 +594,7 @@ async def setGroupAttr(session: CommandSession):
                 'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
                 #推特个人信息变动推送开关
                 'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
-                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
+                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name',
                 'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
                 'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
             }
@@ -710,7 +713,7 @@ async def setAttr(session: CommandSession):
                 'retweet':'retweet','转推':'retweet',
                 'quoted':'quoted','转推并评论':'quoted',
                 'reply_to_status':'reply_to_status','回复':'reply_to_status',
-                'reply_to_user':'reply_to_user','被提及':'reply_to_user',
+                'reply_to_user':'reply_to_user','提及':'reply_to_user',
                 'none':'none','发推':'none',
                 #智能推送开关
                 'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
@@ -931,21 +934,23 @@ async def gettweettext(session: CommandSession):
         return
     args = args[1]
     tweet_id = args['tweet_id']
-    tweet = tmemory.find((lambda item,val:item['id'] == val),tweet_id)
+    tweet = tweet_event_deal.tryGetTweet(tweet_id)
     if tweet == None:
+        if ptwitter.ptwitterapps.hasApp():
+            app = ptwitter.ptwitterapps.getAllow('statuses_lookup')
+            if app == None:
+                await session.send("速率限制，请稍后再试！")
+                return
+            res = app.statuses_lookup(id = tweet_id)
+            if not res[0]:
+                await session.send("未查找到该推文！")
+                return
+            tweet = ptwitter.tweet_event_deal.deal_tweet(res[1])
         await session.send("未从缓存中查找到该推文！")
         return
     msg = "推文 " + encode_b64(tweet_id) + " 的内容如下：\n"
     msg = msg + tweet_event_deal.tweetToStr(tweet,'',1,'')
     await session.send(msg)
-
-@on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
-async def about(session: CommandSession):
-    if not headdeal(session):
-        return
-    logger.info(CQsessionToStr(session))
-    msg = 'http://uee.me/dfRwA'
-    await session.send("想了解我的全部，就来{}这里看看吧~".format(msg))
 
 #获取全局监听推送列表(非正式查错命令)
 def get_tweeallpushlist(page:int):
@@ -979,6 +984,25 @@ async def tweeallpushlist(session: CommandSession):
     s = get_tweeallpushlist(page)
     await session.send(s)
     logger.info(CQsessionToStr(session))
+
+
+@on_command('tweeallpushabout',aliases=['转推帮助'],only_to_me = False)
+async def tweeallpushabout(session: CommandSession):
+    if not headdeal(session):
+        return
+    logger.info(CQsessionToStr(session))
+    msg = '--转推帮助--' + "\n" + \
+        '!转推授权 -切换转推授权' + "\n" + \
+        '!addone 用户ID/UID -添加监测' + "\n" + \
+        '!delone 用户ID/UID -移除监测' + "\n" + \
+        '!DD列表 -监听列表' + "\n" + \
+        '!全局设置列表 无参数/基础/模版/智能/用户信息 -查看设置' + "\n" + \
+        '!对象设置列表 对象ID 无参数/基础/模版/智能/用户信息 -查看设置' + "\n" + \
+        '!全局设置 设置属性 值 -设置' + "\n" + \
+        '!对象设置 对象ID 设置属性 值 -设置' + "\n" + \
+        '!获取推文 推文ID -获取推文(仅检索缓存-待更新)' + "\n" + \
+        '如果出现问题可以 !反馈 反馈内容 反馈信息'
+    await session.send(msg)
 
 
 """

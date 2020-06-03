@@ -3,6 +3,7 @@ from nonebot import on_command, CommandSession, permission as perm
 from helper import getlogger,msgSendToBot,CQsessionToStr,argDeal
 from tweepy import TweepError
 import module.permissiongroup as permissiongroup
+from module.pollingTwitterApi import ptwitterapps
 from module.twitter import push_list
 import module.twitterApi as tweetListener
 import traceback
@@ -114,23 +115,41 @@ async def getuserinfo(session: CommandSession):
         return
     logger.info(CQsessionToStr(session))
 
-    stripped_arg = session.current_arg_text.strip()
-    if stripped_arg == '':
-        await session.send("在？为什么看别的女人连单推的名字都忘了写？")
+    arglimit = [
+        {
+            'name':'tweet_user_id', #参数名
+            'des':'推特用户ID', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':'[A-Za-z0-9_]+$', #正则表达式匹配(match函数)
+            're_error':'用户名/用户ID 只能包含字母、数字或下划线',
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
         return
-    if re.match('[A-Za-z0-9_]+$', stripped_arg, flags=0) == None:
-        await session.send("用户名/用户ID 只能包含字母、数字或下划线")
+    args = args[1]
+    tweet_user_id = args['tweet_user_id']
+
+    app = ptwitterapps.getAllow('users_show')
+    if app == None:
+        await session.send("速率限制，请稍后再试")
         return
-    try:
-        if stripped_arg.isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(stripped_arg))
-        else:
-            userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        logger.error('tweepy发生错误:'+s)
+    if tweet_user_id.isdecimal():
+        res = app.users_show(user_id = int(tweet_user_id))
+    else:
+        res = app.users_show(screen_name = tweet_user_id)
+    if not res[0]:
         await session.send("查询不到这位V哦~复制都能弄歪来┐(ﾟ～ﾟ)┌")
-        return
+    userinfo = res[1]
+
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
     #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
     #'头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
@@ -165,24 +184,48 @@ async def delOne(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     logger.info(CQsessionToStr(session))
+    arglimit = [
+        {
+            'name':'tweet_user_id', #参数名
+            'des':'推特用户ID', #参数错误描述
+            'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':'[A-Za-z0-9_]+$', #正则表达式匹配(match函数)
+            're_error':'用户名/用户ID 只能包含字母、数字或下划线',
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        }
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
+    tweet_user_id = args['tweet_user_id']
 
-    stripped_arg = session.current_arg_text.strip()
-    if stripped_arg == '':
-        await session.send("在？为什么看别的女人连单推的名字都忘了写？")
+    app = ptwitterapps.getAllow('users_show')
+    if app == None:
+        await session.send("速率限制，请稍后再试")
         return
-    if re.match('[A-Za-z0-9_]+$', stripped_arg, flags=0) == None:
-        await session.send("用户名/用户ID 只能包含字母、数字或下划线")
-        return
-    try:
-        if stripped_arg.isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(stripped_arg))
+    if tweet_user_id.isdecimal():
+        res = tweetListener.tweet_event_deal.tryGetUserInfo(user_id=int(tweet_user_id))
+        if res == {}:
+            res = app.users_show(user_id = int(tweet_user_id))
         else:
-            userinfo = tweetListener.api.get_user(screen_name = stripped_arg)
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        logger.error('tweepy发生错误:'+s)
-        await session.send("查询不到信息，不愧是你(๑´ㅂ`๑)")
-        return
+            res = (True,res)
+    else:
+        res = tweetListener.tweet_event_deal.tryGetUserInfo(screen_name = tweet_user_id)
+        if res == {}:
+            res = app.users_show(screen_name = tweet_user_id)
+        else:
+            res = (True,res)
+    if not res[0]:
+        await session.send("查询不到这位V哦~复制都能弄歪来┐(ﾟ～ﾟ)┌")
+    userinfo = res[1]
         
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo')
     #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
@@ -223,7 +266,6 @@ async def addOne(session: CommandSession):
         await session.send('未收录的消息类型:'+message_type)
         return
     logger.info(CQsessionToStr(session))
-
     arglimit = [
         {
             'name':'tweet_user_id', #参数名
@@ -234,6 +276,7 @@ async def addOne(session: CommandSession):
             'default':None, #默认值
             'func':None, #函数，当存在时使用函数进行二次处理
             're':'[A-Za-z0-9_]+$', #正则表达式匹配(match函数)
+            're_error':'用户名/用户ID 只能包含字母、数字或下划线',
             'vlimit':{ 
                 #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
             }
@@ -271,16 +314,26 @@ async def addOne(session: CommandSession):
         return
     args = args[1]
     tweet_user_id = args['tweet_user_id']
-    try:
-        if tweet_user_id.isdecimal():
-            userinfo = tweetListener.api.get_user(user_id = int(tweet_user_id))
-        else:
-            userinfo = tweetListener.api.get_user(screen_name = tweet_user_id)
-    except TweepError:
-        s = traceback.format_exc(limit=5)
-        logger.error('tweepy发生错误:'+s)
-        await session.send("查询不到信息，你D都能D歪来!?(･_･;?")
+    app = ptwitterapps.getAllow('users_show')
+    if app == None:
+        await session.send("速率限制，请稍后再试")
         return
+    if tweet_user_id.isdecimal():
+        res = tweetListener.tweet_event_deal.tryGetUserInfo(user_id=int(tweet_user_id))
+        if res == {}:
+            res = app.users_show(user_id = int(tweet_user_id))
+        else:
+            res = (True,res)
+    else:
+        res = tweetListener.tweet_event_deal.tryGetUserInfo(screen_name = tweet_user_id)
+        if res == {}:
+            res = app.users_show(screen_name = tweet_user_id)
+        else:
+            res = (True,res)
+    if not res[0]:
+        await session.send("查询不到这位V哦~复制都能弄歪来┐(ﾟ～ﾟ)┌")
+    userinfo = res[1]
+
     nick = args['nick']
     des = args['des']
     if des == '':
@@ -301,3 +354,4 @@ async def addOne(session: CommandSession):
         ('已经加入了DD名单了哦' if res[0] == True else '添加失败:'+res[1])
     push_list.savePushList()
     await session.send(s)
+

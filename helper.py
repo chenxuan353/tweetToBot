@@ -86,6 +86,19 @@ def reDealStr(pat:str,msg:str):
     if len(res) == 1:
         return res[0]
     return res
+
+#生成多对一字典
+def arglimitdeal(ls:dict):
+    res = {}
+    for k in ls.keys():
+        res[k]=k
+        if type(ls[k]) is list:
+            for v in ls[k]:
+                res[v]=k
+        else:
+            res[res[k]] = k
+    return res
+    
 #参数处理
 def argDeal(msg:str,arglimit:list):
     #使用空白字符分隔参数(全角空格、半角空格、换行符)
@@ -153,10 +166,21 @@ def argDeal(msg:str,arglimit:list):
                 if ad['re'] != None:
                     hmsg = reDealStr(ad['re'],hmsg)
                     if hmsg == None:
-                        return (False,ad['des'],'参数不符合规则(re)')
+                        if 're_error' in ad:
+                            return (False,ad['des'],ad['re_error'])
+                        else:
+                            return (False,ad['des'],'参数不符合规则(re)')
                 if ad['func'] != None:
                     hmsg = ad['func'](hmsg,ad)
-                    if hmsg == None:
+                    #处理函数返回格式
+                    #其一 None/合法值
+                    #其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
+                    if type(hmsg) is tuple:
+                        if hmsg[0]:
+                            hmsg = hmsg[1]
+                        else:
+                            return (False,ad['des'],hmsg[1])
+                    elif hmsg == None:
                         return (False,ad['des'],'参数不符合规则(fun)')
                 if ad['type'] == 'int' and not (type(hmsg) is int):
                     if not hmsg.isdecimal():
@@ -232,7 +256,7 @@ def data_read(filename:str,path:str = config_file_base_path) -> tuple:
         data = json.load(f)
         fileop_logger.info('读取配置文件：'+json.dumps(data))
     except IOError:
-        logger.warning('IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
+        logger.warning('load IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
         return (False,'配置文件读取失败')
     except:
         logger.critical('数据文件读取解析异常')
@@ -247,7 +271,7 @@ def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
         fw = open(os.path.join(file_base_path,path,filename),mode = 'w',encoding='utf-8')
         json.dump(data,fw,ensure_ascii=False,indent=4)
     except IOError:
-        logger.error('IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
+        logger.error('save IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
         pass
         return (False,'配置文件写入失败')
     except:
@@ -300,12 +324,15 @@ class TokenBucket(object):
     #链接：https://juejin.im/post/5ab10045518825557005db65
     #来源：掘金
     #著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
-    # rate是令牌发放速度(每秒发放数量)，capacity是桶的大小
-    def __init__(self, rate, capacity):
+    def __init__(self, rate, capacity, initval:int = 1):
+        #rate是令牌发放速度(每秒发放数量)，capacity是桶的大小，initval是初始大小(桶的百分比)
         self._rate = rate
         self._capacity = capacity
         self._current_amount = 0
         self._last_consume_time = 0
+        if initval > 1 or initval < 0:
+            raise Exception("无效的参数！")
+        self.consume(capacity*(1-initval))
     # token_amount是发送数据需要的令牌数
     def consume(self, token_amount):
         increment = (int(time.time()) - self._last_consume_time) * self._rate  # 计算从上次发送到这次发送，新发放的令牌数量
@@ -315,4 +342,11 @@ class TokenBucket(object):
             return False
         self._last_consume_time = int(time.time())
         self._current_amount -= token_amount
+        return True
+    def canConsume(self, token_amount):
+        increment = (int(time.time()) - self._last_consume_time) * self._rate  # 计算从上次发送到这次发送，新发放的令牌数量
+        self._current_amount = min(
+            increment + self._current_amount, self._capacity)  # 令牌数量不能超过桶的容量
+        if token_amount > self._current_amount:  # 如果没有足够的令牌，则不能发送数据
+            return False
         return True

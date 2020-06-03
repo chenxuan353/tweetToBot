@@ -8,7 +8,7 @@ import os
 #引入配置
 import config
 #日志输出
-from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory
+from helper import data_read,data_save,getlogger,msgSendToBot,TempMemory,check_path
 logger = getlogger(__name__)
 #引入测试方法
 try:
@@ -321,8 +321,9 @@ class tweetToStrTemplate(string.Template):
     idpattern = '[a-z]+_[a-z_]+'
 #缩写推特ID(缓存1000条)
 mintweetID = TempMemory(def_puth_method + '_' + 'mintweetID.json',limit = 1000,autosave = True,autoload = True)
-#推文缓存(500条)
-tmemory = TempMemory(def_puth_method + '_' + 'tweets.json',limit = 500,autosave = True,autoload = True)
+#推文缓存(150条/监测对象)
+check_path(os.path.join('templist','twitterApi'))
+tweetsmemory = {}
 #推特用户缓存(1000条)
 userinfolist = TempMemory(def_puth_method + '_' + 'userinfolist.json',limit = 1000,autosave = False,autoload = False)
 class tweetEventDeal:
@@ -382,7 +383,8 @@ class tweetEventDeal:
                 userinfolist.join(userinfo)
     #打包事件(事件类型，引起变化的用户ID，事件数据)
     def bale_event(self, event_type,user_id:int,event_data):
-        if event_type in ('quoted','reply_to_status','reply_to_user','none'):
+        if event_type in ('retweet','quoted','reply_to_status','reply_to_user','none'):
+            global tweetsmemory,mintweetID
             if mintweetID.find((lambda item,val:item[0]==val),event_data['id']) == None:
                 count = 0
                 if mintweetID.tm != []:
@@ -393,6 +395,10 @@ class tweetEventDeal:
             sdata = event_data.copy()
             if 'status' in sdata:
                 del sdata['status']
+            ID = event_data['user']['id_str']
+            if ID not in tweetsmemory:
+                tweetsmemory[ID] = TempMemory(os.path.join('twitterApi',ID+'.json'),limit=150,autoload=True,autosave=True)
+            tmemory = tweetsmemory[ID]
             tmemory.join(sdata)
         eventunit = {
             'type':event_type,
@@ -535,6 +541,33 @@ class tweetEventDeal:
         #转换为字符串
         s = t.safe_substitute(template_value)
         return s
+    #是否存在指定ID的缓存
+    def hasUserInCache(self,user_id:str,loadtest:bool = True):
+        global tweetsmemory
+        user_id = str(user_id)
+        if loadtest:
+            if user_id not in tweetsmemory:
+                tweetsmemory[user_id] = TempMemory(os.path.join('twitterApi',user_id+'.json'),limit=150,autoload=True,autosave=True)
+            return tweetsmemory[user_id].tm != []
+        else:
+            return user_id in tweetsmemory
+    #尝试从缓存中获取推文
+    def tryGetTweet(self,tweet_id,user_id:str = None):
+        global tweetsmemory
+        if user_id:
+            user_id = str(user_id)
+            if user_id not in tweetsmemory:
+                return None
+            tweet = tweetsmemory[user_id].find((lambda item,val:item['id'] == val),tweet_id)
+            if tweet != None:
+                return tweet
+        else:
+            for unit in tweetsmemory:
+                tweet = tweetsmemory[unit].find((lambda item,val:item['id'] == val),tweet_id)
+                if tweet != None:
+                    return tweet
+        return None
+        
     #尝试从缓存中获取昵称
     def tryGetNick(self, tweet_user_id,nick):
         global userinfolist
@@ -543,9 +576,14 @@ class tweetEventDeal:
             return tu['name']
         return nick
     #尝试从缓存中获取用户信息,返回用户信息表
-    def tryGetUserInfo(self, tweet_user_id:int) -> list:
+    def tryGetUserInfo(self, user_id:int = None,screen_name:str = None) -> list:
         global userinfolist
-        tu = userinfolist.find((lambda item,val:item['id'] == val),int(tweet_user_id))
+        if user_id:
+            tu = userinfolist.find((lambda item,val:item['id'] == val),int(user_id))
+        elif screen_name:
+            tu = userinfolist.find((lambda item,val:item['screen_name'] == val),screen_name)
+        else:
+            raise Exception("无效的参数")
         if tu != None:
             return tu
         return {}

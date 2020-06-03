@@ -6,6 +6,7 @@ import sys
 import nonebot
 import module.twitterApi as tweetListener
 import module.RSShub_twitter as RSShub_twitter
+import module.pollingTwitterApi as pollingTwitterApi
 import traceback
 import time
 import asyncio
@@ -30,6 +31,10 @@ def init():
     allow_start_method = {
         'TweetApi':{
             'Listener':tweetListener.runTwitterApiThread,
+            'plugin':'plugins.twitterListener.twitterApi',
+        },
+        'PollingTweetApi':{
+            'Listener':pollingTwitterApi.runPollingTwitterApiThread,
             'plugin':'plugins.twitterListener.twitterApi',
         },
         'RSShub':{

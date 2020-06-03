@@ -93,6 +93,24 @@ class tweetApiEventDeal(tweetEventDeal):
             (int(user['followers_count'] / (user['friends_count']+1)) > 500 or user['friends_count'] > 20000):
             return True
         return False
+    #重新包装推特用户信息
+    def get_userinfo(self,user):
+        userinfo = {}
+        userinfo['id'] = user.id
+        userinfo['id_str'] = user.id_str
+        userinfo['name'] = user.name
+        userinfo['description'] = user.description
+        userinfo['screen_name'] = user.screen_name
+        userinfo['profile_image_url'] = user.profile_image_url
+        userinfo['profile_image_url_https'] = user.profile_image_url_https
+
+        userinfo['default_profile_image'] = user.default_profile_image
+        userinfo['default_profile'] = user.default_profile
+        userinfo['protected'] = user.protected
+        userinfo['followers_count'] = user.followers_count
+        userinfo['friends_count'] = user.friends_count
+        userinfo['verified'] = user.verified
+        return userinfo
     #重新包装推特信息
     def get_tweet_info(self, tweet,checkspy = False):
         tweetinfo = {}
@@ -129,25 +147,13 @@ class tweetApiEventDeal(tweetEventDeal):
                     media_obj['media_url'] = media_unit['media_url']
                     media_obj['media_url_https'] = media_unit['media_url_https']
                     tweetinfo['extended_entities'].append(media_obj)
-        tweetinfo['user'] = {}
-        tweetinfo['user']['id'] = tweet.user.id
-        tweetinfo['user']['id_str'] = tweet.user.id_str
-        tweetinfo['user']['name'] = tweet.user.name
-        tweetinfo['user']['description'] = tweet.user.description
-        tweetinfo['user']['screen_name'] = tweet.user.screen_name
-        tweetinfo['user']['profile_image_url'] = tweet.user.profile_image_url
-        tweetinfo['user']['profile_image_url_https'] = tweet.user.profile_image_url_https
-
-        tweetinfo['user']['default_profile_image'] = tweet.user.default_profile_image
-        tweetinfo['user']['default_profile'] = tweet.user.default_profile
-        tweetinfo['user']['protected'] = tweet.user.protected
-        tweetinfo['user']['followers_count'] = tweet.user.followers_count
-        tweetinfo['user']['friends_count'] = tweet.user.friends_count
-        tweetinfo['user']['verified'] = tweet.user.verified
-
+        
+        tweetinfo['user'] = self.get_userinfo(tweet.user)
+        
         tweetinfo['notable'] = self.isNotableUser(tweetinfo['user'],checkspy) #值得注意的用户(用户的影响力比较高)
         self.check_userinfo(tweetinfo['user'],tweetinfo['notable']) #检查用户信息
         return tweetinfo
+    
     def deal_tweet_type(self, status):
         if hasattr(status, 'retweeted_status'):
             return 'retweet' #纯转推

@@ -1,7 +1,8 @@
 # -*- coding: UTF-8 -*-
 from nonebot import on_command, CommandSession,NoticeSession,on_notice,permission as perm
 from helper import getlogger,msgSendToBot,CQsessionToStr,TempMemory,argDeal,data_read,data_save
-from module.twitter import decode_b64,encode_b64,tmemory,mintweetID
+from module.twitter import decode_b64,encode_b64,mintweetID
+from plugins.twitter import tweet_event_deal
 from module.tweettrans import TweetTrans,rate_limit_bucket
 import nonebot
 import time
@@ -259,14 +260,13 @@ def send_res(session: CommandSession,args):
         
         #检查推文缓存
         tweet_sname = 's'
-        for tweet in tmemory.tm:
-            if tweet['id'] == tweet_id:
-                logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['user']['screen_name'] + ')')
-                #logger.info(tweet)
-                tweet_cache = tweet
-                tweet_sname = tweet_cache['user']['screen_name']
-                break
-        
+        tweet = tweet_event_deal.tryGetTweet(tweet_id)
+        if tweet != None:
+            logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['user']['screen_name'] + ')')
+            #logger.info(tweet)
+            tweet_cache = tweet
+            tweet_sname = tweet_cache['user']['screen_name']
+
         tt = TweetTrans()
         res = tt.getTransFromTweetID(
             str(tweet_id),
@@ -549,5 +549,7 @@ async def transabout(session: CommandSession):
         '##1 第一层翻译' + "\n" + \
         '#! 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
         '##2 第二层翻译' + "\n" + \
-        '##main 主翻译'
+        '##main 主翻译' + "\n" + \
+        '烤推支持换行参数，请放心使用！' + "\n" + \
+        '如果出现问题可以 !反馈 反馈内容 反馈信息'
     await session.send(msg)

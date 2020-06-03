@@ -224,3 +224,15 @@ async def feedbacklist(session: CommandSession):
         return
     s = getlist(page)
     await session.send(s)
+
+
+@on_command('about',aliases=['帮助','help','关于'],only_to_me = False)
+async def about(session: CommandSession):
+    if not headdeal(session):
+        return
+    logger.info(CQsessionToStr(session))
+    msg = '维护：晨轩°(3309003591) 相关协作者见开源地址' + "\n"
+    msg = msg + '!转推帮助 -查看转推帮助' + "\n"
+    msg = msg + '!烤推帮助 -查看烤推帮助' + "\n"
+    msg = msg + '项目开源地址：http://uee.me/dfRwA'
+    await session.send(msg)
