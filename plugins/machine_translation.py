@@ -15,9 +15,16 @@ res = data_read(config_filename)
 if res[0]:
     logger.info("配置文件读取成功")
     mtransopt_list = res[2]
+#预处理
+def headdeal(session: CommandSession):
+    if session.event['message_type'] == "group" and session.event.sub_type != 'normal':
+        return False
+    return True
 
-@on_command('mtransopt',aliases=['翻译设置'],permission=perm.SUPERUSER,only_to_me = True)
+@on_command('mtransopt',aliases=['翻译设置'],only_to_me = True)
 async def mtransopt(session: CommandSession):
+    if not headdeal(session):
+        return
     global mtransopt_list
     #message_type = session.event['message_type']
     #group_id = (session.event['group_id'] if message_type == 'group' else None)
@@ -73,8 +80,10 @@ async def mtransopt(session: CommandSession):
     data_save(config_filename,mtransopt_list)
     await session.send("设置已保存")
 
-@on_command('mtrans',aliases=['mt','翻译','机翻'],only_to_me = True)
+@on_command('mtrans',aliases=['mt','翻译','机翻'],only_to_me = False)
 async def mtrans(session: CommandSession):
+    if not headdeal(session):
+        return
     #message_type = session.event['message_type']
     #group_id = (session.event['group_id'] if message_type == 'group' else None)
     user_id = session.event['user_id']
