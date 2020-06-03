@@ -54,6 +54,8 @@ tencent = {
 }
 #源文本，源文本语言，翻译到 返回值(是否成功，结果文本/错误说明，返回的源数据)
 def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
+    if not tencent['bucket'].consume(1):
+        return (False,'错误，速率限制！') 
     from tencentcloud.common import credential
     from tencentcloud.common.profile.client_profile import ClientProfile
     from tencentcloud.common.profile.http_profile import HttpProfile
@@ -83,9 +85,12 @@ def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
         return (False,'获取结果时错误',err) 
 
 google = {
+    'bucket':TokenBucket(5,5),
     'url':"http://translate.google.cn/translate_a/single?client=at&dt=t&dj=1&ie=UTF-8&sl={Source}&tl={Target}&q={SourceText}"
 }
 def google_MachineTrans(SourceText,Source = 'auto',Target = 'zh'):
+    if not google['bucket'].consume(1):
+        return (False,'错误，速率限制！')
     headers = {
         'User-Agent':randUserAgent()
     }
