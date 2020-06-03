@@ -61,12 +61,16 @@ polling_consumers = [
 MachineTrans_default = 'google' #默认翻译引擎
 MachineTransApi = {
     'tencent':{
+        "switch":True,#开关，配置完成后请设置为True,关闭为False
         #地区 ap-guangzhou->广州 ap-hongkong->香港 na-ashburn->美国(靠近纽约)
         #更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
         "Region":"ap-guangzhou",
         "key":"AK****************************8KI",
         "secret":"sW************************w8"
-        }
+    },
+    'google':{
+        "switch":True,#开关
+    }
 }
 
 

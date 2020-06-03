@@ -45,6 +45,7 @@ allow_st = {
 #使用腾讯云SDK，SDK未安装时无法使用
 #pip install tencentcloud-sdk-python
 tencent = {
+    "switch":MachineTransApi['tencent']['switch'],
     'bucket':TokenBucket(5,5),
     #地区 ap-guangzhou->广州 ap-hongkong->香港
     #更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
@@ -54,6 +55,8 @@ tencent = {
 }
 #源文本，源文本语言，翻译到 返回值(是否成功，结果文本/错误说明，返回的源数据)
 def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
+    if not tencent['switch']:
+        return (False,'错误，当前引擎未启用！')
     if not tencent['bucket'].consume(1):
         return (False,'错误，速率限制！') 
     from tencentcloud.common import credential
@@ -85,10 +88,13 @@ def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
         return (False,'获取结果时错误',err) 
 
 google = {
+    "switch":MachineTransApi['google']['switch'],
     'bucket':TokenBucket(5,5),
     'url':"http://translate.google.cn/translate_a/single?client=at&dt=t&dj=1&ie=UTF-8&sl={Source}&tl={Target}&q={SourceText}"
 }
 def google_MachineTrans(SourceText,Source = 'auto',Target = 'zh'):
+    if not google['switch']:
+        return (False,'错误，当前引擎未启用！')
     if not google['bucket'].consume(1):
         return (False,'错误，速率限制！')
     headers = {
