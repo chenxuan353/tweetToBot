@@ -48,7 +48,7 @@ tencent = {
     'bucket':TokenBucket(5,5),
     #地区 ap-guangzhou->广州 ap-hongkong->香港
     #更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
-    'Region':"ap-guangzhou",
+    'Region':MachineTransApi['Region'],
     'key':MachineTransApi['tencent']['key'],
     'secret':MachineTransApi['tencent']['secret'],
 }
