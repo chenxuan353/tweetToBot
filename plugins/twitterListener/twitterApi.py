@@ -149,7 +149,8 @@ async def getuserinfo(session: CommandSession):
     if not res[0]:
         await session.send("查询不到这位V哦~复制都能弄歪来┐(ﾟ～ﾟ)┌")
     userinfo = res[1]
-
+    #检测信息更新
+    tweetListener.tweet_event_deal.get_userinfo(userinfo)
     #tweetListener.tweet_event_deal.seve_image(userinfo.screen_name,userinfo.profile_image_url_https,'userinfo',canCover=True)
     #file_suffix = os.path.splitext(userinfo.profile_image_url_https)[1]
     #'头像:' + '[CQ:image,timeout='+config.img_time_out+',file='+config.img_path+'userinfo/' + userinfo.screen_name + file_suffix + ']'+ "\n" + \
