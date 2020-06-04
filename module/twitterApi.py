@@ -93,8 +93,8 @@ class tweetApiEventDeal(tweetEventDeal):
             (int(user['followers_count'] / (user['friends_count']+1)) > 500 or user['friends_count'] > 20000):
             return True
         return False
-    #重新包装推特用户信息
-    def get_userinfo(self,user):
+    #重新包装推特用户信息(用户数据，是否检查更新)
+    def get_userinfo(self,user,ck = False):
         userinfo = {}
         userinfo['id'] = user.id
         userinfo['id_str'] = user.id_str
@@ -110,6 +110,8 @@ class tweetApiEventDeal(tweetEventDeal):
         userinfo['followers_count'] = user.followers_count
         userinfo['friends_count'] = user.friends_count
         userinfo['verified'] = user.verified
+        if ck and userinfo['id_str'] in push_list.spylist:
+            self.check_userinfo(userinfo,True)
         return userinfo
     #重新包装推特信息
     def get_tweet_info(self, tweet,checkspy = False):
