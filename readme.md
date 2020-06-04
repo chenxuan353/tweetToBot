@@ -1,4 +1,5 @@
 # 可提供一对多转推服务的bot后端
+[![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)![CQHTTP Version](https://img.shields.io/badge/cqhttp-4.8+-black.svg)
 
 ## 简介
 
@@ -8,9 +9,11 @@
 
 **本项目目前仅支持 Python 3.7 及 CQHTTP 插件 v4.8+**
 
-目前仍然处于测试状态，功能大部分已经完善，可以对bot深度定制化。
+目前仍然处于测试状态，功能大部分已经完善，可以对BOT深度定制化。
 
-**目前测试中：烤推功能**
+**目前测试中：烤推/转推功能**
+
+**目前开发中：一键部署功能 动态获取功能**
 
 支持多个bot远程连接此后端，已经对可能的冲突进行了处理。
 
@@ -18,7 +21,7 @@
 
 对监听的修改将立刻保存至文件中。
 
-已经保证了每个群就算是多个bot同时存在也只会添加一个相同监听对象的推送。
+已经保证了每个群就算是多个BOT同时存在也只会添加一个相同监听对象的推送。
 
 现在配置文件读取后会以JSON的形式输出到日志中，如果丢失了配置文件，可以凭日志回档。
 
@@ -29,6 +32,8 @@
 ※ 为了保证推送的正常运行使用了多线程。
 
 ※ 安装思源黑体CN之后可以修复字体问题
+
+
 
 ## 部署
 
@@ -45,7 +50,6 @@
   docker run --name=coolq -d -p <CPDI>:9000 -v /root/coolq-data:/home/user/coolq -e VNC_PASSWD=<CP> -e COOLQ_ACCOUNT=<QQ> coolq/wine-coolq
   ```
 
-  
 
 - Docker中部署Pro
 
@@ -54,13 +58,20 @@
   docker run --name=coolq -d -p <Corresponding Port of Docker Image>:9000 -v `pwd`/coolq:/home/user/coolq -e COOLQ_ACCOUNT=<QQ ID> -e COOLQ_URL=http://dlsec.cqp.me/cqp-full -e VNC_PASSWD=<Console Password> coolq/wine-coolq
   ```
 
+**如需使用除搬运推文以外的其他功能(烤推等涉及图片发送的功能) **
+
+**请务必[捐赠CQP项目](https://cqp.me/user/)以使用[CoolQ Pro](https://cqp.cc/t/14901)**
+
 
 
 ### 启动插件
 
-下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的[CPK依赖包](https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk)并安装(放到依赖包位置并初次启动后配置端口)
+#### 下载CPK依赖
+- Windows平台
 
-**Docker请直接使用wget命令操作**
+下载[CQHttp](https://github.com/richardchien/coolq-http-api/releases)的[CPK依赖包](https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk)并安装(放到依赖包位置并**初次启动后进行配置**)
+
+- Docker for Linux
 
 ```shell
 wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io.github.richardchien.coolqhttpapi.cpk
@@ -68,17 +79,98 @@ wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io
 
 *如在Docker中部署请在此处启动插件服务*
 
+#### 配置CPK插件
+
+在CQ根目录下`data/app/io.github.richardchien.coolqhttpapi/config/`文件夹内，找到`<QQ号>.json`的JSON配置文件（须初次启动后自动生成）
+
+**在其中添加两行以打开消息推送**
+
+```JSON
+"rate_limit_interval":500,
+"enable_rate_limited_actions": true,
+```
+
+本插件支持HTTP和WS两种模式，故可根据官方文档中[配置](https://cqhttp.cc/docs/4.15/#/Configuration)部分进行操作。
+
+绝大部分参数无需修改，但请保证打开http/ws_reverse/ws其中之一，并打开heartbeat以确保全部功能可用。基本操作也可参见Nonebot文档中的[基本配置说明](https://nonebot.cqp.moe/guide/getting-started.html#%E9%85%8D%E7%BD%AE-cqhttp-%E6%8F%92%E4%BB%B6)
+
+下面给出一个配置范例
+
+```JSON
+{
+    "$schema": "https://cqhttp.cc/config-schema.json",//无需修改
+    "host": "0.0.0.0",//HTTP协议监听IP
+    "port": 5700,//HTTP协议监听端口
+    "use_http": true,//默认开启 使用ws_reverse时可关闭
+    "ws_host": "0.0.0.0",//WebSocket协议收发IP
+    "ws_port": 6700,//WS收发端口6700
+    "use_ws": false,//本项目不使用正向WS 请关闭
+    "ws_reverse_url": "ws://127.0.0.1:8087/ws/",//反向WS地址
+    "ws_reverse_api_url": "",
+    //此处默认是{ws_reverse_url}+'api/'如已经配置上一项则其余反向WS均无需另行配置 留空即可
+    "ws_reverse_event_url": "",
+    "ws_reverse_reconnect_interval": 3000,//3S重连
+    "ws_reverse_reconnect_on_code_1000": true,
+    "use_ws_reverse": true,//使用反向WS
+    "post_url": "http://0.0.0.0:8890",//HTTP协议POST发送地址
+    "access_token": "",//TOKEN无需填写 使用默认值
+    "rate_limit_interval":500,//此项必须添加
+    "enable_rate_limited_actions": true,//此项必须添加
+    "enable_heartbeat": true,//请务必打开
+    "secret": "",//此后均可保持默认
+    "post_message_format": "string",
+    "serve_data_files": false,
+    "update_source": "global",
+    "update_channel": "stable",
+    "auto_check_update": false,
+    "auto_perform_update": false,
+    "show_log_console": true,
+    "log_level": "info"
+}
+```
+##### 关于协议
+
+本项目支持使用HTTP或反向WS协议进行通信，其中
+
+- 使用HTTP协议
+  - 事件上报地址 "host"与"port"
+  - POST通信地址 "post_url"(host:port)
+- 使用反向WS协议
+  - API地址 "ws_reverse_url"
+
+简单来说，HTTP的收发分别使用两个地址，而反向WS协议使用同一个地址。
+
+因此可以通过同时打开HTTP和反向WS协议实现使用一个BOT同时连接两个后端服务。
+
+**具体配置过程在[多服务配置](https://github.com/chenxuan353/tweetToQQbot/blob/master/readme.md#多服务配置)中说明。**
+
+
+
 ### 启动服务
 
 #### 安装依赖
 
-```shell
-pip install nonebot[scheduler]
-```
+##### PYPI依赖
+
+手动安装依赖
 
 ```shell
-pip install tweepy
+pip install nonebot[scheduler] selenium xmltodict threading urllib tweepy
 ```
+
+或者可以使用
+
+```
+pip -r requirement.txt
+```
+
+进行一键安装
+
+##### Chrome浏览器与ChromeDriver
+
+您可以参考[本教程](https://blog.csdn.net/Fiverya/article/details/98869750)
+
+#### 添加配置
 
 将config_example.py改名为config.py并填写内部的配置信息
 
@@ -89,6 +181,43 @@ mv config_example.py config.py
 ```shell
 vi config.py
 ```
+**内部各项均已注明 请根据注释进行配置（不填请保留字段 不推荐删除）**
+
+##### 多服务配置
+
+CQHTTP为nonebot提供了HTTP和反向WS两种通信协议 具体配置方法如下
+
+> 为方便书写与描述
+>
+> 称呼`data/app/io.github.richardchien.coolqhttpapi/config/`文件夹内含有QQ号的JSON文件为**插件配置**
+>
+> 称呼本项目中`config.py`文件为**项目配置**
+
+###### HTTP协议
+
+- 事件上报地址
+
+  编辑插件配置中`host`与`port`字段
+
+  并与项目配置中`API_ROOT`字段保持一致
+
+- POST通信地址
+
+  编辑插件配置中`post_url`字段**※ 须添加`https://`作为前缀**
+
+  并与项目配置中`NONEBOT_HOST`和`NONEBOT_PORT`所指向地址保持一致
+
+###### 反向WS协议
+
+- API地址
+
+  编辑插件配置中`ws_reverse_url`字段（只修改IP和端口即可）
+
+  并与项目配置中`NONEBOT_HOST`和`NONEBOT_PORT`所指向地址保持一致
+
+  （API_ROOT与反向WS无关 如**只使用反向WS** 可注释本变量）
+
+#### 启动项目
 
 然后就可以用start.py启动项目了
 
@@ -109,12 +238,6 @@ python start.py
 输入密码后可进入Docker内置的Wine环境，通过可视化方式操作CoolQ客户端，
 
 请登录后在插件管理中打开CQHTTP插件(请确保配置环节中CQHTTP已正确安装)。
-
-#### 配置本地端口
-
-本BOT采用WebSocket进行传输，故请在CoolQ根目录中打开/data/app/richardchen.../config进行服务器配置，并打开WS传输。
-
-具体操作请参考CQHTTP文档中的[说明](https://cqhttp.cc/docs/4.15/#/Configuration)。
 
 ## 本BOT推送命令使用说明
 

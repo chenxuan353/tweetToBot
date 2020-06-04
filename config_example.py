@@ -12,8 +12,8 @@ COMMAND_START = {'!','！'}
 DEBUG = True
 #nonebot的监听地址与启动端口
 NONEBOT_HOST = '0.0.0.0'
-NONEBOT_PORT = 8190
-
+NONEBOT_PORT = 8190 #须和CQP中地址一致
+API_ROOT = '0.0.0.0:8890'#使用HTTP协议时POST发送地址
 #默认botQQ 默认推送用的bot，错误信息会使用此bot推送。
 default_bot_QQ = ''
 bot_waring_printID = '' #bot警告信息推送到的Q号，为None时不进行推送
@@ -23,17 +23,19 @@ feedback_push_switch : bool = True #推送反馈信息
 error_push_switch : bool = True #推送错误信息
 
 #推特更新检测方法(TweetApi,RSShub,PollingTweetApi,Twint)-暂不支持Twint
-UPDATA_METHOD = "PollingTweetApi"
+UPDATA_METHOD = "PollingTweetApi"#使用何种方法进行监听
 
 #烤推图片路径(用于支持酷Q远程连接) 路径：{trans_img_path}/transtweet/transimg/file
 trans_img_path = 'pycache_test' #可以是本地路径 也可以是远程路径 本地路径时无法远程连接bot(需要软链接)
+#如使用本地路径 可以填写形如file:///<地址>(即默认的当前文件夹位置/cache) 如file:///D:\tweetToQQbot\cache
+
 #图片发送超时时间
 img_time_out : str= '15' #图片下载超时时间(秒)
 
 #RSShub推送配置
 #基础地址 https://rsshub.app http://192.168.71.150:1300
 RSShub_base = 'https://rsshub.app' #默认是公用的https://rsshub.app
-RSShub_proxy = '' #代理地址
+RSShub_proxy = '' #代理地址(IP:PORT)
 RSShub_updata_interval = 300 #更新间隔-秒(每个监测对象会多消耗1秒以上的时间)
 RSShub_silent_start = False #静默启动，启动时不检测更新
 

@@ -28,7 +28,7 @@ permissiongroup.perm_addLegalPermGroup(__name__,'烤推模块',permgroupname)
 permissiongroup.perm_addLegalPermUnit(permgroupname,'switch') #烤推切换权限
 permissiongroup.perm_addLegalPermUnit(permgroupname,'trans') #烤推权限
 
-trans_img_path = config.trans_img_path+'/transtweet/transimg/'
+trans_img_path = os.path.join(config.trans_img_path,'transtweet','transimg','')
 
 transtemplate_filename = 'transtemplate.json'
 transtemplate = {
