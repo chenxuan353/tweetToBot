@@ -1040,13 +1040,13 @@ async def gettweetlist(session: CommandSession):
         await session.send("推文缓存中不存在此用户数据！")
         return
     tweets = res.tm
-    ttr = {'none':'发推','retweet':'转推','quoted':'转推并评论','reply_to_status':'回复','reply_to_user':'提及'}
+    ttr = {'none':'发推','retweet':'转推','quoted':'转评','reply_to_status':'回复','reply_to_user':'提及'}
     msg = userinfo['name'] + "(" + userinfo['screen_name'] + ")的推文列表" + "\n"
     msg = msg + "推文缩写ID,标识,推文简写内容" + "\n"
     unit_cout = 0
     for i in range(len(tweets)-1,-1,-1):
         if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
-            msg = msg + encode_b64(tweets[i]['id']) + ',' + ttr[tweets[i]['type']] +',' + tweets[i]['text'][:20].replace("\n"," ") + "\n"
+            msg = msg + ttr[tweets[i]['type']] + ',' + encode_b64(tweets[i]['id']) +',' + tweets[i]['text'][:20].replace("\n"," ") + "\n"
         unit_cout = unit_cout + 1
     totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
     if unit_cout > 5 or page != 1:
