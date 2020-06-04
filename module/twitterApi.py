@@ -114,7 +114,7 @@ class tweetApiEventDeal(tweetEventDeal):
             self.check_userinfo(userinfo,True)
         return userinfo
     #重新包装推特信息
-    def get_tweet_info(self, tweet,checkspy = False):
+    def get_tweet_info(self, tweet,checkspy = False,trigger = True):
         tweetinfo = {}
         tweetinfo['created_at'] = int(tweet.created_at.timestamp())
         tweetinfo['id'] = tweet.id
@@ -153,7 +153,7 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['user'] = self.get_userinfo(tweet.user)
         
         tweetinfo['notable'] = self.isNotableUser(tweetinfo['user'],checkspy) #值得注意的用户(用户的影响力比较高)
-        self.check_userinfo(tweetinfo['user'],tweetinfo['notable']) #检查用户信息
+        self.check_userinfo(tweetinfo['user'],tweetinfo['notable'],trigger = trigger) #检查用户信息
         return tweetinfo
     
     def deal_tweet_type(self, status):
@@ -167,9 +167,9 @@ class tweetApiEventDeal(tweetEventDeal):
             return 'reply_to_user' #提及(猜测就是艾特)
         else:
             return 'none' #未分类(主动发推)
-    def deal_tweet(self, status):
+    def deal_tweet(self, status,trigger = True):
         #监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
-        tweetinfo = self.get_tweet_info(status,True)
+        tweetinfo = self.get_tweet_info(status,True,trigger = trigger)
         tweetinfo['type'] = self.deal_tweet_type(status)
         tweetinfo['status'] = status #原始数据
         #tweetinfo['tweetNotable'] = tweetinfo['notable'] #推文发布用户是否值得关注

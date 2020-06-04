@@ -328,7 +328,7 @@ tweetsmemory = {}
 userinfolist = TempMemory(def_puth_method + '_' + 'userinfolist.json',limit = 1000,autosave = False,autoload = False)
 class tweetEventDeal:
     #检测个人信息更新
-    def check_userinfo(self, userinfo, isnotable = False):
+    def check_userinfo(self, userinfo, isnotable = False, trigger = True):
         global userinfolist
         """
             运行数据比较
@@ -377,7 +377,8 @@ class tweetEventDeal:
                 data['user_id_str'] = userinfo['id_str']
                 data['str'] = s
                 eventunit = self.bale_event(data['type'],data['user_id'],data)
-                self.deal_event(eventunit)
+                if trigger:
+                    self.deal_event(eventunit)
         else:
             if isnotable or userinfo['id_str'] in push_list.spylist:
                 userinfolist.join(userinfo)
