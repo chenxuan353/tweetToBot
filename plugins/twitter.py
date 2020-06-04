@@ -1035,6 +1035,9 @@ async def gettweetlist(session: CommandSession):
     args = args[1]
     userinfo = args['userinfo']
     page = args['page']
+    if page <= 0:
+        await session.send("页码不正确！")
+        return
     res = tweetListener.tweet_event_deal.getUserTSInCache(userinfo['id'])
     if res == None:
         await session.send("推文缓存中不存在此用户数据！")
@@ -1104,6 +1107,8 @@ async def tweeallpushabout(session: CommandSession):
         '!全局设置 设置属性 值 -设置' + "\n" + \
         '!对象设置 对象ID 设置属性 值 -设置' + "\n" + \
         '!获取推文 推文ID -获取推文(仅检索缓存-待更新)' + "\n" + \
+        '!推文列表 无参数/#/用户ID/用户UID 无参数/页码' + "\n" + \
+        '注：推文列表仅读取缓存，#号标识默认用户(推送列表第一位)' + "\n" + \
         '如果出现问题可以 !反馈 反馈内容 反馈信息'
     await session.send(msg)
 
