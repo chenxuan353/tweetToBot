@@ -942,12 +942,13 @@ async def gettweettext(session: CommandSession):
                 await session.send("速率限制，请稍后再试！")
                 return
             res = app.statuses_lookup(id = tweet_id)
-            if not res[0]:
+            if not res[0] or res[1] == []:
                 await session.send("未查找到该推文！")
                 return
-            tweet = ptwitter.tweet_event_deal.deal_tweet(res[1])
-        await session.send("未从缓存中查找到该推文！")
-        return
+            tweet = ptwitter.tweet_event_deal.deal_tweet(res[1][0])
+        else:
+            await session.send("未从缓存中查找到该推文！")
+            return
     msg = "推文 " + encode_b64(tweet_id) + " 的内容如下：\n"
     msg = msg + tweet_event_deal.tweetToStr(tweet,'',1,'')
     await session.send(msg)

@@ -204,6 +204,7 @@ class tweetApiEventDeal(tweetEventDeal):
                     tweetinfo['Related_notable'] = False
         else:
             tweetinfo['Related_notable'] = True
+            tweetinfo['Related_user'] = tweetinfo['user']
         
         #推文是否值得关注
         if tweetinfo['user']['id_str'] in push_list.spylist:
