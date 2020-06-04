@@ -558,10 +558,15 @@ class tweetEventDeal:
         else:
             return user_id in tweetsmemory
     #从缓存中获取推文列表
-    def getUserTSInCache(self,user_id:str) -> TempMemory:
+    def getUserTSInCache(self,user_id:str,loadtest:bool = True) -> TempMemory:
         global tweetsmemory
         user_id = str(user_id)
         if user_id not in tweetsmemory:
+            if loadtest:
+                tweetsmemory[user_id] = TempMemory(os.path.join('twitterApi',user_id+'.json'),limit=150,autoload=True,autosave=True)
+                if tweetsmemory[user_id].tm != []:
+                    return tweetsmemory[user_id]
+                del tweetsmemory[user_id]
             return None
         return tweetsmemory[user_id]
     #尝试从缓存中获取推文
