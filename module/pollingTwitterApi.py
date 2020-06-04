@@ -190,7 +190,7 @@ def get_updata(trigger : bool = True):
                     on_status(statuss[i])
                 else:
                     #组织推特数据
-                    tweetinfo = tweet_event_deal.deal_tweet(statuss[i])
+                    tweetinfo = tweet_event_deal.deal_tweet(statuss[i],trigger = trigger)
                     #缓存处理
                     tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['trigger_user'],tweetinfo)
         itv = round(random.uniform(0,interval),2)
