@@ -215,12 +215,18 @@ async def delOne(session: CommandSession):
         res = tweetListener.tweet_event_deal.tryGetUserInfo(user_id=int(tweet_user_id))
         if res == {}:
             res = app.users_show(user_id = int(tweet_user_id))
+            if res[0]:
+                res = list(res)
+                res[1] = tweetListener.tweet_event_deal.get_userinfo(res[1])
         else:
             res = (True,res)
     else:
         res = tweetListener.tweet_event_deal.tryGetUserInfo(screen_name = tweet_user_id)
         if res == {}:
             res = app.users_show(screen_name = tweet_user_id)
+            if res[0]:
+                res = list(res)
+                res[1] = tweetListener.tweet_event_deal.get_userinfo(res[1])
         else:
             res = (True,res)
     if not res[0]:
@@ -233,15 +239,14 @@ async def delOne(session: CommandSession):
     res = push_list.delPushunitFromPushToAndTweetUserID(
         session.event['message_type'],
         session.event[('group_id' if session.event['message_type'] == 'group' else 'user_id')],
-        userinfo.id
+        userinfo['id']
         )
-    s = '用户UID:'+ str(userinfo.id) + "\n" + \
-        '用户ID:' + userinfo.screen_name + "\n" + \
-        '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
+    s = '用户UID:'+ str(userinfo['id']) + "\n" + \
+        '用户ID:' + userinfo['screen_name'] + "\n" + \
+        '用户昵称:' + userinfo['name'] + "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo['profile_image_url_https'] + ']'+ "\n" + \
         ('已经从监听列表中叉出去了哦' if res[0] == True else '移除失败了Σ（ﾟдﾟlll）:'+res[1])
     push_list.savePushList()
-    logger.info(CQsessionToStr(session))
     await session.send(s)
 
 @on_command('addone',aliases=['给俺D一个'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
@@ -265,7 +270,6 @@ async def addOne(session: CommandSession):
     elif message_type != 'private':
         await session.send('未收录的消息类型:'+message_type)
         return
-    logger.info(CQsessionToStr(session))
     arglimit = [
         {
             'name':'tweet_user_id', #参数名
@@ -322,12 +326,18 @@ async def addOne(session: CommandSession):
         res = tweetListener.tweet_event_deal.tryGetUserInfo(user_id=int(tweet_user_id))
         if res == {}:
             res = app.users_show(user_id = int(tweet_user_id))
+            if res[0]:
+                res = list(res)
+                res[1] = tweetListener.tweet_event_deal.get_userinfo(res[1])
         else:
             res = (True,res)
     else:
         res = tweetListener.tweet_event_deal.tryGetUserInfo(screen_name = tweet_user_id)
         if res == {}:
             res = app.users_show(screen_name = tweet_user_id)
+            if res[0]:
+                res = list(res)
+                res[1] = tweetListener.tweet_event_deal.get_userinfo(res[1])
         else:
             res = (True,res)
     if not res[0]:
@@ -337,20 +347,20 @@ async def addOne(session: CommandSession):
     nick = args['nick']
     des = args['des']
     if des == '':
-        des = userinfo.name+'('+userinfo.screen_name+')'
+        des = userinfo['name']+'('+userinfo['screen_name']+')'
     PushUnit = push_list.baleToPushUnit(
         session.event['self_id'],
         message_type,sent_id,
-        userinfo.id,
+        userinfo['id'],
         user_id,user_id,
         des,
         nick = nick
         )
     res = push_list.addPushunit(PushUnit)
-    s = '用户UID:'+ str(userinfo.id) + "\n" + \
-        '用户ID:' + userinfo.screen_name + "\n" + \
-        '用户昵称:' + userinfo.name + "\n" + \
-        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo.profile_image_url_https + ']'+ "\n" + \
+    s = '用户UID:'+ str(userinfo['id']) + "\n" + \
+        '用户ID:' + userinfo['screen_name'] + "\n" + \
+        '用户昵称:' + userinfo['name'] + "\n" + \
+        '头像:' + '[CQ:image,timeout='+config.img_time_out+',file=' + userinfo['profile_image_url_https'] + ']'+ "\n" + \
         ('已经加入了DD名单了哦' if res[0] == True else '添加失败:'+res[1])
     push_list.savePushList()
     await session.send(s)

@@ -883,7 +883,7 @@ async def encodetweetid(session: CommandSession):
     await session.send("推特ID压缩好了(oﾟ▽ﾟ)o请使用："+res)
 
 #获取推文
-@on_command('gettweettext',aliases=['获取推文','gtt'],permission=perm.SUPERUSER,only_to_me = False)
+@on_command('gettweettext',aliases=['获取推文','推文','gtt'],only_to_me = False)
 async def gettweettext(session: CommandSession):
     if not headdeal(session):
         return
@@ -951,6 +951,108 @@ async def gettweettext(session: CommandSession):
     msg = "推文 " + encode_b64(tweet_id) + " 的内容如下：\n"
     msg = msg + tweet_event_deal.tweetToStr(tweet,'',1,'')
     await session.send(msg)
+
+#推文列表
+@on_command('gettweetlist',aliases=['获取推文列表','推文列表','gttl'],only_to_me = False)
+async def gettweetlist(session: CommandSession):
+    if not headdeal(session):
+        return
+    await asyncio.sleep(0.2)
+    message_type = session.event['message_type']
+    group_id = (session.event['group_id'] if message_type == 'group' else None)
+    user_id = session.event['user_id']
+    if perm_check(session,'-listener',user=True):
+        await session.send('操作被拒绝，权限不足(p)')
+        return
+    sent_id = 0
+    if message_type == 'private':
+        sent_id = user_id
+    elif message_type == 'group':
+        if not perm_check(session,'listener'):
+            await session.send('操作被拒绝，权限不足(g)')
+            return
+        sent_id = group_id
+    else:
+        await session.send('未收录的消息类型:'+message_type)
+        return
+    logger.info(CQsessionToStr(session))
+    #ID为空或者#号时尝试使用默认ID
+    def tryget(a,ad):
+        tweet_user_id = a
+        if tweet_user_id == '' or tweet_user_id == '#':
+            l = push_list.getLitsFromPushTo(message_type,sent_id)
+            if l == []:
+                return (False,'监听列表无成员，无法置入默认值')
+            tweet_user_id = str(l[0]['tweet_user_id'])
+        if tweet_user_id.isdecimal():
+            res = tweetListener.tweet_event_deal.tryGetUserInfo(user_id=int(tweet_user_id))
+            if res == {}:
+                res = (False,'缓存中不存在此用户！')
+            else:
+                res = (True,res)
+        else:
+            res = tweetListener.tweet_event_deal.tryGetUserInfo(screen_name = tweet_user_id)
+            if res == {}:
+                res = (False,'缓存中不存在此用户！')
+            else:
+                res = (True,res)
+        return res
+    arglimit = [
+        {
+            'name':'userinfo', #参数名
+            'des':'推特用户ID', #参数错误描述
+            'type':'dict', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':None, #默认值
+            'func':tryget, #函数，当存在时使用函数进行二次处理
+            'funcdealnull':True, #函数是否处理空值(控制默认值)
+            're':None, #正则表达式匹配(match函数)
+            're_error':'',
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        },
+        {
+            'name':'page', #参数名
+            'des':'页码', #参数错误描述
+            'type':'int', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
+            'strip':True, #是否strip
+            'lower':False, #是否转换为小写
+            'default':1, #默认值(不会进行二次类型转换)
+            'func':None, #函数，当存在时使用函数进行二次处理
+            're':None, #正则表达式匹配(match函数)
+            'vlimit':{ 
+                #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+            }
+        },
+    ]
+    args = argDeal(session.current_arg_text.strip(),arglimit)
+    if not args[0]:
+        await session.send(args[1] + '=>' + args[2])
+        return
+    args = args[1]
+    userinfo = args['userinfo']
+    page = args['page']
+    res = tweetListener.tweet_event_deal.getUserTSInCache(userinfo['id'])
+    if res == None:
+        await session.send("推文缓存中不存在此用户数据！")
+        return
+    tweets = res.tm
+    ttr = {'none':'发推','retweet':'转推','quoted':'转推并评论','reply_to_status':'回复','reply_to_user':'提及'}
+    msg = userinfo['name'] + "(" + userinfo['screen_name'] + ")的推文列表" + "\n"
+    msg = msg + "推文缩写ID,标识,推文简写内容" + "\n"
+    unit_cout = 0
+    for i in range(len(tweets)-1,-1,-1):
+        if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
+            msg = msg + encode_b64(tweets[i]['id']) + ',' + ttr[tweets[i]['type']] +',' + tweets[i]['text'][:20].replace("\n"," ") + "\n"
+        unit_cout = unit_cout + 1
+    totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
+    if unit_cout > 5 or page != 1:
+        msg = msg + '页数：' + str(page) + '/' + str(totalpage) + ' '
+    msg = msg + '总推文缓存数：' + str(unit_cout)
+    await session.send(msg)
+
 
 #获取全局监听推送列表(非正式查错命令)
 def get_tweeallpushlist(page:int):

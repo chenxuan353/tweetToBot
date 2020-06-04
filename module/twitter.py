@@ -541,16 +541,29 @@ class tweetEventDeal:
         #转换为字符串
         s = t.safe_substitute(template_value)
         return s
-    #是否存在指定ID的缓存
-    def hasUserInCache(self,user_id:str,loadtest:bool = True):
-        global tweetsmemory
+    #是否存在指定ID的推文缓存
+    def hasUserTSInCache(self,user_id:str,loadtest:bool = True):
+        global tweetsmemory,userinfolist
         user_id = str(user_id)
         if loadtest:
             if user_id not in tweetsmemory:
                 tweetsmemory[user_id] = TempMemory(os.path.join('twitterApi',user_id+'.json'),limit=150,autoload=True,autosave=True)
-            return tweetsmemory[user_id].tm != []
+            if tweetsmemory[user_id].tm != []:
+                tu = userinfolist.find((lambda item,val:item['id'] == val),int(user_id))
+                if tu == None:
+                    userinfolist.join(tweetsmemory[user_id].tm[0]['user'])
+                return True
+            else:
+                return False
         else:
             return user_id in tweetsmemory
+    #从缓存中获取推文列表
+    def getUserTSInCache(self,user_id:str) -> TempMemory:
+        global tweetsmemory
+        user_id = str(user_id)
+        if user_id not in tweetsmemory:
+            return None
+        return tweetsmemory[user_id]
     #尝试从缓存中获取推文
     def tryGetTweet(self,tweet_id,user_id:str = None):
         global tweetsmemory

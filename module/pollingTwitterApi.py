@@ -179,7 +179,7 @@ def get_updata(trigger : bool = True):
                 break
             continue
         statuss = res[1]
-        if not tweet_event_deal.hasUserInCache(spy):
+        if not tweet_event_deal.hasUserTSInCache(spy):
             #初次监测不推送
             logger.info("初次检测:"+spy)
             trigger = False

@@ -192,7 +192,21 @@ def argDeal(msg:str,arglimit:list):
                         return (False,ad['des'],'数值无效')
                 arglist[ad['name']] = typefun[ad['type']](hmsg)
             else:
-                if ad['default'] != None:
+                if 'funcdealnull' in ad and ad['func'] != None and ad['funcdealnull']:
+                    hmsg = ad['func'](hmsg,ad)
+                    #处理函数返回格式
+                    #其一 None/合法值
+                    #其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
+                    if type(hmsg) is tuple:
+                        if hmsg[0]:
+                            arglist[ad['name']] = hmsg[1]
+                        else:
+                            return (False,ad['des'],hmsg[1])
+                    elif hmsg == None:
+                        return (False,ad['des'],'参数不符合规则(fun)')
+                    else:
+                        arglist[ad['name']] = hmsg
+                elif ad['default'] != None:
                     arglist[ad['name']] = ad['default']
                 else:
                     return (False,ad['des'],'缺少参数')
