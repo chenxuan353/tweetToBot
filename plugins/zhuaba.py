@@ -11,8 +11,8 @@ async def pa(session: CommandSession):
     index = random.randint(0,len(str)-1)
     await session.send(str[index])
 
-@on_command('图来',only_to_me = False)
-async def _ (session:CommandSession):
-    await asyncio.sleep(0.2)
-    #await session.send('[CQ:]')
+# @on_command('图来',only_to_me = False)
+# async def _ (session:CommandSession):
+#     await asyncio.sleep(0.2)
+#     #await session.send('[CQ:]')
     

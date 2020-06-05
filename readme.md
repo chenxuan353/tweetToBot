@@ -31,7 +31,9 @@
 
 ※ 为了保证推送的正常运行使用了多线程。
 
-※ 安装思源黑体CN之后可以修复字体问题
+※ 安装思源黑体CN之后可以修复字体问题。
+
+※ 部分周边功能开发见[分仓库](https://github.com/Cyame/OkayuTweetBot)
 
 
 
@@ -47,7 +49,7 @@
 
   ```shell
   mkdir coolq-data
-  docker run --name=coolq -d -p <CPDI>:9000 -v /root/coolq-data:/home/user/coolq -e VNC_PASSWD=<CP> -e COOLQ_ACCOUNT=<QQ> coolq/wine-coolq
+  docker run --name=coolq -d -p <VNC Port>:9000 -v /root/coolq-data:/home/user/coolq -e VNC_PASSWD=<Password> -e COOLQ_ACCOUNT=<QQ> coolq/wine-coolq
   ```
 
 
@@ -55,8 +57,16 @@
 
   ```shell
   mkdir coolq
-  docker run --name=coolq -d -p <Corresponding Port of Docker Image>:9000 -v `pwd`/coolq:/home/user/coolq -e COOLQ_ACCOUNT=<QQ ID> -e COOLQ_URL=http://dlsec.cqp.me/cqp-full -e VNC_PASSWD=<Console Password> coolq/wine-coolq
+  docker run --name=coolq -d -p <VNC Port>:9000 -v `pwd`/coolq:/home/user/coolq -e COOLQ_ACCOUNT=<QQ ID> -e COOLQ_URL=http://dlsec.cqp.me/cqp-full -e VNC_PASSWD=<Password> coolq/wine-coolq
   ```
+
+※ 其中9000为默认内部端口 映射到指定的VNC端口 故在后面操作图形化界面时 需通过
+
+```
+HOST IP:VNC Port
+```
+
+的地址打开。
 
 **如需使用除搬运推文以外的其他功能(烤推等涉及图片发送的功能) **
 
@@ -166,6 +176,8 @@ pip -r requirement.txt
 
 进行一键安装
 
+**如进行一键依赖安装时发送报错 请检查Python版本是否为3.7**
+
 ##### Chrome浏览器与ChromeDriver
 
 您可以参考[本教程](https://blog.csdn.net/Fiverya/article/details/98869750)
@@ -203,7 +215,7 @@ CQHTTP为nonebot提供了HTTP和反向WS两种通信协议 具体配置方法如
 
 - POST通信地址
 
-  编辑插件配置中`post_url`字段**※ 须添加`https://`作为前缀**
+  编辑插件配置中`post_url`字段 **※ 须添加`https://`作为前缀**
 
   并与项目配置中`NONEBOT_HOST`和`NONEBOT_PORT`所指向地址保持一致
 

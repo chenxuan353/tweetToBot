@@ -1,5 +1,7 @@
 requests==2.23.0
+aiocqhttp==1.2.5
 nonebot==1.6.0
 APScheduler==3.6.3
 selenium==3.141.0
 xmltodict==2020.5.8
+tweepy==3.8.0
