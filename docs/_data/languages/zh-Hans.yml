@@ -1,25 +1,25 @@
 title:
-  archive: 归档
+  archive: 更新日志
   category: 分类
   tag: 标签
   schedule: 日程表
-  archives: 归档
+  archives: 更新日志
   categories: 分类
   tags: 标签
   about: 关于
 
-author: 博主
+author: 撰写
 
 menu:
   home: 首页
-  archives: 归档
-  categories: API
+  archives: 更新日志
+  categories: 分类
   tags: 标签
   about: 关于
   search: 搜索
   schedule: 日程表
-  sitemap: 站点地图
-  commonweal: 公益404
+  #sitemap: 站点地图
+  #commonweal: 公益404
 
 sidebar:
   overview: 概览
@@ -91,3 +91,10 @@ symbol:
   comma: '， '
   period: '。 '
   colon: '：'
+ 
+categories:
+  introduction:简介
+  basic:入门
+  advanced:进阶
+  api:API
+  logs:开发日志

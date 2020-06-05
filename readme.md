@@ -251,7 +251,7 @@ CQHTTP为nonebot提供了HTTP和反向WS两种通信协议 具体配置方法如
 
   并与项目配置中`NONEBOT_HOST`和`NONEBOT_PORT`所指向地址保持一致
 
-  （API_ROOT与反向WS无关 如**只使用反向WS** 可注释本变量）
+  （API_ROOT与反向WS无关 如**在使用反向WS后端** **必须**注释掉本变量）
 
 #### 启动项目
 
