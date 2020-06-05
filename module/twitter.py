@@ -89,9 +89,12 @@ class PushList:
         'change_headimgchange'
         )
     def __init__(self,puth_method:str = def_puth_method):
+        global base_tweet_id
         self.puth_method = puth_method
         if self.puth_method == 'TweetApi':
             self.spylist.append(base_tweet_id)
+        else:
+            base_tweet_id = ""
 
     #重置推送
     def clear(self):
