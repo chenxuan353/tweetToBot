@@ -1,0 +1,837 @@
+
+<!doctype html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/assets/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/assets/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/assets/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Jekyll, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="tweetToQQbot 使用文档" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/assets/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="# NexT &amp;gt; NexT is a high quality elegant [Jekyll](https://jekyllrb.com) theme ported from [Hexo NexT](https://github.com/iissnan/hexo-theme-next). It is crafted from scratch, with love. * [Live Preview](http://simpleyyt.github.io/jekyll-theme-next/) * [Yitao&apos;s Blog](http://simpleyyt.com) ## Screenshots * Desktop ![Desktop Preview](http://iissnan.com/nexus/next/desktop-preview.png) * Sidebar ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-preview.png) * Sidebar (Post details page) ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-toc.png) * Mobile ![Mobile Preview](http://iissnan.com/nexus/next/mobile.png) ## Installation Check whether you have `Ruby 2.1.0` or higher installed: ```sh ruby --version ``` Install `Bundler`: ```sh gem install bundler ``` Clone NexT theme: ```sh git clone https://github.com/Simpleyyt/jekyll-theme-next.git cd jekyll-theme-next ``` Install Jekyll and other dependencies from the GitHub Pages gem: ```sh bundle install ``` Run your Jekyll site locally: ```sh bundle exec jekyll server ``` More Details：[Setting up your GitHub Pages site locally with Jekyll](https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/) ## Features ### Multiple languages support, including: English / Russian / French / German / Simplified Chinese / Traditional Chinese. Default language is English. ```yml language: en # language: zh-Hans # language: fr-FR # language: zh-hk # language: zh-tw # language: ru # language: de ``` Set `language` field as following in site `_config.yml` to change to Chinese. ```yml language: zh-Hans ``` ### Comment support. NexT has native support for `DuoShuo` and `Disqus` comment systems. Add the following snippets to your `_config.yml`: ```yml duoshuo: enable: true shortname: your-duoshuo-shortname ``` OR ```yml disqus_shortname: your-disqus-shortname ``` ### Social Media NexT can automatically add links to your Social Media accounts: ```yml social: GitHub: your-github-url Twitter: your-twitter-url Weibo: your-weibo-url DouBan: your-douban-url ZhiHu: your-zhihu-url ``` ### Feed link. &amp;gt; Show a feed link. Set `rss` field in theme&apos;s `_config.yml`, as the following value: 1. `rss: false` will totally disable feed link. 2. `rss: ` use sites&apos; feed link. This is the default option. Follow the installation instruction in the plugin&apos;s README. After the configuration is done for this plugin, the feed link is ready too. 3. `rss: http://your-feed-url` set specific feed link. ### Up to 5 code highlight themes built-in. NexT uses [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) with 5 themes for you to choose from. Next use `normal` by default. Have a preview about `normal` and `night`: ![Tomorrow Normal Preview](http://iissnan.com/nexus/next/tomorrow-normal.png) ![Tomorrow Night Preview](http://iissnan.com/nexus/next/tomorrow-night.png) Head over to [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) for more details. ## Configuration NexT comes with few configurations. ```yml # Menu configuration. menu: home: / archives: /archives # Favicon favicon: /assets/favicon.ico # Avatar (put the image into next/source/images/) # can be any image format supported by web browsers (JPEG,PNG,GIF,SVG,..) avatar: /assets/default_avatar.png # Code highlight theme # available: normal | night | night eighties | night blue | night bright highlight_theme: normal # Fancybox for image gallery fancybox: true # Specify the date when the site was setup since: 2013 ``` ## Browser support ![Browser support](http://iissnan.com/nexus/next/browser-support.png)">
+<meta name="keywords" content="Jekyll, NexT">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NexT">
+<meta property="og:url" content="https://chenxuan353.github.io/tweetToQQbot/README.en/">
+<meta property="og:site_name" content="tweetToQQbot 使用文档">
+<meta property="og:description" content="# NexT &amp;gt; NexT is a high quality elegant [Jekyll](https://jekyllrb.com) theme ported from [Hexo NexT](https://github.com/iissnan/hexo-theme-next). It is crafted from scratch, with love. * [Live Preview](http://simpleyyt.github.io/jekyll-theme-next/) * [Yitao&apos;s Blog](http://simpleyyt.com) ## Screenshots * Desktop ![Desktop Preview](http://iissnan.com/nexus/next/desktop-preview.png) * Sidebar ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-preview.png) * Sidebar (Post details page) ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-toc.png) * Mobile ![Mobile Preview](http://iissnan.com/nexus/next/mobile.png) ## Installation Check whether you have `Ruby 2.1.0` or higher installed: ```sh ruby --version ``` Install `Bundler`: ```sh gem install bundler ``` Clone NexT theme: ```sh git clone https://github.com/Simpleyyt/jekyll-theme-next.git cd jekyll-theme-next ``` Install Jekyll and other dependencies from the GitHub Pages gem: ```sh bundle install ``` Run your Jekyll site locally: ```sh bundle exec jekyll server ``` More Details：[Setting up your GitHub Pages site locally with Jekyll](https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/) ## Features ### Multiple languages support, including: English / Russian / French / German / Simplified Chinese / Traditional Chinese. Default language is English. ```yml language: en # language: zh-Hans # language: fr-FR # language: zh-hk # language: zh-tw # language: ru # language: de ``` Set `language` field as following in site `_config.yml` to change to Chinese. ```yml language: zh-Hans ``` ### Comment support. NexT has native support for `DuoShuo` and `Disqus` comment systems. Add the following snippets to your `_config.yml`: ```yml duoshuo: enable: true shortname: your-duoshuo-shortname ``` OR ```yml disqus_shortname: your-disqus-shortname ``` ### Social Media NexT can automatically add links to your Social Media accounts: ```yml social: GitHub: your-github-url Twitter: your-twitter-url Weibo: your-weibo-url DouBan: your-douban-url ZhiHu: your-zhihu-url ``` ### Feed link. &amp;gt; Show a feed link. Set `rss` field in theme&apos;s `_config.yml`, as the following value: 1. `rss: false` will totally disable feed link. 2. `rss: ` use sites&apos; feed link. This is the default option. Follow the installation instruction in the plugin&apos;s README. After the configuration is done for this plugin, the feed link is ready too. 3. `rss: http://your-feed-url` set specific feed link. ### Up to 5 code highlight themes built-in. NexT uses [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) with 5 themes for you to choose from. Next use `normal` by default. Have a preview about `normal` and `night`: ![Tomorrow Normal Preview](http://iissnan.com/nexus/next/tomorrow-normal.png) ![Tomorrow Night Preview](http://iissnan.com/nexus/next/tomorrow-night.png) Head over to [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) for more details. ## Configuration NexT comes with few configurations. ```yml # Menu configuration. menu: home: / archives: /archives # Favicon favicon: /assets/favicon.ico # Avatar (put the image into next/source/images/) # can be any image format supported by web browsers (JPEG,PNG,GIF,SVG,..) avatar: /assets/default_avatar.png # Code highlight theme # available: normal | night | night eighties | night blue | night bright highlight_theme: normal # Fancybox for image gallery fancybox: true # Specify the date when the site was setup since: 2013 ``` ## Browser support ![Browser support](http://iissnan.com/nexus/next/browser-support.png)">
+<meta property="og:locale" content="zh-Hans">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NexT">
+<meta name="twitter:description" content="# NexT &amp;gt; NexT is a high quality elegant [Jekyll](https://jekyllrb.com) theme ported from [Hexo NexT](https://github.com/iissnan/hexo-theme-next). It is crafted from scratch, with love. * [Live Preview](http://simpleyyt.github.io/jekyll-theme-next/) * [Yitao&apos;s Blog](http://simpleyyt.com) ## Screenshots * Desktop ![Desktop Preview](http://iissnan.com/nexus/next/desktop-preview.png) * Sidebar ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-preview.png) * Sidebar (Post details page) ![Desktop Sidebar Preview](http://iissnan.com/nexus/next/desktop-sidebar-toc.png) * Mobile ![Mobile Preview](http://iissnan.com/nexus/next/mobile.png) ## Installation Check whether you have `Ruby 2.1.0` or higher installed: ```sh ruby --version ``` Install `Bundler`: ```sh gem install bundler ``` Clone NexT theme: ```sh git clone https://github.com/Simpleyyt/jekyll-theme-next.git cd jekyll-theme-next ``` Install Jekyll and other dependencies from the GitHub Pages gem: ```sh bundle install ``` Run your Jekyll site locally: ```sh bundle exec jekyll server ``` More Details：[Setting up your GitHub Pages site locally with Jekyll](https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/) ## Features ### Multiple languages support, including: English / Russian / French / German / Simplified Chinese / Traditional Chinese. Default language is English. ```yml language: en # language: zh-Hans # language: fr-FR # language: zh-hk # language: zh-tw # language: ru # language: de ``` Set `language` field as following in site `_config.yml` to change to Chinese. ```yml language: zh-Hans ``` ### Comment support. NexT has native support for `DuoShuo` and `Disqus` comment systems. Add the following snippets to your `_config.yml`: ```yml duoshuo: enable: true shortname: your-duoshuo-shortname ``` OR ```yml disqus_shortname: your-disqus-shortname ``` ### Social Media NexT can automatically add links to your Social Media accounts: ```yml social: GitHub: your-github-url Twitter: your-twitter-url Weibo: your-weibo-url DouBan: your-douban-url ZhiHu: your-zhihu-url ``` ### Feed link. &amp;gt; Show a feed link. Set `rss` field in theme&apos;s `_config.yml`, as the following value: 1. `rss: false` will totally disable feed link. 2. `rss: ` use sites&apos; feed link. This is the default option. Follow the installation instruction in the plugin&apos;s README. After the configuration is done for this plugin, the feed link is ready too. 3. `rss: http://your-feed-url` set specific feed link. ### Up to 5 code highlight themes built-in. NexT uses [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) with 5 themes for you to choose from. Next use `normal` by default. Have a preview about `normal` and `night`: ![Tomorrow Normal Preview](http://iissnan.com/nexus/next/tomorrow-normal.png) ![Tomorrow Night Preview](http://iissnan.com/nexus/next/tomorrow-night.png) Head over to [Tomorrow Theme](https://github.com/chriskempson/tomorrow-theme) for more details. ## Configuration NexT comes with few configurations. ```yml # Menu configuration. menu: home: / archives: /archives # Favicon favicon: /assets/favicon.ico # Avatar (put the image into next/source/images/) # can be any image format supported by web browsers (JPEG,PNG,GIF,SVG,..) avatar: /assets/default_avatar.png # Code highlight theme # available: normal | night | night eighties | night blue | night bright highlight_theme: normal # Fancybox for image gallery fancybox: true # Specify the date when the site was setup since: 2013 ``` ## Browser support ![Browser support](http://iissnan.com/nexus/next/browser-support.png)">
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '撰写'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://chenxuan353.github.io/tweetToQQbot"/>
+
+
+
+
+
+  <title>              NexT | tweetToQQbot 使用文档      </title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> <div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">tweetToQQbot 使用文档</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">BOT Documentation</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            更新日志
+          </a>
+        </li>
+      
+        
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+<div id="posts" class="posts-expand">
+<header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline">
+    
+      NexT
+    
+  </h1>
+
+
+
+</header>
+
+  
+  
+    <h1 id="next">NexT</h1>
+
+<blockquote>
+  <p>NexT is a high quality elegant <a href="https://jekyllrb.com">Jekyll</a> theme ported from <a href="https://github.com/iissnan/hexo-theme-next">Hexo NexT</a>. It is crafted from scratch, with love.</p>
+</blockquote>
+
+<ul>
+  <li><a href="http://simpleyyt.github.io/jekyll-theme-next/">Live Preview</a></li>
+  <li><a href="http://simpleyyt.com">Yitao’s Blog</a></li>
+</ul>
+
+<h2 id="screenshots">Screenshots</h2>
+
+<ul>
+  <li>
+    <p>Desktop
+<img src="http://iissnan.com/nexus/next/desktop-preview.png" alt="Desktop Preview" /></p>
+  </li>
+  <li>
+    <p>Sidebar</p>
+  </li>
+</ul>
+
+<p><img src="http://iissnan.com/nexus/next/desktop-sidebar-preview.png" alt="Desktop Sidebar Preview" /></p>
+
+<ul>
+  <li>Sidebar (Post details page)</li>
+</ul>
+
+<p><img src="http://iissnan.com/nexus/next/desktop-sidebar-toc.png" alt="Desktop Sidebar Preview" /></p>
+
+<ul>
+  <li>Mobile</li>
+</ul>
+
+<p><img src="http://iissnan.com/nexus/next/mobile.png" alt="Mobile Preview" /></p>
+
+<h2 id="installation">Installation</h2>
+
+<p>Check whether you have <code class="language-plaintext highlighter-rouge">Ruby 2.1.0</code> or higher installed:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ruby <span class="nt">--version</span>
+</code></pre></div></div>
+
+<p>Install <code class="language-plaintext highlighter-rouge">Bundler</code>:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gem <span class="nb">install </span>bundler
+</code></pre></div></div>
+
+<p>Clone NexT theme:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/Simpleyyt/jekyll-theme-next.git
+<span class="nb">cd </span>jekyll-theme-next
+</code></pre></div></div>
+
+<p>Install Jekyll and other dependencies from the GitHub Pages gem:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">install</span>
+</code></pre></div></div>
+
+<p>Run your Jekyll site locally:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>jekyll server
+</code></pre></div></div>
+
+<p>More Details：<a href="https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/">Setting up your GitHub Pages site locally with Jekyll</a></p>
+
+<h2 id="features">Features</h2>
+
+<h3 id="multiple-languages-support-including-english--russian--french--german--simplified-chinese--traditional-chinese">Multiple languages support, including: English / Russian / French / German / Simplified Chinese / Traditional Chinese.</h3>
+
+<p>Default language is English.</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">language</span><span class="pi">:</span> <span class="s">en</span>
+<span class="c1"># language: zh-Hans</span>
+<span class="c1"># language: fr-FR</span>
+<span class="c1"># language: zh-hk</span>
+<span class="c1"># language: zh-tw</span>
+<span class="c1"># language: ru</span>
+<span class="c1"># language: de</span>
+</code></pre></div></div>
+
+<p>Set <code class="language-plaintext highlighter-rouge">language</code> field as following in site <code class="language-plaintext highlighter-rouge">_config.yml</code> to change to Chinese.</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">language</span><span class="pi">:</span> <span class="s">zh-Hans</span>
+</code></pre></div></div>
+
+<h3 id="comment-support">Comment support.</h3>
+
+<p>NexT has native support for <code class="language-plaintext highlighter-rouge">DuoShuo</code> and <code class="language-plaintext highlighter-rouge">Disqus</code> comment systems.</p>
+
+<p>Add the following snippets to your <code class="language-plaintext highlighter-rouge">_config.yml</code>:</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">duoshuo</span><span class="pi">:</span>
+  <span class="na">enable</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">shortname</span><span class="pi">:</span> <span class="s">your-duoshuo-shortname</span>
+</code></pre></div></div>
+
+<p>OR</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">disqus_shortname</span><span class="pi">:</span> <span class="s">your-disqus-shortname</span>
+</code></pre></div></div>
+
+<h3 id="social-media">Social Media</h3>
+
+<p>NexT can automatically add links to your Social Media accounts:</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">social</span><span class="pi">:</span>
+  <span class="na">GitHub</span><span class="pi">:</span> <span class="s">your-github-url</span>
+  <span class="na">Twitter</span><span class="pi">:</span> <span class="s">your-twitter-url</span>
+  <span class="na">Weibo</span><span class="pi">:</span> <span class="s">your-weibo-url</span>
+  <span class="na">DouBan</span><span class="pi">:</span> <span class="s">your-douban-url</span>
+  <span class="na">ZhiHu</span><span class="pi">:</span> <span class="s">your-zhihu-url</span>
+</code></pre></div></div>
+
+<h3 id="feed-link">Feed link.</h3>
+
+<blockquote>
+  <p>Show a feed link.</p>
+</blockquote>
+
+<p>Set <code class="language-plaintext highlighter-rouge">rss</code> field in theme’s <code class="language-plaintext highlighter-rouge">_config.yml</code>, as the following value:</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">rss: false</code> will totally disable feed link.</li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">rss:  </code> use sites’ feed link. This is the default option.</p>
+
+    <p>Follow the installation instruction in the plugin’s README. After the configuration is done for this plugin, the feed link is ready too.</p>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">rss: http://your-feed-url</code> set specific feed link.</li>
+</ol>
+
+<h3 id="up-to-5-code-highlight-themes-built-in">Up to 5 code highlight themes built-in.</h3>
+
+<p>NexT uses <a href="https://github.com/chriskempson/tomorrow-theme">Tomorrow Theme</a> with 5 themes for you to choose from.
+Next use <code class="language-plaintext highlighter-rouge">normal</code> by default. Have a preview about <code class="language-plaintext highlighter-rouge">normal</code> and <code class="language-plaintext highlighter-rouge">night</code>:</p>
+
+<p><img src="http://iissnan.com/nexus/next/tomorrow-normal.png" alt="Tomorrow Normal Preview" />
+<img src="http://iissnan.com/nexus/next/tomorrow-night.png" alt="Tomorrow Night Preview" /></p>
+
+<p>Head over to <a href="https://github.com/chriskempson/tomorrow-theme">Tomorrow Theme</a> for more details.</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>NexT comes with few configurations.</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="c1"># Menu configuration.</span>
+<span class="na">menu</span><span class="pi">:</span>
+  <span class="na">home</span><span class="pi">:</span> <span class="s">/</span>
+  <span class="na">archives</span><span class="pi">:</span> <span class="s">/archives</span>
+
+<span class="c1"># Favicon</span>
+<span class="na">favicon</span><span class="pi">:</span> <span class="s">/assets/favicon.ico</span>
+
+<span class="c1"># Avatar (put the image into next/source/images/)</span>
+<span class="c1"># can be any image format supported by web browsers (JPEG,PNG,GIF,SVG,..)</span>
+<span class="na">avatar</span><span class="pi">:</span> <span class="s">/assets/default_avatar.png</span>
+
+<span class="c1"># Code highlight theme</span>
+<span class="c1"># available: normal | night | night eighties | night blue | night bright</span>
+<span class="na">highlight_theme</span><span class="pi">:</span> <span class="s">normal</span>
+
+<span class="c1"># Fancybox for image gallery</span>
+<span class="na">fancybox</span><span class="pi">:</span> <span class="no">true</span>
+
+<span class="c1"># Specify the date when the site was setup</span>
+<span class="na">since</span><span class="pi">:</span> <span class="m">2013</span>
+
+</code></pre></div></div>
+
+<h2 id="browser-support">Browser support</h2>
+
+<p><img src="http://iissnan.com/nexus/next/browser-support.png" alt="Browser support" /></p>
+
+  
+</div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="https://avatars2.githubusercontent.com/u/48858695?s=400&u=df27fac408c6823e3938d1e22e2b567986c94a66&v=4"
+               alt="Chen Xuan & Cyame" />
+          <p class="site-author-name" itemprop="name">Chen Xuan & Cyame</p>
+           
+              <p class="site-description motion-element" itemprop="description">The Documentation Site for tweetToQQbot Project</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+        
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              
+              
+              <span class="links-of-author-item">
+                <a href="https://github.com/chenxuan353" target="_blank" title="GitHub@ChenXuan">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub@ChenXuan
+                </a>
+              </span>
+            
+              
+              
+              <span class="links-of-author-item">
+                <a href="https://github.com/Cyame" target="_blank" title="GitHub@Cyame">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub@Cyame
+                </a>
+              </span>
+            
+              
+              
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/chenxuan353" target="_blank" title="Twitter@ChenXuan">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                  Twitter@ChenXuan
+                </a>
+              </span>
+            
+              
+              
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/Cyame1121" target="_blank" title="Twitter@Cyame">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                  Twitter@Cyame
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Xuan & Cyame</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://jekyllrb.com">Jekyll</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/simpleyyt/jekyll-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+   
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  
+  
+  
+  
+  <script type="text/javascript" src="/assets/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/assets/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/assets/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/assets/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/assets/js/src/post-details.js?v=5.1.1"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/assets/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+    
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
+
