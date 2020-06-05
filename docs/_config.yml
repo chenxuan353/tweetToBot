@@ -213,7 +213,11 @@ font:
 # Social Links
 # Key is the link label showing to end users.
 # Value is the target link (E.g. GitHub: https://github.com/iissnan)
-#social:
+social:
+  GitHub: https://github.com/chenxuan353
+  AitHub: https://github.com/Cyame
+  Twitter: https://twitter.com/chenxuan353
+  Weibo: https://twitter.com/Cyame1121
   #LinkLabel: Link
 
 
@@ -227,13 +231,14 @@ social_icons:
   # Icon Mappings.
   # KeyMapsToSocialItemKey: NameOfTheIconFromFontAwesome
   GitHub: github
+  AitHub: github
   Twitter: twitter
-  Weibo: weibo
+  Weibo: twitter
 
 
 # Sidebar Avatar
 # in directory: /assets/images/avatar.gif
-#avatar:
+avatar: https://avatars2.githubusercontent.com/u/48858695?s=400&u=df27fac408c6823e3938d1e22e2b567986c94a66&v=4
 
 
 # Table Of Contents in the Sidebar

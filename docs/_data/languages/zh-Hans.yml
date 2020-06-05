@@ -13,7 +13,7 @@ author: 博主
 menu:
   home: 首页
   archives: 归档
-  categories: 分类
+  categories: API
   tags: 标签
   about: 关于
   search: 搜索
@@ -22,8 +22,8 @@ menu:
   commonweal: 公益404
 
 sidebar:
-  overview: 站点概览
-  toc: 文章目录
+  overview: 概览
+  toc: 目录
 
 post:
   created: 创建于
