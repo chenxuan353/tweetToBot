@@ -108,26 +108,25 @@ wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io
 
 ```JSON
 {
-    "$schema": "https://cqhttp.cc/config-schema.json",//无需修改
-    "host": "0.0.0.0",//HTTP协议监听IP
-    "port": 5700,//HTTP协议监听端口
-    "use_http": true,//默认开启 使用ws_reverse时可关闭
-    "ws_host": "0.0.0.0",//WebSocket协议收发IP
-    "ws_port": 6700,//WS收发端口6700
-    "use_ws": false,//本项目不使用正向WS 请关闭
-    "ws_reverse_url": "ws://127.0.0.1:8087/ws/",//反向WS地址
+    "$schema": "https://cqhttp.cc/config-schema.json",
+    "host": "0.0.0.0",
+    "port": 5700,
+    "use_http": true,
+    "ws_host": "0.0.0.0",
+    "ws_port": 6700,
+    "use_ws": false,
+    "ws_reverse_url": "ws://127.0.0.1:8087/ws/",
     "ws_reverse_api_url": "",
-    //此处默认是{ws_reverse_url}+'api/'如已经配置上一项则其余反向WS均无需另行配置 留空即可
     "ws_reverse_event_url": "",
-    "ws_reverse_reconnect_interval": 3000,//3S重连
+    "ws_reverse_reconnect_interval": 3000,
     "ws_reverse_reconnect_on_code_1000": true,
-    "use_ws_reverse": true,//使用反向WS
-    "post_url": "http://0.0.0.0:8890",//HTTP协议POST发送地址
-    "access_token": "",//TOKEN无需填写 使用默认值
-    "rate_limit_interval":500,//此项必须添加
-    "enable_rate_limited_actions": true,//此项必须添加
-    "enable_heartbeat": true,//请务必打开
-    "secret": "",//此后均可保持默认
+    "use_ws_reverse": true,
+    "post_url": "http://0.0.0.0:8890",
+    "access_token": "",
+    "rate_limit_interval":500,
+    "enable_rate_limited_actions": true,
+    "enable_heartbeat": true,
+    "secret": "",
     "post_message_format": "string",
     "serve_data_files": false,
     "update_source": "global",
@@ -138,6 +137,31 @@ wget https://github.com/richardchien/coolq-http-api/releases/download/v4.15.0/io
     "log_level": "info"
 }
 ```
+
+##### 
+
+| 配置文件                                                     | 注释说明                                              |
+| ------------------------------------------------------------ | ----------------------------------------------------- |
+| "$schema": "https://cqhttp.cc/config-schema.json"            |                                                       |
+| "host": "0.0.0.0"                                            | HTTP协议 事件上报IP（监听IP）**开启时须正确配置**     |
+| "port": 5700                                                 | HTTP协议 事件上报接口（监听接口）**开启时须正确配置** |
+| "use_http": true                                             | 启用HTTP **使用时开启**                               |
+| "ws_host": "0.0.0.0"                                         | 正向WS IP                                             |
+| "ws_port": 6700                                              | 正向WS端口                                            |
+| "use_ws": false                                              | 启用正向WS **本项目不使用 建议关闭**                  |
+| "ws_reverse_url": "ws://127.0.0.1:8087/ws/"                  | 反向WS地址 **务必正确填写**                           |
+| "ws_reverse_api_url": ""                                     | 反向WS API地址 **如填写反向WS地址则无需填写**         |
+| "ws_reverse_event_url": ""                                   | 反向WS 事件上报地址 **如填写反向WS地址则无需填写**    |
+| "ws_reverse_reconnect_interval": 3000                        | 重连间隔 **无需修改**                                 |
+| "ws_reverse_reconnect_on_code_1000": true                    | 是否重连 **无需修改**                                 |
+| "use_ws_reverse": true                                       | 启用反向WS **使用时开启 建议优先使用**                |
+| "post_url": "http://0.0.0.0:8890"                            | HTTP POST地址 **使用HTTP协议填写**                    |
+| "access_token": ""                                           | CQHTTP TOKEN **无需填写**                             |
+| "rate_limit_interval":500                                    | 频率限制 **务必添加**                                 |
+| "enable_rate_limited_actions": true                          | 开启频率限制 **务必打开**                             |
+| "enable_heartbeat": true                                     | 开启心跳 **务必打开**                                 |
+| "secret": "",<br/>"post_message_format": "string",<br/>"serve_data_files": false,<br/>"update_source": "global",<br/>"update_channel": "stable",<br/>"auto_check_update": false,<br/>"auto_perform_update": false,<br/>"show_log_console": true,<br/>"log_level": "info" | 各项均可保持默认 **无需修改**                         |
+
 ##### 关于协议
 
 本项目支持使用HTTP或反向WS协议进行通信，其中
@@ -215,7 +239,7 @@ CQHTTP为nonebot提供了HTTP和反向WS两种通信协议 具体配置方法如
 
 - POST通信地址
 
-  编辑插件配置中`post_url`字段 **※ 须添加`https://`作为前缀**
+  编辑插件配置中`post_url`字段 **※ 须添加`http://`作为前缀**
 
   并与项目配置中`NONEBOT_HOST`和`NONEBOT_PORT`所指向地址保持一致
 
