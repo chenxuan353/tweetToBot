@@ -107,6 +107,10 @@ def google_MachineTrans(SourceText,Source = 'auto',Target = 'zh'):
     except:
         s = traceback.format_exc(limit=10)
         logger.error(s)
+        try:
+            logger.error(r.text)
+        except:
+            pass
         return (False,'连接服务时异常')
     try:
         msg = ''
