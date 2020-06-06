@@ -231,8 +231,10 @@ async def about(session: CommandSession):
     if not headdeal(session):
         return
     logger.info(CQsessionToStr(session))
-    msg = '维护：晨轩°(3309003591) 相关协作者见开源地址' + "\n"
+    msg = '维护：'+config.mastername+' 相关协作者见开源地址' + "\n"
     msg = msg + '!转推帮助 -查看转推帮助' + "\n"
-    msg = msg + '!烤推帮助 -查看烤推帮助' + "\n"
+    msg = msg + '!烤推帮助 -查看烤推帮助(不支持私聊)' + "\n"
+    msg = msg + '!机翻帮助 -查看机翻帮助' + "\n"
+    msg = msg + '如有疑问或bug报告可以!反馈 反馈内容 进行反馈' + "\n"
     msg = msg + '项目开源地址：http://uee.me/dfRwA'
     await session.send(msg)

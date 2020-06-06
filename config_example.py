@@ -8,6 +8,9 @@ SUPERUSERS.add(123456) #多个就复制多行
 #命令起始标识
 COMMAND_START = {'!','！'}
 
+#维护者姓名
+mastername = "" #例如：master(123456)
+
 #nonebot的debug开关
 DEBUG = True
 #nonebot的监听地址与启动端口
