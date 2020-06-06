@@ -64,7 +64,7 @@ if __name__ == "__main__":
     #启动线程
     time.sleep(2)
     logger.info('启动推特流...')
-    #runTweetListener()
+    runTweetListener()
     logger.info('启动nonebot...')
     nonebot.init(config)
     nonebot.load_plugins(
