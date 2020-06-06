@@ -2,7 +2,7 @@
 title: 开发情况
 description: 本项目当前开发情况
 categories:
- - introduction
+ - 项目简介
 tags:
  - 简介
  - 情况

@@ -49,7 +49,7 @@ page:
   tags: 标签
 
 footer:
-  powered: "由 %s 强力驱动"
+  powered: "由 %s 驱动"
   theme: 主题
 
 counter:
@@ -65,8 +65,8 @@ counter:
 
   archive_posts:
     zero: 暂无日志。
-    one: 目前共计 1 篇日志。
-    other: "目前共计 %d 篇日志。"
+    one: 目前共计 1 篇文档。
+    other: "目前共计 %d 篇文档。"
 
 state:
   posts: 日志
@@ -85,16 +85,10 @@ cheers:
   great: 非常好
   excellent: 太棒了
 
-keep_on: 继续努力。
+keep_on: QuQ
 
 symbol:
   comma: '， '
   period: '。 '
   colon: '：'
  
-categories:
-  introduction:简介
-  basic:入门
-  advanced:进阶
-  api:API
-  logs:开发日志
