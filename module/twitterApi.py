@@ -90,7 +90,7 @@ class tweetApiEventDeal(tweetEventDeal):
         if not user['default_profile_image'] and \
             not user['default_profile'] and \
             not user['protected'] and \
-            (int(user['followers_count'] / (user['friends_count']+1)) > 500 or user['friends_count'] > 20000):
+            (int(user['followers_count'] / (user['friends_count']+1)) > 500 or user['followers_count'] > 20000):
             return True
         return False
     #重新包装推特用户信息(用户数据，是否检查更新)
@@ -120,8 +120,11 @@ class tweetApiEventDeal(tweetEventDeal):
         tweetinfo['id'] = tweet.id
         tweetinfo['id_str'] = tweet.id_str
         #尝试获取全文
-        if hasattr(tweet,'extended_tweet'):
-            tweetinfo['text'] = tweet.extended_tweet['full_text'].replace('&lt;','<').replace('&gt;','>')
+        if hasattr(tweet,'extended_tweet') or hasattr(tweet,'full_text'):
+            if hasattr(tweet,'full_text'):
+                tweetinfo['text'] = tweet.full_text.replace('&lt;','<').replace('&gt;','>')
+            else:
+                tweetinfo['text'] = tweet.extended_tweet['full_text'].replace('&lt;','<').replace('&gt;','>')
         else:
             tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&gt;','>')
 

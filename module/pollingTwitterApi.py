@@ -38,11 +38,11 @@ class TwitterAppApiPackage:
             return (False,'速率限制！')
         try:
             if autoid:
-                tweets = self.api.user_timeline(id = autoid,since_id = since_id)
+                tweets = self.api.user_timeline(id = autoid,since_id = since_id,tweet_mode = 'extended')
             elif user_id:
-                tweets = self.api.user_timeline(user_id = user_id)
+                tweets = self.api.user_timeline(user_id = user_id,tweet_mode = 'extended')
             elif screen_name:
-                tweets = self.api.user_timeline(screen_name = screen_name)
+                tweets = self.api.user_timeline(screen_name = screen_name,tweet_mode = 'extended')
             else:
                 return (False,'参数错误')
         except:
@@ -72,9 +72,9 @@ class TwitterAppApiPackage:
             return (False,'速率限制！')
         try:
             if id:
-                tweets = self.api.statuses_lookup([id])
+                tweets = self.api.statuses_lookup([id],tweet_mode = 'extended')
             elif ids:
-                tweets = self.api.statuses_lookup(ids)
+                tweets = self.api.statuses_lookup(ids,tweet_mode = 'extended')
             else:
                 return (False,'参数错误')
         except:

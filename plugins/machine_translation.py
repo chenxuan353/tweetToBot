@@ -21,7 +21,7 @@ def headdeal(session: CommandSession):
         return False
     return True
 
-@on_command('mtransopt',aliases=['翻译设置'],only_to_me = True)
+@on_command('mtransopt',aliases=['翻译设置','设置翻译'],only_to_me = False)
 async def mtransopt(session: CommandSession):
     if not headdeal(session):
         return
@@ -96,3 +96,15 @@ async def mtrans(session: CommandSession):
         res = default_engine(session.current_arg_text.strip())
     await session.send("---翻译结果---\n" + res[1])
 
+@on_command('mtranshelp',aliases=['翻译帮助','机翻帮助'],only_to_me = False)
+async def mtranshelp(session: CommandSession):
+    if not headdeal(session):
+        return
+    logger.info(CQsessionToStr(session))
+    msg = '!翻译设置 引擎 源语言 目标语言 -设置翻译 可以在私聊设置' + "\n"
+    msg = msg + '!翻译 翻译内容 - 翻译指定内容' + "\n"
+    msg = msg + '引擎支持：谷歌、腾讯' + "\n"
+    msg = msg + '语言支持：中日英韩，源语言额外支持自动' + "\n"
+    msg = msg + '翻译设置每人独立，源和目标语言设置时可忽略，默认为自动翻译到中文' + "\n"
+    msg = msg + '如有疑问或bug报告可以!反馈 反馈内容 进行反馈'
+    await session.send(msg)
