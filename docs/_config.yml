@@ -8,7 +8,7 @@ subtitle: 'tweetToQQbot, an automatic bot service based on CoolQ.'
 description: '监听推特更新转发至QQ 并提供一系列后续搬运周边服务'
 keywords: 监听, QQ, 机器人, 酷Q, 推特, 字幕组 
 author: ChenXuan & Cyame
-language: zh-CN
+language: zh-Hans
 timezone: 'Asia/Shanghai'
 
 # URL
@@ -93,7 +93,7 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: next
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
