@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
-keywords:
-author: John Doe
-language: en
-timezone: ''
+title: 基于CoolQ的推特BOT服务 用户文档
+subtitle: 'tweetToQQbot, an automatic bot service based on CoolQ.'
+description: '监听推特更新转发至QQ 并提供一系列后续搬运周边服务'
+keywords: 监听, QQ, 机器人, 酷Q, 推特, 字幕组 
+author: ChenXuan & Cyame
+language: zh-CN
+timezone: 'Asia/Shanghai'
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: chenxuan353.github.io/tweetToQQbot
+url: https://chenxuan353.github.io/tweetToQQbot/
 root: /tweetToQQbot/
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -48,7 +48,7 @@ highlight:
   enable: true
   line_number: true
   auto_detect: false
-  tab_replace: ''
+  tab_replace: '    '
   wrap: true
   hljs: false
 
@@ -100,5 +100,5 @@ theme: landscape
 deploy:
   type: git
   repo: https://github.com/chenxuan353/tweetToQQbot
-  branch: gh-page
+  branch: gh-pages
   message: Auto deployed, page updated.
