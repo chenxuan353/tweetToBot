@@ -99,5 +99,6 @@ theme: landscape
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: https://github.com/chenxuan353/tweetToQQbot/tree/master/docs
-  branch: master
+  repo: https://github.com/chenxuan353/tweetToQQbot
+  branch: gh-page
+  message: Auto deployed, page updated.
