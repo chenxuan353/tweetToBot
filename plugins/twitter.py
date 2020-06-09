@@ -1049,7 +1049,7 @@ async def gettweetlist(session: CommandSession):
     unit_cout = 0
     for i in range(len(tweets)-1,-1,-1):
         if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
-            msg = msg + ttr[tweets[i]['type']] + ',' + encode_b64(tweets[i]['id']) +',' + tweets[i]['text'][:20].replace("\n"," ") + "\n"
+            msg = msg + ("被" if tweets[i]['trigger_remote'] else "") + ttr[tweets[i]['type']] + ',' + encode_b64(tweets[i]['id']) +',' + tweets[i]['text'][:20].replace("\n"," ") + "\n"
         unit_cout = unit_cout + 1
     totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
     if unit_cout > 5 or page != 1:
