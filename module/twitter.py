@@ -416,7 +416,7 @@ class tweetEventDeal:
         if test != None:
             test.event_push(event)
         for Pushunit in table:
-            if not event['data']['trigger_remote']:
+            if (event['type'] in ('retweet','quoted','reply_to_status','reply_to_user') and not event['data']['trigger_remote']) or (event['type'] not in ('retweet','quoted','reply_to_status','reply_to_user')):
                 #获取属性判断是否可以触发事件
                 res = push_list.getPuslunitAttr(Pushunit,event['type'])
                 if res[0] == False:
