@@ -151,10 +151,7 @@ def on_status(status):
                     tweetinfo['Related_user']['id_str'] in push_list.spylist:
                     #使被动推送能够不完整运行
                     rtweetinfo = tweetinfo.copy()
-                    tu = rtweetinfo['Related_user']
-                    rtweetinfo['Related_user'] = rtweetinfo['user']
-                    rtweetinfo['user'] = tu
-                    rtweetinfo['trigger_user'] = tweetinfo['user']['id']
+                    rtweetinfo['trigger_user'] = tweetinfo['Related_user']['id']
                     rtweetinfo['trigger_remote'] = True #监测重定向标识
                     dealTweetsQueue.put(rtweetinfo,timeout=15)
             except:
