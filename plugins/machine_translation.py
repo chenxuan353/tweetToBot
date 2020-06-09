@@ -95,15 +95,33 @@ async def mtrans(session: CommandSession):
     else:
         res = default_engine(session.current_arg_text.strip())
     await session.send("---翻译结果---\n" + res[1])
-
+def engineListToStr():
+    global engine_list
+    #("开" if MachineTransApi['google']['switch'] else "关")
+    """
+        name = {
+            'nick':'引擎昵称',#用于展示(帮助列表)
+            "switch":MachineTransApi['tencent']['switch'],#是否启用
+            'bucket':TokenBucket(5,10),#速率限制的桶（一秒获取5次机会，最高存储10次使用机会）
+            ...
+        }
+    """
+    msg = ''
+    for eg in engine_list.values():
+        msg = msg + "{nick}({switch}) ".format(
+            nick = eg['option']['nick'],
+            switch = ("开" if eg['option']['switch'] else "关")
+            )
+    return msg
 @on_command('mtranshelp',aliases=['翻译帮助','机翻帮助'],only_to_me = False)
 async def mtranshelp(session: CommandSession):
     if not headdeal(session):
         return
     logger.info(CQsessionToStr(session))
-    msg = '!翻译设置 引擎 源语言 目标语言 -设置翻译 可以在私聊设置' + "\n"
+    msg = '--机器翻译帮助--' + "\n"
+    msg = msg + '!翻译设置 引擎 源语言 目标语言 -设置翻译 可以在私聊设置' + "\n"
     msg = msg + '!翻译 翻译内容 - 翻译指定内容' + "\n"
-    msg = msg + '引擎支持：谷歌、腾讯' + "\n"
+    msg = msg + '引擎支持：' + engineListToStr() + "\n"
     msg = msg + '语言支持：中日英韩，源语言额外支持自动' + "\n"
     msg = msg + '翻译设置每人独立，源和目标语言设置时可忽略，默认为自动翻译到中文' + "\n"
     msg = msg + '如有疑问或bug报告可以!反馈 反馈内容 进行反馈'

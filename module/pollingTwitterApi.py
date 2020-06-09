@@ -146,6 +146,17 @@ def on_status(status):
         if tweetinfo['tweetNotable']:
             try:
                 dealTweetsQueue.put(tweetinfo,timeout=15)
+                if tweetinfo['user']['id'] != tweetinfo['Related_user']['id'] and \
+                    tweetinfo['Related_notable'] and \
+                    tweetinfo['Related_user']['id_str'] in push_list.spylist:
+                    #使被动推送能够不完整运行
+                    rtweetinfo = tweetinfo.copy()
+                    tu = rtweetinfo['Related_user']
+                    rtweetinfo['Related_user'] = rtweetinfo['user']
+                    rtweetinfo['user'] = tu
+                    rtweetinfo['trigger_user'] = tweetinfo['user']['id']
+                    rtweetinfo['trigger_remote'] = True #监测重定向标识
+                    dealTweetsQueue.put(rtweetinfo,timeout=15)
             except:
                 s = traceback.format_exc(limit=5)
                 msgSendToBot(logger,'推特监听处理队列溢出，请检查队列！')

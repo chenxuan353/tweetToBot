@@ -23,7 +23,7 @@ def randUserAgent():
     ]
     return UAs[random.randint(0,len(UAs)-1)]
 
-#通用翻译
+#通用翻译语言(参数解析表)
 allow_st = {
     'Source':arglimitdeal({
         'auto':['自动识别','自动'],
@@ -41,10 +41,26 @@ allow_st = {
         'ko':['韩语','韩'],
     })
 }
+#参数解析对照表
+engine_nick = {
+    'tencent':'tencent','腾讯':'tencent',
+    'google':'google','谷歌翻译':'google','谷歌':'google',
+}
+#引擎设置
+"""
+    name = {
+        'nick':'引擎昵称',#用于展示(帮助列表)
+        "switch":MachineTransApi['tencent']['switch'],#是否启用
+        'bucket':TokenBucket(5,10),#速率限制的桶（一秒获取5次机会，最高存储10次使用机会）
+        ...
+    }
+"""
+
 
 #使用腾讯云SDK，SDK未安装时无法使用
 #pip install tencentcloud-sdk-python
 tencent = {
+    'nick':"腾讯",
     "switch":MachineTransApi['tencent']['switch'],
     'bucket':TokenBucket(5,5),
     #地区 ap-guangzhou->广州 ap-hongkong->香港
@@ -58,7 +74,7 @@ def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
     if not tencent['switch']:
         return (False,'错误，当前引擎未启用！')
     if not tencent['bucket'].consume(1):
-        return (False,'错误，速率限制！') 
+        return (False,'错误，速率限制！')
     from tencentcloud.common import credential
     from tencentcloud.common.profile.client_profile import ClientProfile
     from tencentcloud.common.profile.http_profile import HttpProfile
@@ -88,6 +104,7 @@ def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
         return (False,'获取结果时错误',err) 
 
 google = {
+    'nick':"谷歌",
     "switch":MachineTransApi['google']['switch'],
     'bucket':TokenBucket(5,5),
     'url':"http://translate.google.cn/translate_a/single?client=at&dt=t&dj=1&ie=UTF-8&sl={Source}&tl={Target}&q={SourceText}"
@@ -123,10 +140,6 @@ def google_MachineTrans(SourceText,Source = 'auto',Target = 'zh'):
 
 
 
-engine_nick = {
-    'tencent':'tencent','腾讯':'tencent',
-    'google':'google','谷歌翻译':'google','谷歌':'google',
-}
 engine_list = {
     'tencent':{
         'func':tencent_MachineTrans,
@@ -134,7 +147,7 @@ engine_list = {
     },
     'google':{
         'func':google_MachineTrans,
-        'option':tencent
+        'option':google
     },
 }
 
