@@ -416,12 +416,13 @@ class tweetEventDeal:
         if test != None:
             test.event_push(event)
         for Pushunit in table:
-            #获取属性判断是否可以触发事件
-            res = push_list.getPuslunitAttr(Pushunit,event['type'])
-            if res[0] == False:
-                raise Exception("获取Pushunit属性值失败",Pushunit)
-            if res[1] == 1:
-                self.deal_event_unit(event,Pushunit)
+            if not tweetinfo['trigger_remote']:
+                #获取属性判断是否可以触发事件
+                res = push_list.getPuslunitAttr(Pushunit,event['type'])
+                if res[0] == False:
+                    raise Exception("获取Pushunit属性值失败",Pushunit)
+                if res[1] == 1:
+                    self.deal_event_unit(event,Pushunit)
             elif event['type'] in ('retweet','quoted','reply_to_status','reply_to_user'):
                 tweetinfo = event['data']
                 if event['type'] in ('quoted','reply_to_status','reply_to_user') and tweetinfo['trigger_remote']:
