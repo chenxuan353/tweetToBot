@@ -350,7 +350,7 @@ class TweetTrans:
                 }
                 function textparse(text){
                     text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
-                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/,'<a style="color:#1DA1F2;">$1</a>')
+                    text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/g,'<a style="color:#1DA1F2;">$1</a>')
                     return twemoji.parse(text,{
                         attributes:attributesCallback,
                         base:'https://abs-0.twimg.com/emoji/v2/',
