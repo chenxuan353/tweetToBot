@@ -458,7 +458,7 @@ class tweetEventDeal:
     def tweetToStr(self, tweetinfo, nick, upimg=config.pushunit_default_config['upimg'], template_text=''):
         global mintweetID
         global userinfolist
-        if nick == '':
+        if nick == '' or ('trigger_remote' in tweetinfo and tweetinfo['trigger_remote']):
             if tweetinfo['user']['name']:
                 nick = tweetinfo['user']['name']
             else:
