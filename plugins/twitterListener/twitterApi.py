@@ -96,6 +96,19 @@ async def runTweetListener(session: CommandSession):
     await session.send('监听启动中...')
     logger.info(CQsessionToStr(session))
 
+@on_command('stopTweetListener',aliases=['停止监听'], permission=perm.SUPERUSER,only_to_me = False)
+async def stopTweetListener(session: CommandSession):
+    if not headdeal(session):
+        return
+    await asyncio.sleep(0.2)
+    if not tweetListener.run_info['isRun']:
+        await session.send('推特监听处于停止状态！')
+        return
+    tweetListener.setStreamOpen(False)
+    await session.send('监听已关闭')
+    logger.info(CQsessionToStr(session))
+
+
 #获取监听错误列表
 def get_tweeterrorlist(page:int):
     table = tweetListener.run_info['errorlist'].tm
