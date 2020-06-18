@@ -1,5 +1,5 @@
 from module.twitterApi import tweet_event_deal,dealTweetsQueue,push_list
-from helper import getlogger,CQsessionToStr,TokenBucket,msgSendToBot
+from helper import getlogger,CQsessionToStr,TokenBucket,msgSendToBot,TempMemory
 import tweepy
 import config
 import threading
@@ -45,6 +45,9 @@ class TwitterAppApiPackage:
                 tweets = self.api.user_timeline(screen_name = screen_name,tweet_mode = 'extended')
             else:
                 return (False,'参数错误')
+        except tweepy.error.TweepError as e:
+            logger.warning(e.api_code)
+            return (False,'tweepy错误！')
         except:
             s = traceback.format_exc(limit=10)
             logger.warning(s)
@@ -62,6 +65,9 @@ class TwitterAppApiPackage:
                 user = self.api.get_user(screen_name = screen_name)
             else:
                 return (False,'参数错误')
+        except tweepy.error.TweepError as e:
+            logger.warning(e)
+            return (False,'tweepy错误！',e.response.status_code)
         except:
             s = traceback.format_exc(limit=10)
             logger.warning(s)
@@ -77,6 +83,9 @@ class TwitterAppApiPackage:
                 tweets = self.api.statuses_lookup(ids,tweet_mode = 'extended')
             else:
                 return (False,'参数错误')
+        except tweepy.error.TweepError as e:
+            logger.warning(e)
+            return (False,'tweepy错误！',e.response.status_code)
         except:
             s = traceback.format_exc(limit=10)
             logger.warning(s)
@@ -122,6 +131,7 @@ run_info = {
     'Thread':None,
     'keepRun':True,
     'lasterror':int(time.time()),
+    'errorlist':TempMemory('pollingTwitterApi_apierror.json',limit=30,autoload=True,autosave=True),
     'error':0,
 }
 def setStreamOpen(b:bool):
@@ -176,7 +186,8 @@ def get_updata(trigger : bool = True):
         res = app.users_timeline(user_id=int(spy))
         if not res[0]:
             logger.error("错误，未搜索到"+str(spy)+"的时间线数据")
-            if run_info['lasterror'] - int(time.time()) > 300:
+            run_info['errorlist'].join(res)
+            if int(time.time()) - run_info['lasterror']  > 300:
                 run_info['lasterror'] = int(time.time())
                 run_info['error'] = 0
             run_info['error'] = run_info['error'] + 1
@@ -201,7 +212,7 @@ def get_updata(trigger : bool = True):
                     tweetinfo = tweet_event_deal.deal_tweet(statuss[i],trigger = trigger)
                     #缓存处理
                     tweet_event_deal.bale_event(tweetinfo['type'],tweetinfo['trigger_user'],tweetinfo)
-        itv = round(random.uniform(0,interval),2)
+        itv = 0.5 + round(random.uniform(0,interval),2)
         interval = interval - itv
         interval = max(0.5,interval)
         time.sleep(itv)

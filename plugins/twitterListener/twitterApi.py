@@ -4,8 +4,7 @@ from helper import getlogger,msgSendToBot,CQsessionToStr,argDeal
 from tweepy import TweepError
 import module.permissiongroup as permissiongroup
 from module.pollingTwitterApi import ptwitterapps
-from module.twitter import push_list
-import module.twitterApi as tweetListener
+from plugins.twitter import tweetListener
 import traceback
 import re
 import asyncio
@@ -21,6 +20,7 @@ __plugin_usage__ = r"""
 详见：
 https://github.com/chenxuan353/tweetToQQbot
 """
+
 
 permgroupname = 'tweetListener'
 def perm_check(session: CommandSession,permunit:str,Remotely:dict = None,user:bool = False):
@@ -94,6 +94,42 @@ async def runTweetListener(session: CommandSession):
         return
     tweetListener.setStreamOpen(True)
     await session.send('监听启动中...')
+    logger.info(CQsessionToStr(session))
+
+#获取监听错误列表
+def get_tweeterrorlist(page:int):
+    table = tweetListener.run_info['errorlist'].tm
+    msg = "错误原因,错误代码" + "\n"
+    unit_cout = 0
+    for i in range(len(table)-1,-1,-1):
+        if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
+            msg = msg + table[i][1] + ',' + (str(table[i][2]) if (len(table[i])>2) else '-1') + '\n'
+        unit_cout = unit_cout + 1
+    totalpage = unit_cout//5 + (0 if (unit_cout%5 == 0) else 1)
+    if unit_cout > 5 or page != 1:
+        msg = msg + '页数：' + str(page) + '/' + str(totalpage) + ' '
+    msg = msg + '错误记录数：' + str(unit_cout)
+    return msg
+@on_command('gettweeterrorlist',aliases=['监听错误列表'],permission=perm.SUPERUSER,only_to_me = False)
+async def tweeallpushlist(session: CommandSession):
+    if not headdeal(session):
+        return
+    if 'errorlist' not in tweetListener.run_info:
+        await session.send("错误列表不存在")
+        return
+    await asyncio.sleep(0.1)
+    page = 1
+    stripped_arg = session.current_arg_text.strip().lower()
+    if stripped_arg != '':
+        if not stripped_arg.isdecimal():
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
+            return
+        page = int(stripped_arg)
+        if page < 1:
+            await session.send("参数似乎有点不对劲？请再次检查o(￣▽￣)o")
+            return
+    s = get_tweeterrorlist(page)
+    await session.send(s)
     logger.info(CQsessionToStr(session))
 
 @on_command('getuserinfo',aliases=['查询推特用户'],permission=perm.SUPERUSER | perm.PRIVATE_FRIEND | perm.GROUP_ADMIN | perm.GROUP_OWNER,only_to_me = True)
