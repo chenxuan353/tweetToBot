@@ -129,6 +129,7 @@ run_info = {
     'DealDataThread':None,
     'queque':dealTweetsQueue,
     'Thread':None,
+    'isRun':True,
     'keepRun':True,
     'lasterror':int(time.time()),
     'errorlist':TempMemory('pollingTwitterApi_apierror.json',limit=30,autoload=True,autosave=True),
@@ -195,6 +196,7 @@ def get_updata(trigger : bool = True):
                 #短时间错误次数过高
                 msgSendToBot(logger,"错误，监测服务异常，请检测后手动启动")
                 run_info['keepRun'] = False
+                run_info['isRun'] = False
                 break
             continue
         statuss = res[1]
@@ -234,8 +236,11 @@ def Run():
     time.sleep(polling_interval)
     while True:
         if run_info['keepRun']:
+            run_info['isRun'] = True
             logger.info("PollingTweetApi 自动检测")
             get_updata()
+        else:
+            run_info['isRun'] = False
         
         
 
