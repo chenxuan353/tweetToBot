@@ -112,7 +112,7 @@ async def stopTweetListener(session: CommandSession):
 #获取监听错误列表
 def get_tweeterrorlist(page:int):
     table = tweetListener.run_info['errorlist'].tm
-    msg = "错误原因,错误代码" + "\n"
+    msg = "错误原因,错误代码(-1表示非API错误)" + "\n"
     unit_cout = 0
     for i in range(len(table)-1,-1,-1):
         if unit_cout >= (page-1)*5 and unit_cout < (page)*5:
