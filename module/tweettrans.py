@@ -394,7 +394,7 @@ class TweetTrans:
                         tweets.push(trans)
                         //检测推文是否结束
                         //转推喜欢
-                        let rtlk = elart.querySelector('div.r-1w6e6rj.r-9qu9m4')
+                        let rtlk = elart.querySelector('div.r-9qu9m4')
                         if(rtlk){
                             //跳出
                             rtlk.remove()
