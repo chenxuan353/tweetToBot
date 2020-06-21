@@ -4,7 +4,7 @@ from helper import getlogger,msgSendToBot,CQsessionToStr,argDeal
 from tweepy import TweepError
 import module.permissiongroup as permissiongroup
 from module.pollingTwitterApi import ptwitterapps
-from plugins.twitter import tweetListener
+from plugins.twitter import tweetListener,push_list
 import traceback
 import re
 import asyncio
@@ -20,7 +20,6 @@ __plugin_usage__ = r"""
 详见：
 https://github.com/chenxuan353/tweetToQQbot
 """
-
 
 permgroupname = 'tweetListener'
 def perm_check(session: CommandSession,permunit:str,Remotely:dict = None,user:bool = False):
