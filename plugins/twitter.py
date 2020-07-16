@@ -28,6 +28,7 @@ elif config.UPDATA_METHOD == 'PollingTweetApi':
 else:
     raise Exception('暂不支持的更新检测(UPDATA_METHOD)方法：'+config.UPDATA_METHOD)
 tweet_event_deal = tweetListener.tweet_event_deal
+
 #转推权限
 permgroupname = 'tweetListener'
 permissiongroup.perm_addLegalPermGroup(__name__,'转推模块',permgroupname)

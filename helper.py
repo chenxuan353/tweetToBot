@@ -96,7 +96,7 @@ def arglimitdeal(ls:dict):
             for v in ls[k]:
                 res[v]=k
         else:
-            res[res[k]] = k
+            res[res[k]]=k
     return res
     
 #参数处理
