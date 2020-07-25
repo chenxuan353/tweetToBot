@@ -2,6 +2,7 @@
 cache/
 config.py
 dbtest.py
+v3_test.py
 chromedriver.exe
 *.DS_Store
 img/

@@ -1,4 +1,4 @@
-# 可提供一对多转推服务的bot后端
+# 可提供一对多转推服务的bot后端v3
 [![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)![CQHTTP Version](https://img.shields.io/badge/cqhttp-4.8+-black.svg)
 
 ## 简介
