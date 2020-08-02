@@ -5,6 +5,7 @@ import urllib
 import traceback
 import json
 import os
+import time
 #引入配置
 import config
 #日志输出
@@ -416,6 +417,7 @@ class tweetEventDeal:
         if test != None:
             test.event_push(event)
         for Pushunit in table:
+            time.sleep(0.3) #手动增加发送时间，防止发送速率过快
             if (event['type'] in ('retweet','quoted','reply_to_status','reply_to_user') and not event['data']['trigger_remote']) or (event['type'] not in ('retweet','quoted','reply_to_status','reply_to_user')):
                 #获取属性判断是否可以触发事件
                 res = push_list.getPuslunitAttr(Pushunit,event['type'])
@@ -615,9 +617,9 @@ class tweetEventDeal:
         bot = nonebot.get_bot()
         try:
             if message_type == 'private':
-                bot.sync.send_msg_rate_limited(self_id=bindCQID,user_id=send_id,message=message)
+                bot.sync.send_msg(self_id=bindCQID,user_id=send_id,message=message)
             elif message_type == 'group':
-                bot.sync.send_msg_rate_limited(self_id=bindCQID,group_id=send_id,message=message)
+                bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
         except:
             s = traceback.format_exc(limit=5)
             logger.error(s)

@@ -232,7 +232,7 @@ def msgSendToBot(reclogger:logging.Logger,message:str,*arg):
     if bot_error_printID != None and config.error_push_switch:
         try:
             bot = nonebot.get_bot()
-            bot.sync.send_msg_rate_limited(
+            bot.sync.send_msg(
                 self_id=bindCQID,
                 user_id=bot_error_printID,
                 message=message)
@@ -251,7 +251,7 @@ async def async_msgSendToBot(reclogger:logging.Logger,message:str,*arg):
     if bot_error_printID != None:
         try:
             bot = nonebot.get_bot()
-            await bot.send_msg_rate_limited(
+            await bot.send_msg(
                 self_id=bindCQID,
                 user_id=bot_error_printID,
                 message=message)
