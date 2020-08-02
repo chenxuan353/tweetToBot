@@ -724,7 +724,7 @@ async def setAttr(session: CommandSession):
                 'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
                 #推特个人信息变动推送开关
                 'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
-                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name','昵称修改':'change_name',
+                'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name',
                 'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
                 'change_headimgchange':'change_headimgchange','头像改变':'change_headimgchange','头像修改':'change_headimgchange'
             }

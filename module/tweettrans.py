@@ -424,19 +424,19 @@ class TweetTrans:
                     }
                     //处理推文主节点,次要节点一般为转发的推文
                     //最末的推文(需要置入翻译标识)
-                    if(i == (tweets.length-1)){
+                    if(i == (tweets.length-1) && tweets[i][0]){
                         tweets[i][0].elem.append(node_type)//添加推文标识
                         if(!tran_text){
                             tran_text = translist.text['main'] //翻译节点不存在时切换翻译为主翻译
                         }
                     }else{
                         //非末推文存在翻译时清空节点
-                        if(tran_text){
+                        if(tran_text && tweets[i][0]){
                             tweets[i][0].elem.innerHTML = "" //存在翻译则清空节点
                         }
                     }
                     if(tran_text){
-                        if(tran_text[0]){
+                        if(tran_text[0] && tweets[i][0]){
                             let node_trans = document.createElement('div');//翻译节点
                             //注 入 样 式
                             node_trans.className = transclass
