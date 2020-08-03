@@ -232,6 +232,8 @@ async def about(session: CommandSession):
         return
     logger.info(CQsessionToStr(session))
     msg = '维护：'+config.mastername+' 相关协作者见开源地址' + "\n"
+    msg = msg + '*由于bot平台的影响，未来BOT推送可能有不稳定情况。' + "\n"
+    msg = msg + '*本项目的重构及更新将被延迟' + "\n"
     msg = msg + '!转推帮助 -查看转推帮助' + "\n"
     msg = msg + '!烤推帮助 -查看烤推帮助(不支持私聊)' + "\n"
     msg = msg + '!机翻帮助 -查看机翻帮助' + "\n"

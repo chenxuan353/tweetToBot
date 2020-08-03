@@ -243,7 +243,7 @@ def deal_trans(arg,ad) -> dict:
                 trans['text'][kv[0]].append(kvc[2].strip())
     return trans
 def send_msg(session: CommandSession,msg):
-    session.bot.sync.send_msg_rate_limited(self_id=session.self_id,group_id=session.event['group_id'],message=msg)
+    session.bot.sync.send_msg(self_id=session.self_id,group_id=session.event['group_id'],message=msg)
 def send_res(session: CommandSession,args):
     global transtemplate
     group_id =session.event['group_id']
