@@ -38,7 +38,7 @@ class TweetTrans:
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--lang=zh_CN')
+        chrome_options.add_argument('--lang=cn')
         chrome_options.add_argument('lang=zh_CN.UTF-8')
         chrome_options.add_argument('accept-language=zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6')
         #chrome_options.add_argument('--disk-cache-dir='+os.path.join('.','cache','chromecache'))
