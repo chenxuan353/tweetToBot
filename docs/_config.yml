@@ -4,8 +4,8 @@
 
 # Site
 title: 基于CoolQ的推特BOT服务 用户文档
-subtitle: 'tweetToQQbot, an automatic bot service based on CoolQ.'
-description: '监听推特更新转发至QQ 并提供一系列后续搬运周边服务'
+subtitle: 'tweetToQQbot, an automatic bot service.'
+description: '推特更新监听转发机器人'
 keywords: 监听, QQ, 机器人, 酷Q, 推特, 字幕组 
 author: ChenXuan & Cyame
 language: zh-Hans
@@ -13,8 +13,8 @@ timezone: 'Asia/Shanghai'
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: https://chenxuan353.github.io/tweetToQQbot/
-root: /tweetToQQbot/
+url: https://chenxuan353.github.io/tweetToBot/
+root: /tweetToBot/
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
@@ -99,6 +99,6 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: https://github.com/chenxuan353/tweetToQQbot
+  repo: https://github.com/chenxuan353/tweetToBot
   branch: gh-pages
   message: Auto deployed, page updated.
