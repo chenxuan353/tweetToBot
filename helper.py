@@ -1,42 +1,31 @@
 # -*- coding: UTF-8 -*-
 import config
-import time
-import requests
-import traceback
-import nonebot
 import json
 import logging
-import sys
 import os
+import time
+import nonebot
+import traceback
 import re
-from nonebot import CommandSession
 """
 帮助函数
 """
-file_base_path = "cache"
-config_file_base_path = 'config'
-log_file_base_path = 'log'
-#每天一个日志文件
-bindCQID = config.default_bot_QQ
-bot_error_printID = config.bot_waring_printID
-if bindCQID == '':
-    bindCQID = None
-else:
-    bindCQID = int(bindCQID)
-if bot_error_printID == '':
-    bot_error_printID = None
-else:
-    bot_error_printID = int(bot_error_printID)
+cache_base_path = "cache" #基础目录
+config_path = 'config' 
+log_path = 'log'
 
 #判断目录存在性，不存在则生成
 def check_path(filepath:str):
-    if not os.path.exists(os.path.join(file_base_path,filepath)):
-        os.makedirs(os.path.join(file_base_path,filepath))
+    cpath = os.path.join(cache_base_path,filepath)
+    if not os.path.exists(cpath):
+        os.makedirs(cpath)
+    return cpath
+
 #设置nonebot的日志对象
 def initNonebotLogger():
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     trf = logging.handlers.TimedRotatingFileHandler(
-                filename=os.path.join(file_base_path,log_file_base_path,"nonebot.log"),
+                filename=os.path.join(cache_base_path,log_path,"nonebot.log"),
                 encoding="utf-8",
                 when="H", 
                 interval=24, 
@@ -45,23 +34,23 @@ def initNonebotLogger():
     trf.setFormatter(logformat)
     nonebot.logger.addHandler(trf)
 
+#初始化目录
 check_path("")
-check_path(os.path.join('config'))
-check_path(os.path.join('log'))
+check_path(os.path.join(config_path))
+check_path(os.path.join(log_path))
 initNonebotLogger()
 
-
 #获取日志对象(记录名，是否输出到控制台)
-def getlogger(name,printCMD:bool = True) -> logging.Logger:
+def getlogger(name,printCMD:bool = True,loglevel = logging.INFO) -> logging.Logger:
     reslogger = logging.getLogger(name)
-    reslogger.setLevel(logging.INFO)
+    reslogger.setLevel(loglevel)
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     if printCMD == True:
         sh = logging.StreamHandler()
         sh.setFormatter(logformat)
         reslogger.addHandler(sh)
     trf = logging.handlers.TimedRotatingFileHandler(
-                filename=os.path.join(file_base_path,log_file_base_path,name+".log"),
+                filename=os.path.join(cache_base_path,log_path,name+".log"),
                 encoding="utf-8",
                 when="H", 
                 interval=24, 
@@ -72,23 +61,18 @@ def getlogger(name,printCMD:bool = True) -> logging.Logger:
     return reslogger
 logger = getlogger(__name__)
 
-#读写文件日志
-fileop_logger = getlogger('filesystem',False)
-
-#正则表达式处理字符串
-def reDealStr(pat:str,msg:str):
-    res = []
-    resm = re.match(pat,msg, re.M | re.S)
-    if resm == None:
-        return None
-    for reg in resm.regs:
-        res.append(msg[reg[0]:reg[1]])
-    if len(res) == 1:
-        return res[0]
-    return res
-
-#生成多对一字典
 def arglimitdeal(ls:dict):
+    """
+    反向字典映射，最后声明的映射会将之前的声明覆盖
+    {
+        a:[a1,b1,c1],
+        b:[b1]
+    }=>{
+        a1:a,
+        b1:b,
+        c1:a
+    }
+    """
     res = {}
     for k in ls.keys():
         res[k]=k
@@ -98,179 +82,179 @@ def arglimitdeal(ls:dict):
         else:
             res[res[k]]=k
     return res
-    
-#参数处理
-def argDeal(msg:str,arglimit:list):
+
+def reDealStr(pat:str,msg:str) -> list:
+    #使用正则表达式处理字符串
+    res = []
+    resm = re.match(pat,msg, re.M | re.S)
+    if resm == None:
+        return None
+    for reg in resm.regs:
+        res.append(msg[reg[0]:reg[1]])
+    if len(res) == 1:
+        return res[0]
+    return res
+"""
+统一参数处理函数，通过简单配置自动切分参数
+返回值 (True,参数表) (False,参数昵称,错误描述,参数描述)
+"""
+def argDeal(msg:str,arglimits:list) ->tuple:
     #使用空白字符分隔参数(全角空格、半角空格、换行符)
     """    
-        arglimit = [
+        arglimits = [
             {
                 'name':'参数名', #参数名
-                'des':'XX参数', #参数描述
-                'type':'str', #参数类型int float str list dict (list与dict需要使用函数或正则表达式进行二次处理)
-                'strip':True, #是否strip
-                'lower':False, #是否转换为小写
-                'default':None, #默认值
-                'func':None, #函数，当存在时使用函数进行二次处理
-                're':None, #正则表达式匹配(match函数)
+                'nick':'XX参数', #用于错误返回的昵称
+                'des':'XXXX作用', #参数介绍，错误时返回
+                'canSkip':False, #定义为可跳过时参数不符合验证规则将使用默认值
+                #执行顺序 prefunc->verif|验证->vlimit->re->func->verif|类型转换
+                #预处理函数，参数被分离后处理前的阶段，例:(lambda arg:arg.strip())
+                'prefunc':None, #返回值为None或(False,"")时认定为参数无效,其他返回值将作为arg的更新值，特殊情况：(True,更新值)
+                'verif':'str', #预先定义的验证规则(str、int、float、uint、dict、list、bool、other-不验证)
                 'vlimit':{ 
-                    #参数限制表(限制参数内容,空表则不限制),'*':''表示允许任意字符串,值不为空时任意字符串将被转变为这个值
+                    #参数限制表(限制参数内容,空表则不限制),
+                    # '*':''表示允许任意字符串,值不为空时任意字符串将被转变为次元素对应值
                     #处理限制前不进行类型转换，但会进行int float str的类型检查
                     'a':'b',
-                    'a1':'b'
-                }
+                    'a1':'b',
+                    '':'233' #定义默认值
+                },
+                're':None, #正则表达式匹配(match函数)
+                're_error':'', #正则错误信息
+                'func':None, #函数，做返回前的处理，在参数限制及正则表达后调用，fun(arg,arglimit)
             },{
                     #第二个参数
                     #...
                 }
             ]
     """
-    typefun = {
-        'int':int,
-        'float':float,
-        'str':str,
-        'list':list,
-        'dict':dict
+    def vfloat(arg):
+        try:
+            float(hmsg)
+        except:
+            return False
+        return True
+    veriffun = {
+        'int':{
+            'verif':(lambda arg:arg.isdecimal()),
+            'res':int
+        },
+        'uint':{
+            'verif':(lambda arg:arg.isdecimal() and int(arg) > 0),
+            'res':int
+        },
+        'float':{'verif':vfloat,'res':float},
+        'str':{'verif':None,'res':str},
+        'list':{'verif':None,'res':list},
+        'dict':{'verif':None,'res':dict},
+        'other':{}
     }
-    arglist = {}
-    pat = re.compile('[　 \n]{1}')
-    lmsg = msg
-    arglimitL = len(arglimit)
+
+    if 'tail' in arglimits:
+        raise Exception("参数解析器异常：tail不能作为参数名")
+    tailmsg = msg.strip()
+    arglists = {'tail':''} #参数列表,尾参数固定命名为tail
+    pat = re.compile('[　 \n]{1}') #分割正则
     try:
-        for i in range(0,arglimitL):
-            ad = arglimit[i]
-            if i != arglimitL - 1 and lmsg != None:
-                res = pat.split(lmsg,maxsplit=1)
-                hmsg = res[0]
-                if len(res) == 2:
-                    lmsg = res[1]
-                else:
-                    lmsg = None
-            elif lmsg == None:
-                hmsg = None
+        larglimits = len(arglimits)
+        i = 0
+        while i <= larglimits:
+            #预处理
+            if tailmsg != '':
+                res = pat.split(tailmsg,maxsplit=1)
+                arg = res[0]
+                tailmsg = (res[1] if len(res) == 2 else '')
             else:
-                hmsg = lmsg
-            if hmsg != None and hmsg != '':
-                if ad['strip']:
-                    hmsg = hmsg.strip()
-                if ad['lower']:
-                    hmsg = hmsg.lower()
-                if ad['vlimit'] != {}:
-                    if hmsg in ad['vlimit']:
-                        hmsg = ad['vlimit'][hmsg]
+                arg = ''
+            #执行顺序 prefunc->verif|验证->vlimit->re->func->verif|类型转换
+            backuparg = None
+            while True and i <= larglimits:
+                if backuparg:
+                    arg = backuparg
+                else:
+                    backuparg = arg
+                ad = arglimits[i]
+                i += 1
+                if ad['prefunc']:
+                    newarg = ad['prefunc'](arg)
+                    if (newarg == None) or (type(newarg) == tuple and not newarg[0]):
+                        if ad['canSkip']:
+                            arglists[ad['name']] = ad['vlimit']['']
+                            continue
+                        else:
+                            return (False,ad['nick'],'数值无效(PF)',ad['des'])
+                    arg = (newarg if type(newarg) != tuple else newarg[1])
+                
+                vf = veriffun[ad['verif']]
+                if vf['verif'] and not vf['verif'](arg):
+                    if ad['canSkip']:
+                        arglists[ad['name']] = ad['vlimit']['']
+                        continue
+                    else:
+                        return (False,ad['nick'],'数值无效(PF)',ad['des'])
+                
+                if ad['vlimit'] and ad['vlimit'] != {}:
+                    if arg in ad['vlimit']:
+                        arg = ad['vlimit'][arg]
                     elif '*' in ad['vlimit']:
                         if ad['vlimit']['*'] != '':
-                            hmsg = ad['vlimit']['*']
+                            arg = ad['vlimit']['*']
                     else:
-                        return (False,ad['des'],'非法参数(不被允许的值)')
-                if ad['re'] != None:
-                    hmsg = reDealStr(ad['re'],hmsg)
-                    if hmsg == None:
-                        if 're_error' in ad:
-                            return (False,ad['des'],ad['re_error'])
+                        if ad['canSkip']:
+                            arglists[ad['name']] = ad['vlimit']['']
+                            continue
                         else:
-                            return (False,ad['des'],'参数不符合规则(re)')
-                if ad['func'] != None:
-                    hmsg = ad['func'](hmsg,ad)
+                            return (False,ad['nick'],'非法参数(不被允许的值)',ad['des'])
+                
+                if ad['re']:
+                    arg = reDealStr(ad['re'],arg)
+                    if arg == None:
+                        if ad['canSkip']:
+                            arglists[ad['name']] = ad['vlimit']['']
+                            continue
+                        else:
+                            return (False,ad['des'],(ad['re_error'] if ad['re_error'] else '参数不符合规则(re)'),ad['des'])
+
+                if ad['func']:
+                    arg = ad['func'](arg,ad)
                     #处理函数返回格式
-                    #其一 None/合法值
-                    #其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
-                    if type(hmsg) is tuple:
-                        if hmsg[0]:
-                            hmsg = hmsg[1]
+                    #其一 None/合法值 其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
+                    if type(res) is tuple:
+                        if res[0]:
+                            arg = arg[1]
                         else:
-                            return (False,ad['des'],hmsg[1])
-                    elif hmsg == None:
-                        return (False,ad['des'],'参数不符合规则(fun)')
-                if ad['type'] == 'int' and not (type(hmsg) is int):
-                    if not hmsg.isdecimal():
-                        return (False,ad['des'],'数值无效')
-                elif ad['type'] == 'float' and not (type(hmsg) is float):
-                    try:
-                        float(hmsg)
-                    except:
-                        return (False,ad['des'],'数值无效')
-                arglist[ad['name']] = typefun[ad['type']](hmsg)
-            else:
-                if 'funcdealnull' in ad and ad['func'] != None and ad['funcdealnull']:
-                    hmsg = ad['func'](hmsg,ad)
-                    #处理函数返回格式
-                    #其一 None/合法值
-                    #其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
-                    if type(hmsg) is tuple:
-                        if hmsg[0]:
-                            arglist[ad['name']] = hmsg[1]
-                        else:
-                            return (False,ad['des'],hmsg[1])
-                    elif hmsg == None:
-                        return (False,ad['des'],'参数不符合规则(fun)')
-                    else:
-                        arglist[ad['name']] = hmsg
-                elif ad['default'] != None:
-                    arglist[ad['name']] = ad['default']
-                else:
-                    return (False,ad['des'],'缺少参数')
+                            return (False,ad['des'],arg[1],ad['des'])
+                    elif arg == None:
+                        return (False,ad['des'],'参数不符合规则(fun)',ad['des'])
+                    
+                if vf['res']:
+                    arg = vf['res'](arg)
+                arglists[ad['name']] = arg
+                break
+        arglists['tail'] = tailmsg
     except:
         s = traceback.format_exc(limit=10)
         logger.error(s)
-        return (False,'异常','参数提取时异常！')
-    return (True,arglist)
+        return (False,'异常','参数提取时异常！','Exception')
+    return (True,arglists)
 
-#酷Q插件日志预处理
-def CQsessionToStr(session:CommandSession):
-    msg = 'cmd:'+session.event['raw_message']+ \
-        ' ;self_id:'+str(session.event['self_id']) + \
-        ' ;message_type:'+session.event['message_type']+ \
-        ' ;send_id:'+str(session.event['user_id']) if session.event['message_type']=='private' else str(session.event['group_id'])+ \
-        ' ;text:'+session.current_arg_text
-    return msg
-#处理日志输出
-def msgSendToBot(reclogger:logging.Logger,message:str,*arg):
-    for value in arg:
-        message = message + str(value)
-    reclogger.info(message)
-    if bot_error_printID != None and config.error_push_switch:
-        try:
-            bot = nonebot.get_bot()
-            bot.sync.send_msg_rate_limited(
-                self_id=bindCQID,
-                user_id=bot_error_printID,
-                message=message)
-            logger.info('向'+str(bot_error_printID)+'发送了：'+message)
-        except ValueError:
-            logger.warning('BOT未初始化,错误消息未发送')
-        except:
-            logger.error('BOT状态异常')
-            s = traceback.format_exc(limit=10)
-            logger.error(s)
 
-async def async_msgSendToBot(reclogger:logging.Logger,message:str,*arg):
-    for value in arg:
-        message = message + str(value)
-    reclogger.info(message)
-    if bot_error_printID != None:
-        try:
-            bot = nonebot.get_bot()
-            await bot.send_msg_rate_limited(
-                self_id=bindCQID,
-                user_id=bot_error_printID,
-                message=message)
-            logger.info('向'+str(bot_error_printID)+'发送了：'+message)
-        except ValueError:
-            logger.warning('BOT未初始化,错误消息未发送')
-        except:
-            logger.error('BOT状态异常')
-            s = traceback.format_exc(limit=10)
-            logger.error(s)
 
+
+
+"""
+文件操作相关函数
+"""
+#文件操作日志
+fileop_logger = getlogger('filesystem',False)
 #数据文件操作,返回(逻辑值T/F,dict数据/错误信息)
-def data_read(filename:str,path:str = config_file_base_path) -> tuple:
+def data_read(filename:str,path:str = config_path) -> tuple:
     try:
-        f = open(os.path.join(file_base_path,path,filename),mode = 'r',encoding='utf-8')
+        f = open(os.path.join(cache_base_path,path,filename),mode = 'r',encoding='utf-8')
         data = json.load(f)
         fileop_logger.info('读取配置文件：'+json.dumps(data))
     except IOError:
-        logger.warning('load IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
+        logger.warning('load IOError: 未找到文件或文件不存在-'+os.path.join(cache_base_path,path,filename))
         return (False,'配置文件读取失败')
     except:
         logger.critical('数据文件读取解析异常')
@@ -280,12 +264,12 @@ def data_read(filename:str,path:str = config_file_base_path) -> tuple:
     else:
         f.close()
     return (True,'读取成功',data)
-def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
+def data_save(filename:str,data,path:str = config_path,object_hook=None) -> tuple:
     try:
-        fw = open(os.path.join(file_base_path,path,filename),mode = 'w',encoding='utf-8')
-        json.dump(data,fw,ensure_ascii=False,indent=4)
+        fw = open(os.path.join(cache_base_path,path,filename),mode = 'w',encoding='utf-8')
+        json.dump(data,fw,ensure_ascii=False,indent=4,object_hook=object_hook)
     except IOError:
-        logger.error('save IOError: 未找到文件或文件不存在-'+os.path.join(file_base_path,path,filename))
+        logger.error('save IOError: 未找到文件或文件不存在-'+os.path.join(cache_base_path,path,filename))
         pass
         return (False,'配置文件写入失败')
     except:
@@ -298,18 +282,28 @@ def data_save(filename:str,data,path:str = config_file_base_path) -> tuple:
     return (True,'保存成功')
 
 
+
 #临时列表
 class TempMemory:
     tm : list= None
     autosave : bool = None
+    pop_trigger = None #pop函数触发器 FUN(data)
     name : str = ""
     limit : int = 0
     #记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
-    def __init__(self,name:str,limit:int = 30,defdata:list = [],autosave:bool = False,autoload:bool = False):
+    def __init__(self,
+        name:str,
+        limit:int = 30,
+        defdata:list = [],
+        autosave:bool = False,
+        autoload:bool = False,
+        pop_trigger = None
+    ):
         check_path('templist')
         self.name = name
         self.limit = limit
         self.autosave = autosave
+        self.pop_trigger = pop_trigger
         if autoload:
             res = data_read(self.name,"templist")
             if res[0] == True:
@@ -318,11 +312,18 @@ class TempMemory:
             self.tm = defdata.copy()
     def save(self):
         return data_save(self.name,self.tm,"templist")
+    def pop(self,index:int,save:bool=True):
+        res = self.tm.pop(index)
+        if self.pop_trigger:
+            self.pop_trigger(res)
+        if save:
+            self.save()
+        return res
     def join(self,data):
         res = None
         self.tm.append(data)
         if len(self.tm) > self.limit:
-            res = self.tm.pop(0)
+            res = self.pop(0,save=False)
         if self.autosave:
             self.save()
         return res
@@ -332,6 +333,7 @@ class TempMemory:
             if func(item,val):
                 return item
         return None
+
 #速率限制
 class TokenBucket(object):
     #作者：simpleapples
