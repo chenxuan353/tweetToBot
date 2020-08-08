@@ -3,10 +3,10 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 基于CoolQ的推特BOT服务 用户文档
+title: 基于CQHTTP的推特BOT服务 用户文档
 subtitle: 'tweetToQQbot, an automatic bot service.'
 description: '推特更新监听转发机器人'
-keywords: 监听, QQ, 机器人, 酷Q, 推特, 字幕组 
+keywords: 监听, QQ, 机器人, CQHTTP, 推特, 字幕组 
 author: ChenXuan & Cyame
 language: zh-Hans
 timezone: 'Asia/Shanghai'
