@@ -219,8 +219,10 @@ class TweetTrans:
                             //let nick = uie.innerText
                             let nick = elart.querySelector('div.r-vw2c0b').innerText
                             //投票
-                            //暂无实现 定位 .r-p1n3y5.r-aj3cln
+                            //投票中 定位 .r-p1n3y5.r-aj3cln
+                            //投票完成 定位 .r-1g7fiml
                             let elemvotes = elart.querySelectorAll('div.r-p1n3y5.r-aj3cln')
+                            let elemvoteends = elart.querySelectorAll('div.r-1g7fiml')
                             let tweetvotes = []
                             for(let j = 0;j<elemvotes.length;j++){
                                 tweetvotes.push({
@@ -228,6 +230,14 @@ class TweetTrans:
                                     elemy:getoffsetTop(elemvotes[j],elart),//文字内容相对于推文的高度
                                     elemh:elemvotes[j].offsetHeight,//文字内容相对于推文的高度
                                     text:elemvotes[j].innerText,
+                                })
+                            }
+                            for(let j = 0;j<elemvoteends.length;j++){
+                                tweetvotes.push({
+                                    elem:elemvoteends[j],
+                                    elemy:getoffsetTop(elemvoteends[j],elart),//文字内容相对于推文的高度
+                                    elemh:elemvoteends[j].offsetHeight,//文字内容相对于推文的高度
+                                    text:elemvoteends[j].innerText,
                                 })
                             }
                             //外链及图片
