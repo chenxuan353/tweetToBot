@@ -238,5 +238,5 @@ async def about(session: CommandSession):
     msg = msg + '!烤推帮助 -查看烤推帮助(不支持私聊)' + "\n"
     msg = msg + '!机翻帮助 -查看机翻帮助' + "\n"
     msg = msg + '如有疑问或bug报告可以!反馈 反馈内容 进行反馈' + "\n"
-    msg = msg + '项目开源地址：http://uee.me/dfRwA'
+    msg = msg + '项目开源地址：http://dwz.date/bS4p'
     await session.send(msg)
