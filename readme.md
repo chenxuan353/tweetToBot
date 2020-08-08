@@ -15,7 +15,7 @@
 
 ### 文档首页(使用者请使用)
 
-[用户文档](https://chenxuan353.github.io/tweetToQQbot/)
+[用户文档](https://chenxuan353.github.io/tweetToBot/)
 
 ### 文档维护(开发者请参见)
 
