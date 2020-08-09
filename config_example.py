@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 from nonebot.default_config import *
 #也可以在此处对nonebot进行设置
+#不需要修改的设置
+SESSION_RUNNING_EXPRESSION = ''
 
 #超级管理员，拥有最高权限
 SUPERUSERS.add(123456) #多个就复制多行
