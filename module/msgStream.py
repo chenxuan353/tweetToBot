@@ -7,7 +7,7 @@ import asyncio
 import os
 
 #日志输出
-from helper import getlogger,TempMemory,data_read,data_save
+from helper import getlogger,TempMemory,data_read,data_save,data_read_auto
 logger = getlogger(__name__)
 sendlogger = getlogger(__name__+'_nocmd',printCMD=False)
 """
@@ -21,17 +21,95 @@ sendlogger = getlogger(__name__+'_nocmd',printCMD=False)
 send_count_path = 'msgStream.json'
 send_count = {}
 send_log = {}
+exp_info_path = 'msgStream_expinfo.json'
+exp_info:TempMemory = TempMemory(exp_info_path,limit = 100,autosave=True,autoload=True)
 send_stream = {}
 allow_bottype = ['cqhttp','dingding']
 
 def init():
-    res = data_read(send_err_path)
+    res = data_read(send_count_path)
     if res[0]:
         send_count = res[2]
         for bottype in send_count:
             for botuuid in send_count[bottype]:
                 dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid+'.json'),limit = 250,autosave = True,autoload = True))
 
+
+"""
+消息类·用于组合与生成消息
+"""
+def IOC_text(msgtype,data):
+    return data['text']
+def IOC_CQ_img(msgtype,data):
+    return "[CQ:image,timeout={timeout},file={src}]".format(**data)
+conversionFunc = {
+    'default':IOC_text,
+    'CQ':{
+        'img':IOC_CQ_img
+    }
+}
+class SendMessage:
+    def __init__(self,msg:str = None):
+        self.infoObjs:list = [].copy()
+        if msg:
+            self.append(self.baleTextObj(msg))
+    def removeAllTypeObj(self,msgtype):
+        self.infoObjs = list(filter((lambda obj:obj['msgtype']!=msgtype),self.infoObjs))
+    def baleTextObj(self,msg):
+        return {
+            'msgtype':'text',
+            'text':msg
+        }
+    def baleImgObj(self,src,timeout = 15,text = '[图片]'):
+        return {
+            'msgtype':'img',
+            'src':src,
+            'timeout':str(timeout),
+            'text':str(text),
+        }
+    def __checkMsg(self,msgtype,data):
+        if type(data) != dict:
+            raise Exception('{msgtype},数据类型异常'.format(msgtype))
+        if msgtype == 'text':
+            if 'text' not in data:
+                raise Exception('{msgtype},text类型缺少文本内容'.format(msgtype))
+        if msgtype == 'img':
+            if 'src' not in data:
+                raise Exception('{msgtype},img类型缺少源标签'.format(msgtype))
+            if 'timeout' not in data:
+                data['timeout'] = 15
+            data['timeout'] = str(data['timeout'])
+            data['text'] = '[图片]'
+        else:
+            raise Exception('{msgtype},不支持的数据类型'.format(msgtype))
+    def append(self,infoObj):
+        if type(infoObj) == str:
+            infoObj = self.baleTextObj(infoObj)
+        self.__checkMsg(infoObj['msgtype'],infoObj)
+        self.infoObjs.append((infoObj['msgtype'],infoObj))
+    def __infoObjToStr(self,msgtype,data,Conversion_flag = 'CQ'):
+        global conversionFunc
+        if Conversion_flag not in conversionFunc:
+            return conversionFunc['default'](msgtype,data)
+        if msgtype not in conversionFunc[Conversion_flag]:
+            if 'default' not in conversionFunc[Conversion_flag]:
+                return conversionFunc['default'](msgtype,data)
+            else:
+                return conversionFunc[Conversion_flag]['default'](msgtype,data)
+        return conversionFunc[Conversion_flag][msgtype](msgtype,data)
+    def toStr(self,Conversion_flag:str = 'CQ'):
+        text = ""
+        for infoObj in self.infoObjs:
+            text += self.__infoObjToStr(infoObj[0],infoObj[1],Conversion_flag)
+        return text
+    def toSimpleStr(self):
+        text = ""
+        for infoObj in self.infoObjs:
+            text += infoObj[1]['text']
+        return text
+"""
+消息流
+"""
 class QueueStream:
     def __init__(self,name,deal_func,max_size:int = 64,senddur = 0.3):
         self.queue = queue.Queue(max_size)
@@ -57,46 +135,14 @@ class QueueStream:
 
 #start = QueueStream('allsendmsg',threadSendDeal)
 #start.run()
+from helper import dictInit,dictHas,dictGet,dictSet
 
-def dictInit(d:dict,*args,endobj:dict = None):
-    #参数：待初始化字典,键名...
-    #初始化层次字典,初始化结构为层层字典嵌套
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            nowd[unit] = {}
-        nowd = nowd[unit]
-    if endobj:
-        if nowd == {}:
-            nowd.update(endobj)
-            return True
-        else:
-            return False
-    return True
-def dictHas(d:dict,*args):
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            return False
-        nowd = nowd[unit]
-    return True
-def dictGet(d:dict,*args,default = None):
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            return default
-        nowd = nowd[unit]
-    return nowd
-
-#sendUnit
-def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:str):
+#sendUnit:消息发送元
+def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
     message_type = botgroup
     send_id = senduuid
     bindCQID = botuuid
+    message = message.toStr('CQ')
     #初始化
     bot = nonebot.get_bot()
     if message_type not in ('private','group'):
@@ -108,8 +154,24 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
 SUConfig = {
     'cqhttp':SUCqhttpWs
     }
+
+def exp_send(msg:SendMessage,source = '未知',flag = '信息',other:dict = None):
+    global exp_info
+    if type(msg) == str:
+        msg = SendMessage(msg)
+    if not isinstance(msg,SendMessage):
+        raise Exception('不支持的消息类型')
+    exp_info.join({
+        'source':source,
+        'flag':flag,
+        'msg':msg,
+        other:other,
+    })
+    
 def exp_push(eventype,evendes,send_unit):
-    sendlogger.warning(('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息流:{evendes}'.format(evendes,**send_unit)))
+    msg = ('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息流:{evendes}'.format(evendes = evendes,**send_unit))
+    sendlogger.warning(msg)
+    exp_send(msg,source='消息流警告触发器',flag = '警告')
 
 #警告触发器(发送单元,信息发送对象,单元错误计数)
 def exp_check(send_unit,send_me,uniterrcount):
@@ -220,10 +282,13 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     #保存包含统计信息的数组
     data_save(send_count_path,send_count)
 
-def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:str):
+def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
     if not dictHas(send_stream,bottype,botuuid):
         dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype+'_'+botuuid,threadSendDeal))
         send_stream[bottype][botuuid].run()
+    if type(message) == str:
+        message = SendMessage()
+        message.append(message)
     unit = {
         'bottype':bottype,
         'botuuid':str(botuuid),
@@ -233,8 +298,16 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         'message':message,
         'sendstarttime':time.time()
     }
-    send_stream[bottype][botuuid].put(unit)
-
+    try:
+        send_stream[bottype][botuuid].put(unit)
+    except:
+        s = traceback.format_exc(limit=5)
+        exp_send('消息推送队列异常或溢出！请检查队列',source = '消息推送队列',flag='异常')
+        logger.error(s)
+        return False
+    return True
+def send_msg_kw(*,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,**kw):
+    return send_msg(bottype,botuuid,botgroup,senduuid,sendObj,message)
 """
 信息接口
 """
@@ -284,4 +357,5 @@ def getMsgStreamInfo(bottype:str,botuuid:str):
     回绝计数：{total_refuse}\n
     短时错误计数：{error}
     """.format(pushhealth,**unit)
+
 

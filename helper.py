@@ -20,6 +20,10 @@ def check_path(filepath:str):
     if not os.path.exists(cpath):
         os.makedirs(cpath)
     return cpath
+def file_exists(filepath:str):
+    cpath = os.path.join(cache_base_path,filepath)
+    return os.path.isfile(cpath)
+
 
 #设置nonebot的日志对象
 def initNonebotLogger():
@@ -239,8 +243,62 @@ def argDeal(msg:str,arglimits:list) ->tuple:
     return (True,arglists)
 
 
-
-
+#dict扩展操作
+def dictInit(d:dict,*args,endobj:dict = None) -> bool:
+    #参数：待初始化字典,键名...
+    #初始化层次字典,初始化结构为层层字典嵌套
+    #不重复初始化(不覆盖已有内容),endobj会被copy
+    nowunit = None
+    nowd = None
+    for unit in args:
+        nowunit = unit
+        if nowd == None:
+            nowd = d
+        else:
+            nowd = nowd[unit]
+        if unit not in nowd:
+            nowd[unit] = {}
+    if endobj:
+        if nowd[nowunit] == {}:
+            nowd[nowunit] = endobj.copy()
+            return True
+        else:
+            return False
+    return True
+def dictHas(d:dict,*args) -> bool:
+    #参数：待判断字典,键名...
+    #判断多层键是否存在
+    nowd = d
+    for unit in args:
+        if unit not in nowd:
+            return False
+        nowd = nowd[unit]
+    return True
+def dictGet(d:dict,*args,default = None) -> dict:
+    #参数：待判断字典,键名...
+    #判断多层键是否存在
+    nowd = d
+    for unit in args:
+        if unit not in nowd:
+            return default
+        nowd = nowd[unit]
+    return nowd
+def dictSet(d:dict,*args,obj:dict = None) -> None:
+    #参数：待初始化字典,键名...
+    #初始化层次字典,初始化结构为层层字典嵌套
+    #obj不为None时将覆盖末端节点
+    nowunit = None
+    nowd = None
+    for unit in args:
+        nowunit = unit
+        if nowd == None:
+            nowd = d
+        else:
+            nowd = nowd[unit]
+        if unit not in nowd:
+            nowd[unit] = {}
+    if obj:
+        nowd[nowunit] = obj
 
 """
 文件操作相关函数
@@ -281,7 +339,11 @@ def data_save(filename:str,data,path:str = config_path,object_hook=None) -> tupl
         fw.close()
     return (True,'保存成功')
 
-
+def data_read_auto(filename:str,default = None,path:str = config_path):
+    res = data_read(filename,path)
+    if res[0]:
+        return res[2]
+    return default
 
 #临时列表
 class TempMemory:
@@ -292,26 +354,28 @@ class TempMemory:
     limit : int = 0
     #记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
     def __init__(self,
-        name:str,
-        limit:int = 30,
-        defdata:list = [],
-        autosave:bool = False,
-        autoload:bool = False,
-        pop_trigger = None
-    ):
+            name:str,
+            limit:int = 30,
+            path:str = "templist",
+            defdata:list = [],
+            autosave:bool = False,
+            autoload:bool = False,
+            pop_trigger = None
+        ):
         check_path('templist')
         self.name = name
         self.limit = limit
         self.autosave = autosave
         self.pop_trigger = pop_trigger
+        self.path = path
         if autoload:
-            res = data_read(self.name,"templist")
+            res = data_read(self.name,path=self.path)
             if res[0] == True:
                 self.tm = res[2]
         if self.tm == None:
             self.tm = defdata.copy()
     def save(self):
-        return data_save(self.name,self.tm,"templist")
+        return data_save(self.name,self.tm,path=self.path)
     def pop(self,index:int,save:bool=True):
         res = self.tm.pop(index)
         if self.pop_trigger:

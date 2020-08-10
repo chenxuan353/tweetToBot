@@ -36,7 +36,8 @@ def randUserAgent():
 class TweetTrans:
     driver : webdriver.Chrome = None
     def __init__(self):
-        #时区与语言需要在系统环境设置内更改
+        #时区与语言需要在系统环境设置内更改,建议自行添加字体支持
+        #默认使用字体为思源体
         chrome_options = Options()
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -123,10 +124,17 @@ class TweetTrans:
         driver = self.driver
         JS_imgIsLoad = r"""
                 var mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
+                
                 try{
                     let elems = mainelem.querySelectorAll('img')
                     for (var i = 0;i<elems.length;i++) {
                         if(!elems[i].complete){
+                            return false
+                        }
+                    }
+                    let tweetPhotos = mainelem.querySelectorAll('[data-testid="tweetPhoto"]')
+                    for (var i = 0;i<tweetPhotos.length;i++) {
+                        if(tweetPhotos[i].querySelectorAll('img').length == 0){
                             return false
                         }
                     }
@@ -565,7 +573,6 @@ class TweetTrans:
             driver.save_screenshot(error_save_filename)
             logger.warning("推文分析未返回数据，filename="+error_save_filename + ';url=' + driver.current_url)
             return (False,error_save_filename,res[1])
-        self.waitForTweetLoad3(tasktype)
         return (True,res)
     #对指定推文置入翻译并获取截图
     def getTransFromTweetID(self,TweetID:str,trans:list,tweet_user_sname:str='s',tasktype:str = 'def'):
@@ -588,7 +595,7 @@ class TweetTrans:
         tres = self.getSingelTweet(trans,tasktype)
         if not tres[0]:
             return tres
-        self.waitForTweetLoad3(tasktype)
+        self.waitForImg(tasktype)
         try:
             #scroll_width = driver.execute_script('return document.body.parentNode.scrollWidth')
             elem = driver.find_element_by_css_selector('section[aria-labelledby].css-1dbjc4n')

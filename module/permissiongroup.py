@@ -166,52 +166,7 @@ bottype:{botuuid:{botgroup:{uuid:{groupname:{prem:{unit},...}}}}}
 由添加授权的函数指定，一般由被授权对象标识以及授权人标识组成
 
 """
-
-def dictInit(d:dict,*args,endobj:dict = None):
-    #参数：待初始化字典,键名...
-    #初始化层次字典,初始化结构为层层字典嵌套
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            nowd[unit] = {}
-        nowd = nowd[unit]
-    if endobj:
-        if nowd == {}:
-            nowd.update(endobj)
-            return True
-        else:
-            return False
-    return True
-def dictHas(d:dict,*args):
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            return False
-        nowd = nowd[unit]
-    return True
-def dictGet(d:dict,*args,default = None):
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            return default
-        nowd = nowd[unit]
-    return nowd
-def dictSet(d:dict,*args,obj:dict = None):
-    #参数：待初始化字典,键名...
-    #初始化层次字典,初始化结构为层层字典嵌套
-    nowd = d
-    for unit in args:
-        if unit not in nowd:
-            nowd[unit] = {}
-        nowd = nowd[unit]
-    if obj:
-        nowd.clear()
-        nowd.update(obj)
-
+from helper import dictInit,dictHas,dictGet,dictSet
 
 def perm_add(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:str,authunit:dict):
     global permissionList
