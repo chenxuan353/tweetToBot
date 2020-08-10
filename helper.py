@@ -363,6 +363,8 @@ class TempMemory:
             pop_trigger = None
         ):
         check_path('templist')
+        if name[-5].lower() != '.json':
+            name += '.json'
         self.name = name
         self.limit = limit
         self.autosave = autosave

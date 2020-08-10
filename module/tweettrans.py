@@ -143,7 +143,7 @@ class TweetTrans:
                     return true
                 }
             """
-        for i in range(0,15):
+        for _ in range(0,15):
             if driver.execute_script(JS_imgIsLoad):
                 break
             time.sleep(0.9)

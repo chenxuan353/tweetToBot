@@ -40,6 +40,8 @@ class PushList:
     #获取监测长度
     def getSpyNum(self):
         return len(self.spylist)
+    def getSpylist(self):
+        return self.spylist
     #获取所有推送单元
     def getAllPushUnit(self) -> list:
         sourcedata = self.push_list.copy()
@@ -99,7 +101,7 @@ class PushList:
                         pushobj = None,
                         spyobj = None,
                         createobj = None,
-                        lasteditobj = None,
+                        lasteditobj = None
                         ):
         spyuuid = str(spyuuid)
         botuuid = str(botuuid)
@@ -213,7 +215,7 @@ class PushList:
             return (False,"待删除推送对象与已存在的推送对象不符")
         self.__delToSpyRelate(searchpushunit)
         self.__delToSpyList(spyuuid)
-        recpoint[spyuuid] = None
+        del recpoint[spyuuid]
         return (True,"成功！")
     def delPushunit(self,pushunit:dict):
         if not self.hasPushunit_kw(**pushunit):

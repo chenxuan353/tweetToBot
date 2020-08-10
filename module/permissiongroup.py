@@ -186,7 +186,7 @@ def perm_del(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:st
     dictInit(permissionList,bottype,botuuid,botgroup,uuid,groupname)
     if perm not in permissionList[bottype][botuuid][botgroup][uuid][groupname]:
         return (False,"{groupname}->{perm},权限未曾授权".format(groupname,perm)) 
-    permissionList[bottype][botuuid][botgroup][uuid][groupname][perm] = None
+    del permissionList[bottype][botuuid][botgroup][uuid][groupname][perm]
     return (True,'成功')
 def perm_uuidGet(bottype:str,botuuid:str,botgroup:str,uuid:str):
     global legalPermissionList,permissionList

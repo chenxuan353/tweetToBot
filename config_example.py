@@ -31,6 +31,11 @@ trans_img_path = ""
 """
 推特API配置
 """
+#是否启用推送功能(关闭后无法使用所有推送相关功能)
+twitterpush = True
+#是否启用流式侦听辅助(ApiStream)
+twitterStream = False
+
 #API代理
 api_proxy = "" #127.0.0.1:10809
 #填写twitter提供的开发Key和secret
@@ -42,7 +47,8 @@ access_token_secret = 'ShW****************************************oy'
 #pollingTwitterApi可填写的多个应用密钥对 -> ['key','secret']
 #推特API应用轮询系统，可增加请求量
 polling_silent_start = False #静默启动，启动时不检测更新
-polling_interval = 60 #轮询监测间隔 单位秒，每对API速率限制约为1.5次每秒(建议60秒及以上)
+polling_level = 5 #默认轮询优先级(5则为五轮监测一次)，不建议修改，范围0-15
+polling_interval = 1 #轮间监测间隔 单位秒，建议值1-15，实际默认间隔约为 polling_level*polling_interval
 polling_consumers = [
     #示例 ['7*********************d','fIgX*****************************SJ'],
     [consumer_key,consumer_secret],#基础密钥对，删除影响运行

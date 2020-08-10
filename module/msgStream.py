@@ -55,6 +55,12 @@ class SendMessage:
             self.append(self.baleTextObj(msg))
     def removeAllTypeObj(self,msgtype):
         self.infoObjs = list(filter((lambda obj:obj['msgtype']!=msgtype),self.infoObjs))
+    def designatedTypeToStr(self,msgtype):
+        for obj in self.infoObjs:
+            if obj['msgtype'] == msgtype:
+                if 'text' not in obj:
+                    obj['text'] = '[{0}]'.format(obj['msgtype'])
+                obj['msgtype'] = 'text'
     def baleTextObj(self,msg):
         return {
             'msgtype':'text',
@@ -82,6 +88,11 @@ class SendMessage:
             data['text'] = '[图片]'
         else:
             raise Exception('{msgtype},不支持的数据类型'.format(msgtype))
+    def insert(self,infoObj,index:int = 0):
+        if type(infoObj) == str:
+            infoObj = self.baleTextObj(infoObj)
+        self.__checkMsg(infoObj['msgtype'],infoObj)
+        self.infoObjs.insert(index,((infoObj['msgtype'],infoObj)))
     def append(self,infoObj):
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
