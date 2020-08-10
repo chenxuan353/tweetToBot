@@ -19,6 +19,10 @@
 
 [用户文档](https://chenxuan353.github.io/tweetTobot/)
 
+# Docs分支
+
+项目文档所在分支 通过Hexo部署。
+
 ### 文档维护(开发者请参见)
 
 #### 依赖
