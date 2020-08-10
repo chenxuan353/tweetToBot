@@ -122,3 +122,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.deploy_git/
+db.json
+node_modules/
+public/
