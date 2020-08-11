@@ -7,14 +7,15 @@ import module.twitter as twitter
 import module.msgStream as msgStream
 #引入配置
 import config
-from helper import getlogger,data_read_auto,data_save
+from helper import getlogger,data_read_auto,data_save,TokenBucket
 logger = getlogger(__name__)
 #引入推送列表、推送处理模版
 
 '''
 推特API监听更新的实现类
 '''
-pushmerge = True
+pushmerge = True #推送合并
+tokenbucket = TokenBucket(3,30) #流式限速检查
 #推特监听者
 class MyStreamListener(tweepy.StreamListener):
     #错误处理

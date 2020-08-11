@@ -63,7 +63,7 @@ def getlogger(name,printCMD:bool = True,loglevel = logging.INFO) -> logging.Logg
     trf.setFormatter(logformat)
     reslogger.addHandler(trf)
     return reslogger
-logger = getlogger(__name__)
+logger = getlogger(__name__,printCMD=False)
 
 def arglimitdeal(ls:dict):
     """

@@ -79,7 +79,7 @@ class SendMessage:
         if msgtype == 'text':
             if 'text' not in data:
                 raise Exception('{msgtype},text类型缺少文本内容'.format(msgtype))
-        if msgtype == 'img':
+        elif msgtype == 'img':
             if 'src' not in data:
                 raise Exception('{msgtype},img类型缺少源标签'.format(msgtype))
             if 'timeout' not in data:
@@ -293,7 +293,7 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     #保存包含统计信息的数组
     data_save(send_count_path,send_count)
 
-def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
+def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,block=True,timeout = 5):
     if not dictHas(send_stream,bottype,botuuid):
         dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype+'_'+botuuid,threadSendDeal))
         send_stream[bottype][botuuid].run()
@@ -310,7 +310,7 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         'sendstarttime':time.time()
     }
     try:
-        send_stream[bottype][botuuid].put(unit)
+        send_stream[bottype][botuuid].put(unit,timeout = timeout,block=block)
     except:
         s = traceback.format_exc(limit=5)
         exp_send('消息推送队列异常或溢出！请检查队列',source = '消息推送队列',flag='异常')

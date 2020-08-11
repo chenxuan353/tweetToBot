@@ -1,20 +1,11 @@
 # -*- coding: UTF-8 -*-
-from nonebot.default_config import *
-#也可以在此处对nonebot进行设置
-#不需要修改的设置
-SESSION_RUNNING_EXPRESSION = ''
-
-#nonebot的监听地址与启动端口
-NONEBOT_HOST = '0.0.0.0'
-NONEBOT_PORT = 8190
-#nonebot的debug开关
-DEBUG = True
-
-#超级管理员，拥有最高权限(多个用逗号分割)
-SUPERUSERS=[123456,1234567]
-
-#命令起始标识
-COMMAND_START = {'!','！'}
+"""
+全局配置
+"""
+#启用debug信息
+DEBUG = False
+#是否启用(nonebot使用ws连接，可多对一)
+nonebot = True
 
 #维护信息
 mastername = "" #维护者，例：XX(QQ123456)
@@ -28,12 +19,37 @@ project_addr = "" #项目地址，例：https://www.baidu.com
 #本地存储路径为cache/transtweet/transimg
 trans_img_path = ""
 
+
+"""
+翻译引擎配置
+腾讯(tencent)->需要API及SDK
+谷歌(google)->可能无法使用(人机验证)
+"""
+MachineTrans_default = 'google' #默认翻译引擎
+MachineTransApi = {
+    'tencent':{
+        #使用腾讯云SDK，SDK未安装时无法使用
+        #pip install tencentcloud-sdk-python
+        "switch":False,#开关，配置完成后请设置为True,关闭为False
+        #地区 ap-guangzhou->广州 ap-hongkong->香港 na-ashburn->美国(靠近纽约)
+        #更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
+        "Region":"ap-guangzhou",
+        "key":"AK****************************8KI",
+        "secret":"sW************************w8"
+    },
+    'google':{
+        "switch":True,#开关
+    }
+}
+
+
 """
 推特API配置
 """
 #是否启用推送功能(关闭后无法使用所有推送相关功能)
 twitterpush = True
 #是否启用流式侦听辅助(ApiStream)
+#注：可以大幅增强指定监听对象的推送速度，被动推送能完整运行
 twitterStream = False
 
 #API代理

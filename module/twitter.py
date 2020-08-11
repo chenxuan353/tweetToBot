@@ -126,8 +126,10 @@ class TweePushList(PushList):
         super().__init__(pushtype,fileprefix + '_' + pushtype + '.json',basepath = baseconfigpath)
         self.baseconfigpath = baseconfigpath
         self.PushTemplate = {}
-        self.pushunit_default_config = self.pushunit_base_config.copy().update(config.pushunit_default_config)
-        del self.pushunit_default_config['diy']
+        self.pushunit_default_config = self.pushunit_base_config.copy()
+        self.pushunit_default_config.update(config.pushunit_default_config)
+        if 'diy' in self.pushunit_default_config:
+            del self.pushunit_default_config['diy']
         if self.pushunit_default_config['template'].strip() == '':
             self.pushunit_default_config['template'] = self.defaulttemplate
         self.pushTemplateFile = fileprefix + '_' + pushtype + '_PTL.json'
@@ -278,7 +280,7 @@ class TweePushList(PushList):
         return self.getMergeConfKey(self.getUnitPushToConfig(pushunit),pushunit['config'],key)
 
     #触发器
-    def pushcheck_trigger(self,pushunit,**pushunit) -> bool:
+    def pushcheck_trigger(self,unit,**pushunit) -> bool:
         return True
     def setPushToAttr_trigger(self,pushtoconfig:dict,setkey:str,setvalue) -> tuple:
         if setkey != 'upimg':
@@ -1104,6 +1106,7 @@ class TweetEventDeal:
     def tweetinfoGetMap(self,tweetinfo:dict):
         tweetcache = self.tweetcache
         if 'argmap' in tweetinfo:
+            tweetinfo['argmap']['senddur'] = str(int(time.time()) - int(tweetinfo['timestmap']))
             return tweetinfo['argmap']
         argmap = {
                 'type':tweetinfo['type'],#推文状态
@@ -1213,6 +1216,7 @@ class TweetEventDeal:
             data['oldkey'] = old_userinfo[key]
             data['newkey'] = userinfo[key]
         """
+
         if nick and nick.strip() == '':
             nick = None
         userupdata['nick'] = (nick if nick else userupdata['user_screen_name'])
@@ -1272,8 +1276,8 @@ newevenscache = TempMemory('evencache',limit = 100)
 运行线程信息，及更新合并请求提交
 *线程保证status处理顺序的提交
 """
-tweetEvenQueue = queue.Queue(64)
-Submitqueque = queue.Queue(64)
+Submitqueque = queue.Queue(128) #更新提交待处理
+tweetEvenQueue = queue.Queue(64) #事件队列
 run_info = {
     'EventDealThread':None,
     'Eventqueque':tweetEvenQueue,
@@ -1282,12 +1286,42 @@ run_info = {
     'Submitqueque':Submitqueque,
     'isDeal':True
 }
+def getSubmitQueueStatus():
+    global Submitqueque
+    idle = round(Submitqueque.qsize()*100/128,2)
+    return idle
+def getEventQueueStatus():
+    global tweetEvenQueue
+    idle = round(tweetEvenQueue.qsize()*100/64,2)
+    return idle
+
+def getQueueStatus():
+    idle1 = getSubmitQueueStatus()
+    idle2 = getEventQueueStatus()
+    avg = (idle1+idle2)/2
+    if avg < 5:
+        status = '空闲'
+    elif avg < 30:
+        status = '略有占用'
+    elif avg < 50:
+        status = '占用略高'
+    elif avg < 70:
+        status = '繁忙'
+    elif avg < 90:
+        status = '拥挤'
+    else:
+        status = '阻塞'
+    msg = '队列状态：{status}'.format(status)
+    msg = msg + "\n提交队列占用率：{idle1}%".format(idle1)
+    msg = msg + "\n事件队列占用率：{idle2}%".format(idle2)
+
+    return getSubmitQueueStatus() + "\n" + getEventQueueStatus()
 """
 推送预处理与合并过滤
 """
-def on_even(even,source = '未知'):
+def on_even(even,source = '未知',timeout = 5,block=True):
     try:
-        run_info['Eventqueque'].put(even,timeout=15)
+        run_info['Eventqueque'].put(even,timeout=timeout,block=block)
     except:
         s = traceback.format_exc(limit=5)
         notice = '推特监听处理队列异常或溢出，请检查队列！'
@@ -1349,9 +1383,9 @@ def eventDeal():
         run_info['queque'].task_done()
 
 #预处理提交(预处理,默认进行合并检查)
-def submitStatus(status,merge:bool = True,source = '未知'):
+def submitStatus(status,merge:bool = True,source = '未知',timeout = 5,block=True):
     try:
-        run_info['Submitqueque'].put((status,merge),timeout=15)
+        run_info['Submitqueque'].put((status,merge),timeout=timeout,block=True)
     except:
         s = traceback.format_exc(limit=5)
         notice = '推特预处理队列异常或溢出，请检查队列！'
@@ -1370,6 +1404,7 @@ def submitDeal():
 
 #运行推送线程
 def runTwitterApiThread():
+    logger.info("TwitterEvenPush 已启动")
     #预处理队列维护线程
     run_info['SubmitStatusThread'] = threading.Thread(
         group=None, 

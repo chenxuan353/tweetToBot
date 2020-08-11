@@ -26,7 +26,7 @@ class PushList:
         self.configfilename = configfilename
         self.basepath = basepath
 
-    def pushcheck_trigger(self,pushunit,**pushunit) -> bool:
+    def pushcheck_trigger(self,unit,**pushunit) -> bool:
         return True
     def setPushToAttr_trigger(self,pushtoconfig:dict,setkey:str,setvalue) -> tuple:
         return (False,'未设置全局属性设置触发器')
