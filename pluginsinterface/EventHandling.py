@@ -102,6 +102,8 @@ class StandEven:
             sourceObj:dict = None,
             plugObj:dict = None,
             ):
+        if msgtype not in ('private','group','tempprivate','tempgroup'):
+            raise Exception('消息类型不合法')
         return {
             'bottype':bottype,
             'botuuid':botuuid,
@@ -128,6 +130,8 @@ class StandEven:
         log = "回复：{bottype}-{botuuid}-{botgroup}-{uuid}:".format(**self.__dict__) + message.toSimpleStr()
         logger.info(log)
         self.hasReply = True
+        #pylint: disable=no-member
+        msgStream.send_msg(self.bottype,self.botuuid,self.botgroup,self.uuid,self.sourceObj,message)
     def send(self,message:SendMessage):
         self.Reply(message)
     def setMessage(self,message:SendMessage):

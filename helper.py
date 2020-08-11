@@ -247,20 +247,20 @@ def argDeal(msg:str,arglimits:list) ->tuple:
 def dictInit(d:dict,*args,endobj:dict = None) -> bool:
     #参数：待初始化字典,键名...
     #初始化层次字典,初始化结构为层层字典嵌套
-    #不重复初始化(不覆盖已有内容),endobj会被copy
+    #不重复初始化(不覆盖已有内容),endobj为字典时会被copy
     nowunit = None
     nowd = None
-    for unit in args:
-        nowunit = unit
+    for unit in args:   
         if nowd == None:
             nowd = d
         else:
-            nowd = nowd[unit]
+            nowd = nowd[nowunit]
+        nowunit = unit
         if unit not in nowd:
             nowd[unit] = {}
     if endobj:
         if nowd[nowunit] == {}:
-            nowd[nowunit] = endobj.copy()
+            nowd[nowunit] = (endobj.copy() if type(endobj) == dict else endobj)
             return True
         else:
             return False
@@ -322,6 +322,7 @@ def data_read(filename:str,path:str = config_path) -> tuple:
     else:
         f.close()
     return (True,'读取成功',data)
+
 def data_save(filename:str,data,path:str = config_path,object_hook=None) -> tuple:
     try:
         fw = open(os.path.join(cache_base_path,path,filename),mode = 'w',encoding='utf-8')

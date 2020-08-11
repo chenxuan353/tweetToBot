@@ -21,6 +21,7 @@ class MsgTypeEnum:
     tempprivate = 4
     tempgroup = 8
 
+#暂时无效
 #(6级 0群主 1管理 2预留 3预留 4一般群员 5临时群员-匿名等),
 class GroupLevel(Enum):
     owner = 0
@@ -30,7 +31,7 @@ class GroupLevel(Enum):
     ordinary = 4
     temporary = 5
 
-#注册消息函数(消息过滤器,消息类型限制,是否允许匿名,需要指定BOT)
+#注册消息函数(消息过滤器,消息类型限制,群聊限制-暂未实现,是否允许匿名,需要指定BOT)
 def on_message(msgfilter = '',limitMsgType:MsgTypeEnum = MsgTypeEnum.private | MsgTypeEnum.group,grouplevellimit:GroupLevel = GroupLevel.ordinary,allow_anonymous = False,at_to_me = True):
     global messagefilterlist,logger
     #logger.info('on_msg初始化')

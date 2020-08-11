@@ -10,20 +10,6 @@ logger = getlogger('START')
 """
 启动文件
 """
-def testFun():
-    even:StandEven = StandEven(
-        'CQ','12345','group','233233233',
-        'group',False,True,'233233233',StandEven.baleToStandGroupInfo('233233233','测试测试',0,'nmdwsm'),
-        '3309003591',StandEven.baleToStandSenduuidInfo('3309003591','nmdwsm','晨轩°'),
-        SendMessage('!爪巴 你快爬'),{},{}
-        )
-    Plugmanagement.eventArrives(even)
-    even.setMessage("!233 动啊.jpg")
-    Plugmanagement.eventArrives(even)
-    even.setMessage("!复读 做无情的复读机")
-    Plugmanagement.eventArrives(even)
-
-
 import botinterface.nonebotstart as nonebotstart
 if __name__ == "__main__":
     #加载插件

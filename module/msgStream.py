@@ -44,7 +44,7 @@ def IOC_CQ_img(msgtype,data):
     return "[CQ:image,timeout={timeout},file={src}]".format(**data)
 conversionFunc = {
     'default':IOC_text,
-    'CQ':{
+    'cqhttp':{
         'img':IOC_CQ_img
     }
 }
@@ -73,6 +73,13 @@ class SendMessage:
             'timeout':str(timeout),
             'text':str(text),
         }
+    def baleUnknownObj(self,bottype,alt,data):
+        #打包不明组件(bot标识-不指向此bot是不明段将被alt替代,alt-错误替代,data-数据包)
+        return {
+            'msgtype':'unknown',
+            'text':alt,
+            'data':data
+        }
     def __checkMsg(self,msgtype,data):
         if type(data) != dict:
             raise Exception('{msgtype},数据类型异常'.format(msgtype))
@@ -86,6 +93,9 @@ class SendMessage:
                 data['timeout'] = 15
             data['timeout'] = str(data['timeout'])
             data['text'] = '[图片]'
+        elif msgtype == 'unknown':
+            if 'text' not in data:
+                raise Exception('{msgtype},未知类型缺少转换标签'.format(msgtype))
         else:
             raise Exception('{msgtype},不支持的数据类型'.format(msgtype))
     def insert(self,infoObj,index:int = 0):
@@ -98,7 +108,7 @@ class SendMessage:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.append((infoObj['msgtype'],infoObj))
-    def __infoObjToStr(self,msgtype,data,Conversion_flag = 'CQ'):
+    def __infoObjToStr(self,msgtype,data,Conversion_flag = 'cqhttp'):
         global conversionFunc
         if Conversion_flag not in conversionFunc:
             return conversionFunc['default'](msgtype,data)
@@ -108,7 +118,7 @@ class SendMessage:
             else:
                 return conversionFunc[Conversion_flag]['default'](msgtype,data)
         return conversionFunc[Conversion_flag][msgtype](msgtype,data)
-    def toStr(self,Conversion_flag:str = 'CQ'):
+    def toStr(self,Conversion_flag:str = 'cqhttp'):
         text = ""
         for infoObj in self.infoObjs:
             text += self.__infoObjToStr(infoObj[0],infoObj[1],Conversion_flag)
@@ -139,10 +149,10 @@ class QueueStream:
             time.sleep(self.senddur)
     def run(self):
         self.dealthread.start()
-    def put(self,unit:dict):
+    def put(self,unit:dict,block=True,timeout = 5):
         if type(unit) != dict:
             raise Exception('无法处理此消息,消息类型不为字典(dict)')
-        self.queue.put(unit)
+        self.queue.put(unit,timeout = timeout,block=block)
 
 #start = QueueStream('allsendmsg',threadSendDeal)
 #start.run()
@@ -150,7 +160,9 @@ from helper import dictInit,dictHas,dictGet,dictSet
 
 #sendUnit:消息发送元
 def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
-    message_type = botgroup
+    if not sendObj:
+        raise Exception('错误，来源OBJ不存在')
+    message_type = sendObj['message_type']
     send_id = senduuid
     bindCQID = botuuid
     message = message.toStr('CQ')
@@ -159,9 +171,9 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
     if message_type not in ('private','group'):
         raise Exception('错误，不支持的消息标识')
     if message_type == 'private':
-        bot.sync.send_msg_rate_limited(self_id=bindCQID,user_id=send_id,message=message)
+        bot.sync.send_msg(self_id=bindCQID,user_id=send_id,message=message)
     elif message_type == 'group':
-        bot.sync.send_msg_rate_limited(self_id=bindCQID,group_id=send_id,message=message)
+        bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
 SUConfig = {
     'cqhttp':SUCqhttpWs
     }
@@ -240,13 +252,15 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
             'reset':0,#重置计数
             'last_error':0,#上次错误时间戳
             'rebirth':send_me['rebirth'] + 1,#轮回计数
+            'dealtimeavg':0,#处理时间平均值
+            'dealerrtimeavg':0,#异常处理时间平均值
+            'sendtimeavg':0,#从发送到发送完毕时间的平均值(不计算异常消耗时)
             'last_change':0,
-            'last_deal':0,
-            'group':send_me['group'],
-            'private':send_me['private']
+            'last_deal':0
         }
-    
-    if not send_me[botgroup][senduuid]:
+    if botgroup not in send_me:
+        send_me[botgroup] = {}
+    if senduuid not in send_me[botgroup]:
         send_me[botgroup][senduuid] = 0
         
     send_unit = {
