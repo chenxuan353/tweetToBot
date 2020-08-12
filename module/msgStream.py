@@ -333,7 +333,7 @@ def exp_check(send_unit,send_me,uniterrcount):
         sendlogger.error('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息发送异常:{message}'.format(**send_unit))
     send_me['last_deal'] = time.time()
 
-def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:str):
+def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
     global send_count,send_log,allow_bottype,SUConfig
     if bottype not in allow_bottype:
         logger.info(allow_bottype)
@@ -402,7 +402,13 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     #数据发送
     try:
         SUConfig[bottype](bottype,botuuid,botgroup,senduuid,sendObj,message)
-        sendlogger.info('{bottype}>{botuuid}>{botgroup}>{senduuid} 发送了一条消息:{message}'.format(**send_unit))
+        sendlogger.info('{bottype}>{botuuid}>{botgroup}>{senduuid} 发送了一条消息:{message}'.format(
+                bottype = send_unit['bottype'],
+                botuuid = send_unit['botuuid'],
+                botgroup = send_unit['botgroup'],
+                senduuid = send_unit['senduuid'],
+                message = message.toSimpleStr(),
+            ))
     except:
         send_unit['status'] = False
         send_me['total_error'] += 1

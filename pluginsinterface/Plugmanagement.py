@@ -479,7 +479,14 @@ def __eventArrives(even:StandEven) -> PlugMsgReturn:
         for plug in pluglist[i]:
             res = plug._eventArrives(even)
             if res == PlugMsgReturn.Intercept:
+                if DEBUG:
+                    logger.info('插件{modulename}·{name}拦截了这条消息'.format(
+                        modulename = plug.modulename,
+                        name = plug.name
+                        ))
                 return PlugMsgReturn.Intercept
+    if DEBUG:
+        logger.info('没有插件处理此消息')
     return PlugMsgReturn.Ignore
 def _send_even(even:StandEven) -> PlugMsgReturn:
     return __eventArrives(even)
