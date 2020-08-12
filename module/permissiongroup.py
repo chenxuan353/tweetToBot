@@ -18,12 +18,11 @@ legalPermissionList = {
     'perms':{},
     'roles':{},
     'default':{}
-}
+    }
 
 #默认权限组
 groupPermissionList = {
-
-}
+    }
 
 #授权权限表
 permissionList = {}
@@ -171,7 +170,7 @@ from helper import dictInit,dictHas,dictGet,dictSet
 def perm_add(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:str,authunit:dict):
     global permissionList
     if not legalPermHas(groupname,perm):
-        return (False,"{groupname}->{perm},此权限不存在".format(groupname,perm))
+        return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = perm))
     #初始化层次字典
     res = dictInit(permissionList,bottype,botuuid,botgroup,uuid,groupname,perm,endobj=authunit)
     if res:
@@ -181,11 +180,11 @@ def perm_add(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:st
 def perm_del(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:str):
     global permissionList
     if not legalPermHas(groupname,perm):
-        return (False,"{groupname}->{perm},此权限不存在".format(groupname,perm))
+        return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = perm))
     #初始化层次字典
     dictInit(permissionList,bottype,botuuid,botgroup,uuid,groupname)
     if perm not in permissionList[bottype][botuuid][botgroup][uuid][groupname]:
-        return (False,"{groupname}->{perm},权限未曾授权".format(groupname,perm)) 
+        return (False,"{groupname}->{perm},权限未曾授权".format(groupname = groupname,perm = perm))
     del permissionList[bottype][botuuid][botgroup][uuid][groupname][perm]
     return (True,'成功')
 def perm_uuidGet(bottype:str,botuuid:str,botgroup:str,uuid:str):
@@ -240,7 +239,7 @@ def authadd(bottype:str,botuuid:str,botgroup:str,uuid:str,groupname:str,perm:str
     botuuid = str(botuuid)
     uuid = str(uuid)
     if not legalPermHas(groupname,perm):
-        return (False,"{groupname}->{perm},此权限不存在".format(groupname,perm))
+        return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = perm))
     if overlapping and dictHas(permissionList,bottype,botuuid,botgroup,uuid,groupname,perm):
         return (False,'授权重复！')
     createTimestamp = (kw['createTimestamp'] if kw['createTimestamp'] else time.time())

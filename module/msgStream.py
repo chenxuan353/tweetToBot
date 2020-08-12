@@ -5,7 +5,7 @@ import queue
 import threading
 import asyncio
 import os
-
+import re
 #日志输出
 from helper import getlogger,TempMemory,data_read,data_save,data_read_auto
 logger = getlogger(__name__)
@@ -42,17 +42,34 @@ def IOC_text(msgtype,data):
     return data['text']
 def IOC_CQ_img(msgtype,data):
     return "[CQ:image,timeout={timeout},file={src}]".format(**data)
+def UVS_conversionToStr(msgtype,data:dict):
+    if msgtype == 'text':
+        msg = data['text']
+        msg = msg.replace("&",'&amp;')
+        msg = msg.replace("[",'&#91;')
+        msg = msg.replace("]",'&#93;')
+    else:
+        msg = "[CX:"+msgtype
+        for key,value in data.items():
+            value = value.replace("&",'&amp;')
+            value = value.replace("[",'&#91;')
+            value = value.replace("]",'&#93;')
+            value = value.replace(",",'&#44;')
+            msg += "," + key + '=' + value
+        msg += "]"
+    return msg
 conversionFunc = {
     'default':IOC_text,
     'cqhttp':{
         'img':IOC_CQ_img
     }
 }
+
 class SendMessage:
-    def __init__(self,msg:str = None):
-        self.infoObjs:list = [].copy()
-        if msg:
-            self.append(self.baleTextObj(msg))
+    def __init__(self,msg:str = None,Conversion_flag:str = 'cqhttp'):
+        self.infoObjs:list = list()
+        if msg and type(msg) == str:
+            self.infoObjs = self.parsingToObjlist(msg)
     def removeAllTypeObj(self,msgtype):
         self.infoObjs = list(filter((lambda obj:obj['msgtype']!=msgtype),self.infoObjs))
     def designatedTypeToStr(self,msgtype):
@@ -61,25 +78,6 @@ class SendMessage:
                 if 'text' not in obj:
                     obj['text'] = '[{0}]'.format(obj['msgtype'])
                 obj['msgtype'] = 'text'
-    def baleTextObj(self,msg):
-        return {
-            'msgtype':'text',
-            'text':msg
-        }
-    def baleImgObj(self,src,timeout = 15,text = '[图片]'):
-        return {
-            'msgtype':'img',
-            'src':src,
-            'timeout':str(timeout),
-            'text':str(text),
-        }
-    def baleUnknownObj(self,bottype,alt,data):
-        #打包不明组件(bot标识-不指向此bot是不明段将被alt替代,alt-错误替代,data-数据包)
-        return {
-            'msgtype':'unknown',
-            'text':alt,
-            'data':data
-        }
     def __checkMsg(self,msgtype,data):
         if type(data) != dict:
             raise Exception('{msgtype},数据类型异常'.format(msgtype))
@@ -102,12 +100,12 @@ class SendMessage:
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
-        self.infoObjs.insert(index,((infoObj['msgtype'],infoObj)))
+        self.infoObjs.insert(index,infoObj)
     def append(self,infoObj):
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
-        self.infoObjs.append((infoObj['msgtype'],infoObj))
+        self.infoObjs.append(infoObj)
     def __infoObjToStr(self,msgtype,data,Conversion_flag = 'cqhttp'):
         global conversionFunc
         if Conversion_flag not in conversionFunc:
@@ -118,18 +116,103 @@ class SendMessage:
             else:
                 return conversionFunc[Conversion_flag]['default'](msgtype,data)
         return conversionFunc[Conversion_flag][msgtype](msgtype,data)
-    def toStr(self,Conversion_flag:str = 'cqhttp'):
+    def toStr(self,Conversion_flag:str = 'cqhttp',simple = False):
+        if simple:
+            return self.toSimpleStr()
         text = ""
         for infoObj in self.infoObjs:
-            text += self.__infoObjToStr(infoObj[0],infoObj[1],Conversion_flag)
+            text += self.__infoObjToStr(infoObj['msgtype'],infoObj,Conversion_flag)
         return text
     def toSimpleStr(self):
         text = ""
         for infoObj in self.infoObjs:
-            text += infoObj[1]['text']
+            text += infoObj['text']
         return text
+    def toStandStr(self):
+        text = ""
+        for infoObj in self.infoObjs:
+            text += UVS_conversionToStr(infoObj['msgtype'],infoObj)
+        return text
+    def filterToStr(self,msgfilter:tuple = ('img','text')):
+        text = ""
+        for infoObj in self.infoObjs:
+            if infoObj['msgtype'] in msgfilter:
+                text += infoObj['text']
+        return text
+    def __iter__(self):
+        return self.infoObjs.__iter__()
+    @staticmethod
+    def parsingToObjlist(msg:str) -> list:
+        """
+            通用标签转换为通用OBJ列表
+        """
+        objlist = []
+        res = re.split(r'\[CX:([^\[\]]+)\]',msg)
+        for i in range(len(res)):
+            if (i+1) % 2 == 0:
+                spr = res[i].split(',')
+                if len(spr) >= 2:
+                    msgtype = spr[0]
+                    data = {}
+                    for j in range(1,len(spr)):
+                        kv = spr[j].split('=',1)
+                        if len(kv) != 2:
+                            msgtype = ''
+                            break
+                        value = kv[1]
+                        value = value.replace('&amp;',"&")
+                        value = value.replace('&#91;',"[")
+                        value = value.replace('&#93;',"]")
+                        value = value.replace('&#44;',",")
+                        data[kv[0]] = value
+                    if msgtype and msgtype in ('text','img','unknown'):
+                        data['msgtype'] = msgtype
+                        objlist.append(data)
+                        continue
+                res[i] = '[CX:'+res[i]+']'
+            msg = res[i]
+            if msg:
+                msg = msg.replace('&amp;',"&")
+                msg = msg.replace('&#91;',"[")
+                msg = msg.replace('&#93;',"]")
+                objlist.append(SendMessage.baleTextObj(msg))
+        return objlist
+    @staticmethod
+    def infoObjIsType(infoObj,msgtype):
+        return infoObj['msgtype'] == msgtype
+    @staticmethod
+    def baleTextObj(msg:str):
+        """
+            打包文本数据段(文本)
+        """
+        return {
+            'msgtype':'text',
+            'text':msg
+        }
+    @staticmethod
+    def baleImgObj(src,timeout = 15,text = '[图片]'):
+        """
+            打包图片数据段(图片地址，超时时间，替代文本)
+        """
+        return {
+            'msgtype':'img',
+            'src':src,
+            'timeout':str(timeout),
+            'text':str(text),
+        }
+    @staticmethod
+    def baleUnknownObj(bottype,alt,data):
+        """
+            打包不明数据段(bot标识-不指向此bot是不明段将被alt替代,alt-错误替代,data-数据包)
+        """
+        return {
+            'msgtype':'unknown',
+            'text':alt,
+            'data':data
+        }
 """
 消息流
+后续可能从线程模式改为异步模式，以提高效率
 """
 class QueueStream:
     def __init__(self,name,deal_func,max_size:int = 64,senddur = 0.3):
@@ -165,7 +248,7 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
     message_type = sendObj['message_type']
     send_id = senduuid
     bindCQID = botuuid
-    message = message.toStr('CQ')
+    message = message.toStr('cqhttp')
     #初始化
     bot = nonebot.get_bot()
     if message_type not in ('private','group'):
@@ -190,12 +273,10 @@ def exp_send(msg:SendMessage,source = '未知',flag = '信息',other:dict = None
         'msg':msg,
         other:other,
     })
-    
 def exp_push(eventype,evendes,send_unit):
     msg = ('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息流:{evendes}'.format(evendes = evendes,**send_unit))
     sendlogger.warning(msg)
     exp_send(msg,source='消息流警告触发器',flag = '警告')
-
 #警告触发器(发送单元,信息发送对象,单元错误计数)
 def exp_check(send_unit,send_me,uniterrcount):
     if uniterrcount == -1:
@@ -308,6 +389,19 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     data_save(send_count_path,send_count)
 
 def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,block=True,timeout = 5):
+    """
+        发送消息给指定bot的指定对象
+
+        :param bottype: BOT的标识
+        :param botuuid: BOT的UUID
+        :param botgroup: 指定bot发送组
+        :param senduuid: 发送对象的UUID
+        :param sendObj: 发送数据的附加数据(用于适配各类bot)
+        :param message: 需要发送的数据
+        :param block: queue参数，是否等待
+        :param timeout: 等待时间，为0则无限等待，默认15s
+        :return: None
+    """
     if not dictHas(send_stream,bottype,botuuid):
         dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype+'_'+botuuid,threadSendDeal))
         send_stream[bottype][botuuid].run()
@@ -332,7 +426,21 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         return False
     return True
 def send_msg_kw(*,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,**kw):
+    """
+        发送消息给指定bot的指定对象
+
+        :param bottype: BOT的标识
+        :param botuuid: BOT的UUID
+        :param botgroup: 指定bot发送组
+        :param senduuid: 发送对象的UUID
+        :param sendObj: 发送数据的附加数据(用于适配各类bot)
+        :param message: 需要发送的数据
+        :param block: queue参数，是否等待
+        :param timeout: 等待时间，为0则无限等待，默认15s
+        :return: None
+    """
     return send_msg(bottype,botuuid,botgroup,senduuid,sendObj,message)
+
 """
 信息接口
 """
@@ -347,7 +455,6 @@ def getPushHealth(bottype:str,botuuid:str):
     if not unit:
         return -1
     return round(1-unit['total_error']/unit['total_send'],3)
-
 def getMsgStreamUnitErr(bottype:str,botuuid:str,botgroup:str,senduuid:str):
     unit = getCountUnit(bottype,botuuid)
     if not unit:
@@ -356,7 +463,6 @@ def getMsgStreamUnitErr(bottype:str,botuuid:str,botgroup:str,senduuid:str):
     if not unit:
         return -1
     return unit
-
 def getMsgStreamInfo(bottype:str,botuuid:str):
     unit = getCountUnit(bottype,botuuid)
     if not unit:

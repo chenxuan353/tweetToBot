@@ -1,9 +1,10 @@
 import asyncio
 from nonebot import NLPSession, on_natural_language
-from helper import getlogger,data_save
 from module.msgStream import SendMessage
 from pluginsinterface.EventHandling import StandEven
-from pluginsinterface.Plugmanagement import eventArrives
+from pluginsinterface.Plugmanagement import _send_even,PlugMsgTypeEnum
+import config
+from helper import getlogger,data_save
 logger = getlogger(__name__)
 """
 通用插件接口
@@ -33,8 +34,8 @@ async def _(session: NLPSession):
     groupuuid = ''
     groupinfo = None
     anonymous = False
-    msgtype = session.event['message_type']
-    message_type = msgtype
+    msgtype = PlugMsgTypeEnum.unknown
+    message_type = session.event['message_type']
     sourceObj = {
         'message_type':session.event['message_type']
     }
@@ -43,14 +44,16 @@ async def _(session: NLPSession):
     card = ''
     if message_type == 'private':
         message_type += '_' +session.event['sub_type']
+        msgtype = PlugMsgTypeEnum.private
         if session.event['sub_type'] != 'friend':
-            msgtype = 'tempprivate'
+            msgtype = PlugMsgTypeEnum.tempprivate
         if session.event['sub_type'] == 'other':
             anonymous = True
     elif message_type == 'group':
         #sub_type	normal、anonymous、notice	
         #消息子类型，正常消息是 normal，匿名消息是 anonymous，
         #系统提示（如「管理员已禁止群内匿名聊天」）是 notice
+        msgtype = PlugMsgTypeEnum.group
         sourceID = str(session.event['group_id'])
         groupuuid = sourceID
         if session.event['sub_type'] == 'anonymous':
@@ -91,7 +94,8 @@ async def _(session: NLPSession):
                 CQm += ',' + key + '=' + value
             CQm += ']'
             message.append(message.baleUnknownObj('CQ',CQm,{'flag':data.type,'data':data.data}))
-
+    if senduuid in config.PLUGADMIN['cqhttp']:
+        msgtype = msgtype | PlugMsgTypeEnum.plugadmin
     plugObj = {'type':'cqhttp','even':session.event}
     #生成事件
     even = StandEven(
@@ -100,5 +104,5 @@ async def _(session: NLPSession):
         groupuuid,groupinfo,senduuid,senduuidinfo,
         message,plugObj=plugObj,sourceObj=sourceObj
     )
-    #发 送 事 件
-    eventArrives(even)
+    #发送事件
+    _send_even(even)

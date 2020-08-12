@@ -4,10 +4,23 @@
 """
 #启用debug信息
 DEBUG = False
+#当前支持bot，cqhttp、dingding(待支持)
 #是否启用(nonebot使用ws连接，可多对一)
 nonebot = True
 
-#维护信息
+#插件管理者
+PLUGADMIN = {
+    #腾讯QQ
+    'cqhttp':[
+        12345,
+    ],
+    #钉钉
+    'dingding':[
+
+    ]
+}
+
+#维护信息，用于生成help帮助
 mastername = "" #维护者，例：XX(QQ123456)
 project_des = "" #项目描述
 project_addr = "" #项目地址，例：https://www.baidu.com

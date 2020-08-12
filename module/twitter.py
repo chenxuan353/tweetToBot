@@ -941,9 +941,9 @@ class TweetEventDeal:
             ]
         }
         if grouptype not in allow_type:
-            raise Exception('事件组标识异常，{grouptype}->{unittype}'.format(grouptype,unittype))
+            raise Exception('事件组标识异常，{0}->{1}'.format(grouptype,unittype))
         if unittype not in allow_type[grouptype]:
-            raise Exception('事件元标识异常，{grouptype}->{unittype}'.format(grouptype,unittype))
+            raise Exception('事件元标识异常，{0}->{1}'.format(grouptype,unittype))
         eventunit = {
             'grouptype':grouptype,
             'unittype':unittype,
@@ -1031,17 +1031,17 @@ class TweetEventDeal:
             msg = self.userUpdataToMsg(event['data'],nick)
             self.send_msg_pushunit(pushunit,msg)
         else:
-            msgStream.exp_send('推送不可达：{grouptype}'.format(event['grouptype']),source='推送事件到达(触发)',flag="异常")
+            msgStream.exp_send('推送不可达：{0}'.format(event['grouptype']),source='推送事件到达(触发)',flag="异常")
     #事件转文本
     def eventToStr(self,event):
-        msg = '触发事件{grouptype}-{unittype}来自{spyid}：\n'.format(event['grouptype'],event['unittype'],event['spyid'])
+        msg = '触发事件{0}-{1}来自{2}：\n'.format(event['grouptype'],event['unittype'],event['spyid'])
         if event['grouptype'] in ('listen','reverse'):
             tweetinfo = event['data']
             msg = msg + self.tweetToMsg(tweetinfo)
         elif event['grouptype'] == 'userupdata':
             msg = msg + self.userUpdataToMsg(event['data'])
         else:
-            msg = msg + '事件转换失败，{grouptype} 未知事件组'.format(event['grouptype'])
+            msg = msg + '事件转换失败，{0} 未知事件组'.format(event['grouptype'])
         return msg
     #推特标识转中文
     def tweetTypeToStr(self,tweettype:str = 'unknown'):
@@ -1090,16 +1090,16 @@ class TweetEventDeal:
         msg.append(msg.baleImgObj(userinfo['profile_image_url_https']))
         if not simple:
             if 'statuses_count' in userinfo:
-                msg.append("\n发推数(包括转推)：{statuses_count}".format(userinfo['statuses_count']))
+                msg.append("\n发推数(包括转推)：{0}".format(userinfo['statuses_count']))
             if 'friends_count' in userinfo:
-                msg.append("\n关注数：{friends_count}".format(userinfo['friends_count']))
+                msg.append("\n关注数：{0}".format(userinfo['friends_count']))
             if 'followers_count' in userinfo:
-                msg.append("\n粉丝数：{followers_count}".format(userinfo['followers_count']))
+                msg.append("\n粉丝数：{0}".format(userinfo['followers_count']))
             if 'protected' in userinfo:
-                msg.append("\n推文受保护：{protected}".format(('是' if userinfo['protected'] else '否')))
+                msg.append("\n推文受保护：{0}".format(('是' if userinfo['protected'] else '否')))
             if 'created_at' in userinfo:
                 timestr = time.strftime("%Y年%m月%d %H:%M:%S", time.localtime(userinfo['created_at']))
-                msg.append("\n账户创建时间：{timestr}".format(timestr))
+                msg.append("\n账户创建时间：{0}".format(timestr))
         return msg
 
     #生成推文数据map
@@ -1123,7 +1123,7 @@ class TweetEventDeal:
                 'tempID':tweetcache.findTweetTempID(int(tweetinfo['id'])),
                 'text':tweetinfo['text'],
                 'imgs':'[!imgs!]',
-                'link':"https://twitter.com/{user_id}/status/{tweet_id}".format(tweetinfo['user_name'],tweetinfo['id_str'])
+                'link':"https://twitter.com/{0}/status/{1}".format(tweetinfo['user_name'],tweetinfo['id_str'])
             }
         if argmap['tempID'] == -1:
             argmap['tempID'] = '未生成'
@@ -1311,9 +1311,9 @@ def getQueueStatus():
         status = '拥挤'
     else:
         status = '阻塞'
-    msg = '队列状态：{status}'.format(status)
-    msg = msg + "\n提交队列占用率：{idle1}%".format(idle1)
-    msg = msg + "\n事件队列占用率：{idle2}%".format(idle2)
+    msg = '队列状态：{0}'.format(status)
+    msg = msg + "\n提交队列占用率：{0}%".format(idle1)
+    msg = msg + "\n事件队列占用率：{0}%".format(idle2)
 
     return getSubmitQueueStatus() + "\n" + getEventQueueStatus()
 """

@@ -67,10 +67,23 @@ class StandEven:
             message,
             sourceObj = sourceObj,
             plugObj= plugObj)
+        standdata['filtermsg'] = message.filterToStr()
         standdata['simplemsg'] = message.toSimpleStr()
+        self.__dict__['lock'] = False
         self.message:SendMessage = None
         self.hasReply = False
         self.__dict__.update(standdata)
+
+    def __setattr__(self,key,value):
+        if key == 'lock':
+            self.lock = value
+        elif self.lock:
+            raise Exception('禁止修改')
+        self.__dict__[key] = value
+    def __delattr__(self,key):
+        if self.lock:
+            raise Exception('禁止修改')
+        del self.__dict__[key]
     @staticmethod
     def baleToStandGroupInfo(groupuuid,name,sendlevel,sendnick):
         return {
@@ -86,6 +99,8 @@ class StandEven:
             'nick':nick,
             'name':name,
         }
+    def setLock(self,value:bool):
+        self.lock = value
     def baleToStandEven(self,
             bottype:str,
             botuuid:str,
@@ -102,8 +117,6 @@ class StandEven:
             sourceObj:dict = None,
             plugObj:dict = None,
             ):
-        if msgtype not in ('private','group','tempprivate','tempgroup'):
-            raise Exception('消息类型不合法')
         return {
             'bottype':bottype,
             'botuuid':botuuid,

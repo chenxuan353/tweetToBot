@@ -1,15 +1,23 @@
 # 可提供一对多转烤推服务的bot后端v3
-[![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)![CQHTTP Version](https://img.shields.io/badge/cqhttp-4.8+-black.svg)
+[![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 ## 简介
 
-本仓库主要依赖于模块[tweepy](https://github.com/tweepy/tweepy)
+本仓库主要依赖于模块[tweepy](https://github.com/tweepy/tweepy)进行推特操作
 
-将在未来增添更多bot接口支持
+拥有全平台BOT兼容层，可以快速接入多个不同平台或相同平台bot。
 
-与CoolQ的通信依赖于CQHTTP以及模块[nonebot](https://github.com/nonebot/nonebot)，特别鸣谢[richardchien](https://github.com/richardchien)对nonebot封装项目的贡献。
+原CoolQBot的通信依赖于CQHTTP，由于平台问题已迁移至[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
 
-**项目目前支持 Python 3.7 及 CQHTTP 插件 v4.8+**
+特别鸣谢[richardchien](https://github.com/richardchien)对nonebot封装项目的贡献。
+
+兼容：[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)(连接使用[nonebot](https://github.com/nonebot/nonebot))，更多接口待开发
+
+BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发送、多接口插件兼容层-消息获取及响应
+
+已实现主要功能：机器翻译、多功能转推、烤推、RSS更新订阅
+
+**项目目前支持 Python 3.7 **
 
 
 
