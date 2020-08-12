@@ -158,10 +158,8 @@ class PushList:
         spyunit:set = self.spy_relate[spyuuid]
         spyunit.add(pushunit)
     def __addPushunit(self,pushunit,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw):
-        if self.pushcheck_trigger:
-            if not self.pushcheck_trigger(pushunit,**pushunit):
-                return (False,"单元检查不通过！")
-        
+        if not self.pushcheck_trigger(pushunit,**pushunit):
+            return (False,"单元检查不通过！")
         dictSet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,spyuuid,obj=pushunit)
         self.__addToSpyRelate(pushunit)
         self.__addToSpyList(spyuuid)

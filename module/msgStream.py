@@ -6,10 +6,11 @@ import threading
 import asyncio
 import os
 import re
+import config
 #日志输出
 from helper import getlogger,TempMemory,data_read,data_save,data_read_auto
 logger = getlogger(__name__)
-sendlogger = getlogger(__name__+'_nocmd',printCMD=False)
+sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
 """
 消息流处理及推送模块
 

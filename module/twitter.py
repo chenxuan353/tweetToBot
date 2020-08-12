@@ -145,7 +145,7 @@ class TweePushList(PushList):
         if not filename:
             filename = self.pushTemplateFile
         data = data_read(filename,path)
-        if data[0] != False:
+        if data[0] is False:
             self.PushTemplate = data[2]
             return (True,data[1])
         return data
@@ -243,7 +243,7 @@ class TweePushList(PushList):
             'template':'',
             'push':{}
         }.update(self.pushunit_default_config)
-        if key == None:
+        if not key:
             mergeConf['upimg'] = pushtoconfig['upimg'] if pushtoconfig['upimg'] else mergeConf['upimg']
             mergeConf['unit'].update(pushtoconfig['unit'] if pushtoconfig['unit'] else {})
             mergeConf['template'] = pushtoconfig['template'] if pushtoconfig['template'] else mergeConf['template']

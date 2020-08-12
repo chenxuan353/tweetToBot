@@ -26,7 +26,7 @@ def file_exists(filepath:str):
 
 
 #设置nonebot的日志对象
-def initNonebotLogger():
+def initNonebotLogger(printCMD:bool = True):
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     trf = logging.handlers.TimedRotatingFileHandler(
                 filename=os.path.join(cache_base_path,log_path,"nonebot.log"),
@@ -173,7 +173,6 @@ def data_save(filename:str,data,path:str = config_path,object_hook=None) -> tupl
         json.dump(data,fw,ensure_ascii=False,indent=4,object_hook=object_hook)
     except IOError:
         logger.error('save IOError: 未找到文件或文件不存在-'+os.path.join(cache_base_path,path,filename))
-        pass
         return (False,'配置文件写入失败')
     except:
         logger.critical('数据文件写入异常')
