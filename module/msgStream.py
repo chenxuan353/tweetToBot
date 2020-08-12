@@ -42,6 +42,9 @@ def IOC_text(msgtype,data):
     return data['text']
 def IOC_CQ_img(msgtype,data):
     return "[CQ:image,timeout={timeout},file={src}]".format(**data)
+def IOC_CQ_unknown(msgtype,data):
+    if data['bottype'] == 'cqhttp':
+        return data['alt']
 def UVS_conversionToStr(msgtype,data:dict):
     if msgtype == 'text':
         msg = data['text']
@@ -61,7 +64,8 @@ def UVS_conversionToStr(msgtype,data:dict):
 conversionFunc = {
     'default':IOC_text,
     'cqhttp':{
-        'img':IOC_CQ_img
+        'img':IOC_CQ_img,
+        'unknown':IOC_CQ_unknown
     }
 }
 
@@ -142,6 +146,26 @@ class SendMessage:
     def __iter__(self):
         return self.infoObjs.__iter__()
     @staticmethod
+    def textCoding(msg:str):
+        """
+            文本编码
+        """
+        msg = msg.replace("&",'&amp;')
+        msg = msg.replace("[",'&#91;')
+        msg = msg.replace("]",'&#93;')
+        msg = msg.replace(",",'&#44;')
+        return msg
+    @staticmethod
+    def textDecoding(msg:str):
+        """
+            文本解码
+        """
+        msg = msg.replace('&amp;',"&")
+        msg = msg.replace('&#91;',"[")
+        msg = msg.replace('&#93;',"]")
+        msg = msg.replace('&#44;',",")
+        return msg
+    @staticmethod
     def parsingToObjlist(msg:str) -> list:
         """
             通用标签转换为通用OBJ列表
@@ -160,15 +184,25 @@ class SendMessage:
                             msgtype = ''
                             break
                         value = kv[1]
-                        value = value.replace('&amp;',"&")
-                        value = value.replace('&#91;',"[")
-                        value = value.replace('&#93;',"]")
-                        value = value.replace('&#44;',",")
+                        value = SendMessage.textDecoding(value)
                         data[kv[0]] = value
                     if msgtype and msgtype in ('text','img','unknown'):
                         data['msgtype'] = msgtype
-                        objlist.append(data)
-                        continue
+                        if msgtype != 'img' or msgtype == 'img' and 'src' in data:
+                            if msgtype == 'img':
+                                if 'timeout' not in data:
+                                    data['timeout'] = 15
+                                if 'text' not in data:
+                                    data['text'] = "[图片]"
+                            if msgtype == 'unknown':
+                                if 'bottype' not in data:
+                                    data['bottype'] = 'unknown'
+                                if 'alt' not in data:
+                                    data['alt'] = '[unknown]'
+                            if 'text' not in data:
+                                data['text'] = "[未知]"
+                            objlist.append(data)
+                            continue
                 res[i] = '[CX:'+res[i]+']'
             msg = res[i]
             if msg:
@@ -207,7 +241,9 @@ class SendMessage:
         """
         return {
             'msgtype':'unknown',
-            'text':alt,
+            'bottype':bottype,
+            'text':'[未知]',
+            'alt':alt,
             'data':data
         }
 """

@@ -1,7 +1,17 @@
 from pluginsinterface.PluginLoader import on_message,StandEven,on_preprocessor,on_plugloaded
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,plugGet,PluginsManage
+from pluginsinterface.PluginLoader import SendMessage
 from helper import getlogger
 logger = getlogger(__name__)
+"""
+兼容层使用CX码，可兼容大部分bot
+*兼容标识：unknown
+*兼容段将交给对应bot的消息解析器处理，通用段保证可以对所有bot兼容
+通用段：text,img
+固定数据键值对：text-当无法解析时将使用此值
+[CX:消息段标识,数据键值对]
+
+"""
 
 @on_plugloaded()
 def _(plug:PluginsManage):
@@ -32,6 +42,14 @@ def _(even:StandEven) -> PlugMsgReturn:
 @on_message(msgfilter='233',des='233 - 回复一句233')
 def _(even:StandEven) -> PlugMsgReturn:
     even.send('233')
+
+#命令注册例
+@on_message(msgfilter='来图',des='来图 - 回复一张图')
+def _(even:StandEven) -> PlugMsgReturn:
+    even.send('[CX:img,src={src},text={text}]'.format(
+        src = 'https://i2.hdslb.com/bfs/face/727d19364b867c2baaf5a2902de6bf28387379e7.jpg',
+        text = SendMessage.textCoding('[无法显示的图片]')
+    ))
 
 @on_message(msgfilter='爪巴',des='爪巴 - 随机爪巴')
 def _(even:StandEven):

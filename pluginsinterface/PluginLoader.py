@@ -3,7 +3,7 @@ from pluginsinterface.Plugmanagement import PluginsManage
 #插件装载
 from pluginsinterface.Plugmanagement import StandEven,PlugMsgReturn,PlugMsgTypeEnum
 from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,plugGet,on_message,on_preprocessor,on_plugloaded
-
+from pluginsinterface.PlugFilter import SendMessage
 """
 本类用于创建插件制作与使用者可见类型
 并尽可能保证这些类的稳定性
