@@ -133,7 +133,7 @@ class PluginsManage:
         #插件的事件处理，返回值决定消息是否放行，PlugMsgReturn.Intercept拦截、PlugMsgReturn.Ignore放行
         if not self.open:
             return PlugMsgReturn.Ignore
-        even.sourcefiltermsg = even.message.toStandStr()
+        even.sourcefiltermsg = even.message.toStandStr().strip()
         even.filtermsg = even.sourcefiltermsg
         for func in self.perfuncs:
             try:
@@ -384,7 +384,7 @@ def on_preprocessor(
     return decorate
 def on_message(
         msgfilter:PlugMsgFilter = '',argfilter:PlugArgFilter = '',des:str = '',
-        limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.private | PlugMsgTypeEnum.group | PlugMsgTypeEnum.plugadmin,
+        limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
         allow_anonymous = False,at_to_me = True
         ):
     """

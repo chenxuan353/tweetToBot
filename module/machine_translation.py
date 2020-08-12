@@ -1,5 +1,5 @@
 
-from helper import getlogger,TokenBucket,arglimitdeal,TokenBucket
+from helper import getlogger,TokenBucket,arglimitdeal
 import config
 import requests
 import random

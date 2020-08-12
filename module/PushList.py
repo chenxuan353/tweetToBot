@@ -1,20 +1,20 @@
 from helper import dictInit,dictHas,dictGet,dictSet
 from helper import data_read,data_save
 """
-推送列表
-监测对象UUID与推送单元关联表
-多层推送单元关联列表
+    推送列表
+    监测对象UUID与推送单元关联表
+    多层推送单元关联列表
 
-·推送单元
-指定推送对象(bottype、botuuid)
-推送信息(receivegroup|接收组、receiveuuid|接收者、receiveobj|接收者附加信息、pushconfig|推送配置、pushobj|推送附加信息)
-receiveobj:额外的接收者信息
-pushobj:提供额外的推送信息(增强兼容)
-监听信息(spyuuid|监测对象uuid,spyobj|监听附加信息)
-spyobj:提供额外的监听信息(增强兼容)
-对象操作信息(create_opuuid、create_timestamp、createobj、lastedit_opuuid、lastedit_timestamp、lasteditobj)
-createobj:额外的创建对象信息
-lasteditobj:额外的最后编辑对象信息
+    ·推送单元
+    指定推送对象(bottype、botuuid)
+    推送信息(receivegroup|接收组、receiveuuid|接收者、receiveobj|接收者附加信息、pushconfig|推送配置、pushobj|推送附加信息)
+    receiveobj:额外的接收者信息
+    pushobj:提供额外的推送信息(增强兼容)
+    监听信息(spyuuid|监测对象uuid,spyobj|监听附加信息)
+    spyobj:提供额外的监听信息(增强兼容)
+    对象操作信息(create_opuuid、create_timestamp、createobj、lastedit_opuuid、lastedit_timestamp、lasteditobj)
+    createobj:额外的创建对象信息
+    lasteditobj:额外的最后编辑对象信息
 """
 class PushList:
     puth_type = '' 
