@@ -121,7 +121,10 @@ class PlugArgFilter:
             :param verif: 预先定义的验证规则(str、int、float、uint、dict、list、bool、other-不验证)
             :param vlimit: 
                 参数限制表(限制参数内容,空表则不限制),类型为dict
+                为list或tuple时将被转换 例(1,2,3)或[1,2,3] -> {1:'',2:'',3:''}
+                若list或tuple中不存在空字符串时默认值将设为第一个元素，没有元素或存在''时设置为{'':''}
                 '*':''表示允许任意字符串,键值不为空时任意字符串将被转变为对应值
+                '匹配值':'修正值'修正值为空时不进行修正
             :param re: 正则表达式匹配(match函数)
             :param re_error: 正则匹配不通过时的错误信息
             :param func: 
@@ -129,6 +132,13 @@ class PlugArgFilter:
                 函数签名：fun(arg,arglimit)
             :return: ArgLimit
         """
+        if type(vlimit) == list or type(vlimit) == tuple:
+            newvlimit = {}
+            for v in vlimit:
+                newvlimit[v] = ''
+            if '' not in newvlimit:
+                newvlimit[''] = ('' if len(vlimit) == 0 else vlimit[0])
+            vlimit = newvlimit
         arglimit = self.baleArgLimit(name,nick,des,
                     canSkip = canSkip,prefunc = prefunc,
                     verif = verif,vlimit = vlimit,
@@ -225,6 +235,10 @@ class PlugArgFilter:
                 'verif':(lambda arg:arg.isdecimal() and int(arg) >= 0),
                 'res':int
             },
+            'uintnozero':{
+                'verif':(lambda arg:arg.isdecimal() and int(arg) > 0),
+                'res':int
+            },
             'float':{'verif':vfloat,'res':float},
             'str':{'verif':None,'res':str},
             'list':{'verif':None,'res':list},
@@ -249,25 +263,24 @@ class PlugArgFilter:
                     arg = ''
                 #执行顺序 prefunc->verif|验证->vlimit->re->func->verif|类型转换
                 identify = False
-                backuparg = None
+                backuparg = arg
                 while True and i < larglimits:
-                    if backuparg:
-                        arg = backuparg
-                    else:
-                        backuparg = arg
+                    arg = backuparg
                     ad = arglimits[i]
                     i += 1
                     if ad['prefunc'] is not None:
                         newarg = ad['prefunc'](arg)
-                        if (newarg == None) or (type(newarg) == tuple and not newarg[0]):
+                        if newarg is None or type(newarg) == tuple and not newarg[0]:
                             if ad['canSkip']:
                                 arglists[ad['name']] = ad['vlimit']['']
                                 continue
                             else:
                                 return (False,ad['nick'],'数值无效(PF)',ad['des'])
                         arg = (newarg if type(newarg) != tuple else newarg[1])
-                    
-                    vf = veriffun[ad['verif']]
+                    if ad['verif'] in veriffun:
+                        vf = veriffun[ad['verif']]
+                    else:
+                        vf = veriffun['other']
                     if vf['verif'] is not None and not vf['verif'](arg):
                         if ad['canSkip']:
                             arglists[ad['name']] = ad['vlimit']['']
@@ -277,7 +290,8 @@ class PlugArgFilter:
                     
                     if ad['vlimit'] is not None and len(ad['vlimit']) > 1:
                         if arg in ad['vlimit']:
-                            arg = ad['vlimit'][arg]
+                            if ad['vlimit'][arg] != '':
+                                arg = ad['vlimit'][arg]
                         elif '*' in ad['vlimit']:
                             if ad['vlimit']['*'] != '':
                                 arg = ad['vlimit']['*']
@@ -290,7 +304,7 @@ class PlugArgFilter:
                     
                     if ad['re'] is not None:
                         arg = reDealStr(ad['re'],arg)
-                        if arg == None:
+                        if arg is None:
                             if ad['canSkip']:
                                 arglists[ad['name']] = ad['vlimit']['']
                                 continue
@@ -306,7 +320,7 @@ class PlugArgFilter:
                                 arg = arg[1]
                             else:
                                 return (False,ad['des'],arg[1],ad['des'])
-                        elif arg == None:
+                        elif arg is None:
                             return (False,ad['des'],'参数不符合规则(fun)',ad['des'])
                         
                     if vf['res'] is not None:

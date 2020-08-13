@@ -1,6 +1,8 @@
 from pluginsinterface.PluginLoader import on_message,Session,on_preprocessor,on_plugloaded
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,plugGet,PluginsManage
 from pluginsinterface.PluginLoader import SendMessage,plugGetListStr,PlugMsgTypeEnum
+from pluginsinterface.PluginLoader import PlugArgFilter,plugGetNameList,plugGetNamePlugDes
+import config
 from helper import getlogger
 logger = getlogger(__name__)
 """
@@ -12,6 +14,15 @@ logger = getlogger(__name__)
 [CX:消息段标识,数据键值对]
 
 """
+mastername = config.mastername
+project_des = config.project_des
+project_addr = config.project_addr
+if not mastername:
+    mastername = '未知'
+if not project_des:
+    project_des = '没有描述'
+if not project_addr:
+    project_addr = '暂无'
 
 @on_plugloaded()
 def _(plug:PluginsManage):
@@ -38,6 +49,40 @@ def _(session:Session) -> PlugMsgReturn:
         return PlugMsgReturn.Ignore
     return PlugMsgReturn.Intercept
 
+#自动参数过滤器的使用
+argfilter = PlugArgFilter()
+argfilter.addArg(
+    'plugnick',
+    '插件昵称',
+    '需要输入插件的昵称',
+    prefunc=(lambda arg:(arg if arg in plugGetNameList() else None)),
+    canSkip=True,
+    vlimit={'':''}
+    )
+argfilter.addArg(
+    'page',
+    '页码',
+    '帮助的页码',
+    verif='uintnozero',
+    canSkip=True,
+    vlimit={'':1}#设置默认值
+    )
+@on_message(msgfilter='(help)|(帮助)',argfilter=argfilter,des='help或帮助 参数 - 获取帮助信息')
+def _(session:Session):
+    global mastername,project_des,project_addr
+    page = session.filterargs['page']
+    plugnick = session.filterargs['plugnick']
+    if plugnick != '':
+        session.send(plugGetNamePlugDes(plugnick))
+        return
+    msg = '----帮助----\n维护者：{mastername}\n项目描述：{project_des}\n项目地址：{project_addr}\n'.format(
+            mastername=mastername,
+            project_des=project_des,
+            project_addr=project_addr
+        )
+    msg += plugGetListStr(page)
+    session.send(msg)
+
 #命令注册例
 @on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233')
 def _(session:Session) -> PlugMsgReturn:
@@ -59,7 +104,4 @@ def _(session:Session):
 def _(session:Session):
     session.send(session.argstr.strip())
 
-@on_message(msgfilter='(help)|(帮助)',argfilter="page:uint:0",des='help或帮助 参数 - 获取帮助信息')
-def _(session:Session):
-    page = int(session.filterargs['page'])
-    session.send(plugGetListStr(page))
+

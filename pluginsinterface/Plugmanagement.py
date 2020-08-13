@@ -480,9 +480,23 @@ def on_message(
         return wrapper
     return decorate
 
-def plugGetListStr(page:int = 0):
+NameListCache = []
+def plugGetNameList():
+    global PluginsManageList,NameListCache
+    if not NameListCache:
+        for plug in PluginsManageList.values():
+            NameListCache.append(plug.name)
+    return NameListCache
+def plugGetNamePlugDes(name:str):
+    global PluginsManageList
+    for plug in PluginsManageList.values():
+        if name == plug.name:
+            return plug.getPlugDes()
+    return '未查询到插件'
+def plugGetListStr(page:int = 1):
     global PluginsManageList
     msg = '插件列表：'
+    page = page - 1
     i = 0
     lll = len(PluginsManageList)
     if page > int(lll/5):

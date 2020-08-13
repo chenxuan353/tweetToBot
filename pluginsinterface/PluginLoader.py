@@ -1,10 +1,11 @@
 #插件装载
 from pluginsinterface.TypeExtension import PlugMsgReturn,PlugMsgTypeEnum
+from pluginsinterface.PlugFilter import PlugArgFilter
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.PlugSession import SessionManagement,Session
 from pluginsinterface.PlugFilter import SendMessage
 #插件相关类
-from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr
+from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr,plugGetNameList,plugGetNamePlugDes
 from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,plugGet,on_message,on_preprocessor,on_plugloaded
 """
 本类用于创建插件制作与使用者可见类型
