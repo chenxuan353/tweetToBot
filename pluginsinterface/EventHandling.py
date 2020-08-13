@@ -73,16 +73,17 @@ class StandEven:
         self.message:SendMessage = None
         self.hasReply = False
         self.__dict__.update(standdata)
-
     def __setattr__(self,key,value):
-        if key == 'lock':
-            self.lock = value
+        if key in ('lock','hasReply'):
+            self.__dict__[key] = value
         elif self.lock:
-            raise Exception('禁止修改')
+            raise Exception('当前StandEven已锁定')
         self.__dict__[key] = value
     def __delattr__(self,key):
         if self.lock:
-            raise Exception('禁止修改')
+            raise Exception('当前StandEven已锁定')
+        if key in ('lock','hasReply'):
+            raise Exception('StandEven类不可删除lock与hasReply属性')
         del self.__dict__[key]
     @staticmethod
     def baleToStandGroupInfo(groupuuid,name,sendlevel,sendnick):
@@ -144,9 +145,9 @@ class StandEven:
         logger.info(log)
         self.hasReply = True
         #pylint: disable=no-member
-        msgStream.send_msg(self.bottype,self.botuuid,self.botgroup,self.uuid,self.sourceObj,message)
+        return msgStream.send_msg(self.bottype,self.botuuid,self.botgroup,self.uuid,self.sourceObj,message)
     def send(self,message:SendMessage):
-        self.Reply(message)
+        return self.Reply(message)
     def setMessage(self,message:SendMessage):
         #用于测试，快速修改信息
         if type(message) == str:

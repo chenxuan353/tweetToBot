@@ -247,6 +247,7 @@ class SendMessage:
             'alt':alt,
             'data':data
         }
+
 """
 消息流
 后续可能从线程模式改为异步模式，以提高效率

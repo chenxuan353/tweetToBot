@@ -76,14 +76,14 @@ def Priority_getlist(page:int = 0) -> tuple:
     i = 0
     for userid in prioritylist:
         i += 1
-        if i > page*5 and i % 5 == 0:
+        if i >= page*5 and i < (page+1)*5:
             userinfo = twitter.tweetcache.getUserInfo(userid = userid)
             if userinfo:
                 msg.append(msg.baleTextObj('\n{0},{1}({2}),{3}'.format(prioritylist[userid],userinfo['screen_name'],userinfo['name'],userinfo['id'])))
             else:
                 msg.append(msg.baleTextObj('\n{0},用户不在缓存中(不明),{1}'.format(prioritylist[userid],userid)))
     
-    msg.append('\n当前页{0}/total (总{1})'.format(page,lll/5,lll))
+    msg.append('\n当前页{0}/{1} (总{2})'.format(page,int(lll/5),lll))
     return msg
 def Priority_canRun(userid:str,defaultpriority:int = defaultpriority):
     #检测是否可运行监测

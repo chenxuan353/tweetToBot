@@ -119,14 +119,13 @@ def getListenList(page:int = 0) -> tuple:
     i = 0
     for userid in listenlist:
         i += 1
-        if i > page*5 and i % 5 == 0:
+        if i >= page*5 and i < (page+1)*5:
             userinfo = twitter.tweetcache.getUserInfo(userid = userid)
             if userinfo:
                 msg.append(msg.baleTextObj('\n{0}({1}),{2}'.format(userinfo['screen_name'],userinfo['name'],userinfo['id'])))
             else:
                 msg.append(msg.baleTextObj('\n用户不在缓存中(不明),{0}'.format(userid)))
-    
-    msg.append('\n当前页{0}/total (总{1})'.format(page,lll/5,lll))
+    msg.append('\n当前页{0}/{1} (总{2})'.format(page,int(lll/5),lll))
     return msg
 
 #维持侦听流运行

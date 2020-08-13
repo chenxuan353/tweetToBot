@@ -1,7 +1,7 @@
 import re
 import traceback
 from module.msgStream import SendMessage
-from pluginsinterface.Plugmanagement import PlugMsgTypeEnum
+from pluginsinterface.TypeExtension import PlugMsgTypeEnum
 from helper import getlogger
 logger = getlogger(__name__)
 """
@@ -19,7 +19,7 @@ class PlugMsgFilter:
     def filter(self,smsg:SendMessage) -> list:
         msg = smsg
         if type(msg) != str:
-            msg = smsg.filterToStr(('text','img'))
+            msg = smsg.toStandStr()
         return self.reDealStr(self.filterstr,msg)
     def replace(self,msg:str):
         res = self.reDealStr(self.filterstr,msg)
@@ -31,10 +31,11 @@ class PlugMsgFilter:
         #使用正则表达式处理字符串
         res = []
         resm = re.match(pat,msg, re.M | re.S)
-        if resm == None:
+        if resm is None:
             return []
-        for reg in resm.regs:
-            res.append(msg[reg[0]:reg[1]])
+        for reg in resm.groups():
+            if reg is not None:
+                res.append(reg)
         if len(res) == 1:
             return res[0]
         return res
@@ -50,10 +51,12 @@ class PlugArgFilter:
                 处理后剩余文本固定为tail键的值
         :param filterstr: 
             文本形过滤参数，每参数以一个半角空格分割
+            default
+                默认值，存在时参数可跳过
             verif 
                 预先定义的验证规则(str、int、float、uint、dict、list、bool、other-不验证)
             格式
-                argname1:verifstr argname2:verifstr
+                argname1:verifstr argname2:verifstr:default
     """
     def __init__(self,filterstr:str = ''):
         if type(filterstr) != str:
@@ -65,7 +68,14 @@ class PlugArgFilter:
             args = filterstr.split(' ')
             for arg in args:
                 argunit = arg.split(':')
-                self.addArg(argunit[0],argunit[0],argunit[0],verif = argunit[1])
+                self.addArg(
+                    argunit[0],
+                    argunit[0],
+                    argunit[0],
+                    canSkip=(False if len(argunit) <= 2 else True),
+                    vlimit=(None if len(argunit) <= 2 else {'':argunit[2]}),
+                    verif = argunit[1]
+                    )
         except:
             s = traceback.format_exc(limit=10)
             logger.error(s)
@@ -82,7 +92,7 @@ class PlugArgFilter:
         """
         msg = smsg
         if isinstance(msg,SendMessage):
-            msg = msg.toSimpleStr()
+            msg = msg.toStandStr()
         return self.argDeal(msg,self.arglimits)
     def addArgLimit(self,arglimit:dict):
         self.arglimits.append(arglimit)
@@ -135,6 +145,21 @@ class PlugArgFilter:
         """
         if name == 'tail':
             raise Exception('参数名不能为tail')
+        if canSkip:
+            if not vlimit or '' not in vlimit:
+                raise Exception('参数为可跳过时vlimit必须有默认值{\'\':\'默认值\'}')
+        return {
+            'name':name,
+            'nick':nick,
+            'des':des,
+            'canSkip':canSkip,
+            'prefunc':prefunc,
+            'verif':verif,
+            'vlimit':vlimit,
+            're':re,
+            're_error':re_error,
+            'func':func
+        }
     @staticmethod
     def arglimitdeal(ls:dict):
         """
@@ -164,8 +189,8 @@ class PlugArgFilter:
         resm = re.match(pat,msg, re.M | re.S)
         if resm == None:
             return None
-        for reg in resm.regs:
-            res.append(msg[reg[0]:reg[1]])
+        for reg in resm.groups():
+            res.append(reg)
         if len(res) == 1:
             return res[0]
         return res
@@ -203,16 +228,15 @@ class PlugArgFilter:
             'dict':{'verif':None,'res':dict},
             'other':{}
             }
-
         if 'tail' in arglimits:
             raise Exception("参数解析器异常：tail不能作为参数名")
         tailmsg = msg.strip()
-        arglists = {'tail':''} #参数列表,尾参数固定命名为tail
+        arglists = {'tail':tailmsg} #参数列表,尾参数固定命名为tail
         pat = re.compile('[　 \n]{1}') #分割正则
         try:
             larglimits = len(arglimits)
             i = 0
-            while i <= larglimits:
+            while i < larglimits:
                 #预处理
                 if tailmsg != '':
                     res = pat.split(tailmsg,maxsplit=1)
@@ -221,15 +245,16 @@ class PlugArgFilter:
                 else:
                     arg = ''
                 #执行顺序 prefunc->verif|验证->vlimit->re->func->verif|类型转换
+                identify = False
                 backuparg = None
-                while True and i <= larglimits:
+                while True and i < larglimits:
                     if backuparg:
                         arg = backuparg
                     else:
                         backuparg = arg
                     ad = arglimits[i]
                     i += 1
-                    if ad['prefunc']:
+                    if ad['prefunc'] is not None:
                         newarg = ad['prefunc'](arg)
                         if (newarg == None) or (type(newarg) == tuple and not newarg[0]):
                             if ad['canSkip']:
@@ -240,14 +265,14 @@ class PlugArgFilter:
                         arg = (newarg if type(newarg) != tuple else newarg[1])
                     
                     vf = veriffun[ad['verif']]
-                    if vf['verif'] and not vf['verif'](arg):
+                    if vf['verif'] is not None and not vf['verif'](arg):
                         if ad['canSkip']:
                             arglists[ad['name']] = ad['vlimit']['']
                             continue
                         else:
                             return (False,ad['nick'],'数值无效(PF)',ad['des'])
                     
-                    if ad['vlimit'] and ad['vlimit'] != {}:
+                    if ad['vlimit'] is not None and len(ad['vlimit']) > 1:
                         if arg in ad['vlimit']:
                             arg = ad['vlimit'][arg]
                         elif '*' in ad['vlimit']:
@@ -260,7 +285,7 @@ class PlugArgFilter:
                             else:
                                 return (False,ad['nick'],'非法参数(不被允许的值)',ad['des'])
                     
-                    if ad['re']:
+                    if ad['re'] is not None:
                         arg = reDealStr(ad['re'],arg)
                         if arg == None:
                             if ad['canSkip']:
@@ -269,7 +294,7 @@ class PlugArgFilter:
                             else:
                                 return (False,ad['des'],(ad['re_error'] if ad['re_error'] else '参数不符合规则(re)'),ad['des'])
 
-                    if ad['func']:
+                    if ad['func'] is not None:
                         arg = ad['func'](arg,ad)
                         #处理函数返回格式
                         #其一 None/合法值 其二 tuple对象 -> (参数是否合法,处理后的参数/错误文本)
@@ -281,11 +306,14 @@ class PlugArgFilter:
                         elif arg == None:
                             return (False,ad['des'],'参数不符合规则(fun)',ad['des'])
                         
-                    if vf['res']:
+                    if vf['res'] is not None:
                         arg = vf['res'](arg)
+                    identify = True
                     arglists[ad['name']] = arg
                     break
-            arglists['tail'] = tailmsg
+            if identify:
+                #只有参数被识别才更新tail
+                arglists['tail'] = tailmsg
         except:
             s = traceback.format_exc(limit=10)
             logger.error(s)

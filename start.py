@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-import pluginsinterface.PluginLoader as PluginLoader
+from pluginsinterface.PluginLoader import plugLoads
 #配置
 import config
 #日志输出
@@ -10,8 +10,7 @@ logger = getlogger('START')
 """
 if __name__ == "__main__":
     #加载插件
-    PluginLoader.plugLoads()
-    
+    plugLoads()
     #加载nonebot
     if config.nonebot:
         import botinterface.nonebotstart as nonebotstart

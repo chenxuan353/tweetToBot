@@ -4,8 +4,16 @@ import importlib
 import os
 import traceback
 import functools
+from pluginsinterface.TypeExtension import PlugMsgTypeEnum,PlugMsgReturn
 from pluginsinterface.EventHandling import StandEven
-from enum import Enum
+from pluginsinterface.PlugSession import sessionManagement,SessionManagement,Session
+
+from pluginsinterface.PlugFilter import PlugArgFilter,PlugMsgFilter
+
+from pluginsinterface.PermissionGroup import permRegisterGroup,permRegisterPerm
+from pluginsinterface.PermissionGroup import legalPermHas,authRegisterDefaultPerm
+from pluginsinterface.PermissionGroup import permDefaultInit
+
 from helper import getlogger
 import config
 logger = getlogger(__name__)
@@ -14,8 +22,10 @@ logger = getlogger(__name__)
 *插件管理大师(划掉)
 支持发送事件
 """
-#插件列表
+#插件列表(modulename索引)
 PluginsManageList = {}
+#插件列表(name索引)
+PluginsManageNameList = {}
 #优先级插件列表
 pluglist = []
 for _ in range(10):
@@ -28,39 +38,6 @@ DEBUG = config.DEBUG
 """
 插件相关类
 """
-class NoInstance(type):
-    #通过__call___方法控制访问
-    def __call__(self,*args,**kwargs):
-        raise TypeError('禁止实例化')
-
-#消息类型 private、group、tempprivate、tempgroup  私聊(一对一)、群聊(一对多)、临时聊天(一对一)、临时群聊(一对多)
-class PlugMsgTypeEnum:
-    """
-        插件消息类型定义类
-        不可实例化 多个类型过滤使用 | 分隔(例：PlugMsgTypeEnum.private | PlugMsgTypeEnum.group)
-        unknown #未知类型(仅用于事件生成过程)
-        private #私聊
-        group #群聊
-        tempprivate #临时私聊
-        tempgroup #临时群聊
-        plugadmin #插件管理者(仅用于消息过滤时识别管理者)
-    """
-    unknown = 0
-    private = 1
-    group = 2
-    tempprivate = 4
-    tempgroup = 8
-    plugadmin = 16 #插件管理者
-    allowall = 1 | 2 | 4 | 8 | 16
-class PlugMsgReturn(Enum):
-    """
-        插件返回值定义类
-        不可实例化
-        Ignore 消息忽略
-        Intercept 消息拦截
-    """
-    Ignore = 1 
-    Intercept = 2 
 class PluginsManage:
     """
         插件管理器
@@ -75,26 +52,35 @@ class PluginsManage:
         :param level: 插件优先级(0-9),0为最高优先级
     """
     #module名，昵称，描述，优先级(0-9，决定插件何时处理消息)
-    def __init__(self,modulename:str,name:str,version:str,auther:str,des:str,level:int = 4):
-        global pluglist,PluginsManageList
+    def __init__(self,modulename:str,name:str,groupname:str,version:str,auther:str,des:str,level:int = 4):
+        global pluglist,PluginsManageList,PluginsManageNameList
         if level < 0 or level > 9:
             raise Exception('插件优先级设置异常！')
         self.open = True
         self.modulename = modulename
         self.name = name
+        self.groupname = groupname
         self.version = version
         self.auther = auther
         self.des = des
         self.funcs = []
         self.perfuncs = []
         self.level = level
+        if self.name in PluginsManageNameList:
+            i = 1
+            while True:
+                self.name = "{0}{1}".format(name,i)
+                if self.name in PluginsManageNameList:
+                    break
         if self.modulename in PluginsManageList:
-            raise Exception('函数重复注册！')
+            raise Exception('模块重复注册！')
         pluglist[self.level].append(self)
+        PluginsManageNameList[self.name] = self
         PluginsManageList[self.modulename] = self
     def __del__(self):
-        global pluglist,PluginsManageList
+        global pluglist,PluginsManageList,PluginsManageNameList
         pluglist[self.level].remove(self)
+        del PluginsManageNameList[self.name]
         del PluginsManageList[self.modulename]
     def __hash__(self):
         return hash(self.modulename)
@@ -129,15 +115,15 @@ class PluginsManage:
             return False
         self.funcs.append((func,funcinfo))
         return True
-    def _eventArrives(self,even:StandEven) -> PlugMsgReturn:
+    def _eventArrives(self,session:Session) -> PlugMsgReturn:
         #插件的事件处理，返回值决定消息是否放行，PlugMsgReturn.Intercept拦截、PlugMsgReturn.Ignore放行
         if not self.open:
             return PlugMsgReturn.Ignore
-        even.sourcefiltermsg = even.message.toStandStr().strip()
-        even.filtermsg = even.sourcefiltermsg
+        session.sourcefiltermsg = session.messagestand
+        session.filtermsg = session.sourcefiltermsg
         for func in self.perfuncs:
             try:
-                res = func(even)
+                res = func(session)
                 if res == PlugMsgReturn.Intercept:
                     return PlugMsgReturn.Ignore
             except:
@@ -152,8 +138,8 @@ class PluginsManage:
                 return PlugMsgReturn.Ignore
         for fununit in self.funcs:
             try:
-                even.filtermsg = even.sourcefiltermsg
-                res = fununit[0](even)
+                session.filtermsg = session.sourcefiltermsg
+                res = fununit[0](session)
                 if res == PlugMsgReturn.Intercept:
                     return res
             except:
@@ -180,6 +166,12 @@ class PluginsManage:
                 )
         if not simple:
             msg = '所属模块：{module}\n插件优先级：{level}'.format(module = self.modulename,level = self.level)
+        return msg
+    def getPlugMinDes(self) -> str:
+        msg = "{name}:{des}".format(
+                    name = self.name,
+                    des = self.des.strip().replace('\n',' ')[:15]
+                )
         return msg
     def __getFuncDes(self,funcinfo:tuple,simple = True):
         if simple:
@@ -208,7 +200,7 @@ class PluginsManage:
 """
 插件注册等静态函数
 """
-from pluginsinterface.PlugFilter import PlugArgFilter,PlugMsgFilter
+
 def plugGet(modulename:str) -> PluginsManage:
     """
         通过模块名称获取插件管理器
@@ -248,6 +240,7 @@ def plugLoads(plugpath = 'plugins'):
             plugcount += 1
             if DEBUG:
                 logger.info("成功加载插件："+module_name)
+    permDefaultInit()
     logger.info("插件加载完毕，共加载插件{0}".format(plugcount))
     for func in plugstartfuncs:
         try:
@@ -258,7 +251,7 @@ def plugLoads(plugpath = 'plugins'):
             logger.error(s)
             logger.error("插件启动回调异常！请检查模块->{0}".format(func.__module__))
 
-def plugRegistered(name:str,modulename:str = '',level:int = 4):
+def plugRegistered(name:str,groupname:str,modulename:str = '',level:int = 4):
     """
         插件注册函数(插件名，插件消息处理优先级0-9，默认4)
         每个插件必须运行一次，也只能运行一次，且运行在注册函数之前
@@ -272,6 +265,7 @@ def plugRegistered(name:str,modulename:str = '',level:int = 4):
         }
         
         :param name: 插件名
+        :param groupname: 插件权限组名，大小写字母和数字非数字开头
         :param level: 插件消息处理优先级，0-9级，0级最优先
         :param modulename: 手动指定注册的插件模块名，默认为被装饰函数所在模块，一般不需要指定
         :return: Func
@@ -285,7 +279,7 @@ def plugRegistered(name:str,modulename:str = '',level:int = 4):
         logger.warning('手动加载插件:{modulename}'.format(modulename = modulename))
     
     def decorate(func):
-        nonlocal modulename,level,name
+        nonlocal modulename,level,name,groupname
         @functools.wraps(func)
         def wrapper():
             return func()
@@ -313,7 +307,8 @@ def plugRegistered(name:str,modulename:str = '',level:int = 4):
         if not modulename:
             modulename = func.__module__
         #插件注册
-        plug = PluginsManage(modulename,name,plugdes['version'],plugdes['auther'],plugdes['des'],level)
+        permRegisterGroup(modulename,groupname,name,plugdes['des'])
+        plug = PluginsManage(modulename,name,groupname,plugdes['version'],plugdes['auther'],plugdes['des'],level)
         logger.info('插件已注册{module}-{name}-{auther}-{version}'.format(
             module = plug.modulename,
             name = plug.name,
@@ -356,12 +351,12 @@ def on_preprocessor(
     def decorate(func):
         nonlocal limitMsgType,allow_anonymous,at_to_me
         @functools.wraps(func)
-        def wrapper(even:StandEven) -> PlugMsgReturn:
-            if even.anonymous and not allow_anonymous or \
-                not even.atbot and at_to_me or \
-                not even.msgtype & limitMsgType:
+        def wrapper(esession:Session) -> PlugMsgReturn:
+            if esession.anonymous and not allow_anonymous or \
+                not esession.atbot and at_to_me or \
+                not esession.msgtype & limitMsgType:
                 return PlugMsgReturn.Intercept
-            res = func(even)
+            res = func(esession)
             if res == None:
                 return PlugMsgReturn.Ignore
             return res
@@ -384,6 +379,7 @@ def on_preprocessor(
     return decorate
 def on_message(
         msgfilter:PlugMsgFilter = '',argfilter:PlugArgFilter = '',des:str = '',
+        bindperm:str = None,defaultperm:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
         limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
         allow_anonymous = False,at_to_me = True
         ):
@@ -394,9 +390,14 @@ def on_message(
             参数 even:StandEven
             返回值 PlugMsgReturn类型
         注：过滤器相关请查看对应过滤类
+        权限说明：
+            绑定权限后执行命令前将检查权限，权限不通过则不响应，可多个插件绑定相同权限
+            绑定多个重名权限时 defaultperm|默认授权 会合并
         :param msgfilter: PlugMsgFilter类 消息过滤器，可以为正则表达式字符串
         :param argfilter: PlugArgFilter类 参数过滤器，可以为文本 详见PlugArgFilter类注释
         :param des: 函数描述(例：“!翻译 待翻译内容 - 机器翻译”)，可使用 !help 插件昵称 查看描述预览
+        :param bindperm: 函数绑定的权限，大小写字母和数字非数字开头
+        :param defaultperm: 函数的默认授权(默认全部)
         :param limitMsgType: 消息标识过滤器
         :param allow_anonymous: 是否允许匿名消息
         :param at_to_me: 需要艾特BOT
@@ -413,34 +414,34 @@ def on_message(
         raise Exception('参数过滤器参数不兼容！')
     
     def decorate(func):
-        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me
+        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me,defaultperm,bindperm
         @functools.wraps(func)
-        def wrapper(even:StandEven) -> PlugMsgReturn:
+        def wrapper(session:Session) -> PlugMsgReturn:
             #消息过滤，
-            if even.anonymous and not allow_anonymous or \
-                not even.atbot and at_to_me or \
-                not even.msgtype & limitMsgType:
+            if session.anonymous and not allow_anonymous or \
+                not session.atbot and at_to_me or \
+                not session.msgtype & limitMsgType:
                 return PlugMsgReturn.Ignore
-            filtermsg = even.filtermsg
+            filtermsg = session.filtermsg
             if not msgfilter.filter(filtermsg):
                 return PlugMsgReturn.Ignore
             #参数处理
-            even.argstr = msgfilter.replace(filtermsg)
-            res = argfilter.filter(even.argstr)
+            session.argstr = msgfilter.replace(filtermsg)
+            res = argfilter.filter(session.argstr)
             if not res[0]:
                 nick = res[1]
                 errdes = res[2]
                 argdes = res[3]
-                even.send("{nick}，{errdes}，参数说明 {des}".format(
+                session.send("{nick}，{errdes}，参数说明 {des}".format(
                     nick = nick,
                     errdes = errdes,
                     des = argdes
                     ))
                 return PlugMsgReturn.Intercept
-            even.filterargs = res[1]
-            res = func(even)
+            session.filterargs = res[1]
+            res = func(session)
             if res == None:
-                if even.hasReply:
+                if session.hasReply():
                     return PlugMsgReturn.Intercept
             return res
         if func.__module__ in PluginsManageList:
@@ -450,6 +451,10 @@ def on_message(
                     name = wrapper.__name__,
                     des = des
                     ))
+            if bindperm and type(bindperm) == str and bindperm.strip():
+                if not legalPermHas(func.__module__,bindperm):
+                    permRegisterPerm(PluginsManageList[func.__module__].groupname,bindperm,des)
+                authRegisterDefaultPerm(PluginsManageList[func.__module__].groupname,bindperm,defaultperm)
             PluginsManageList[func.__module__].addFunc(
                 wrapper,
                 PluginsManage.baleFuncInfo(
@@ -468,16 +473,38 @@ def on_message(
         return wrapper
     return decorate
 
+def plugGetListStr(page:int = 0):
+    global PluginsManageList
+    msg = '插件列表：'
+    i = 0
+    lll = len(PluginsManageList)
+    if page > int(lll/5):
+        page = 0
+    for plug in PluginsManageList.values():
+        i += 1
+        if i >= page*5 and i < (page+1)*5:
+            msg += '\n' + plug.getPlugMinDes()
+    msg += '\n当前页{0}/{1} (共{2}个插件)'.format(page+1,int(lll/5)+1,lll)
+    return msg
 """
 事件处理
 """
+session_check_count = 0 #暂时的会话检测(每五十次事件检测一次)
 def __eventArrives(even:StandEven) -> PlugMsgReturn:
-    global pluglist
+    global pluglist,session_check_count
     if DEBUG:
         logger.info(even.toStr())
+    session_check_count += 1
+    if session_check_count % 50 == 0:
+        session_check_count = 0
+        sessionManagement.checkExpired()
+    #获取session并设置session对应事件
+    session:Session = sessionManagement.getSession(even.bottype,even.botuuid,even.botgroup,even.uuid,even)
+    session.setEven(even)
+    even.setLock(True)
     for i in range(len(pluglist)):
         for plug in pluglist[i]:
-            res = plug._eventArrives(even)
+            res = plug._eventArrives(session)
             if res == PlugMsgReturn.Intercept:
                 if DEBUG:
                     logger.info('插件{modulename}·{name}拦截了这条消息'.format(
@@ -487,6 +514,7 @@ def __eventArrives(even:StandEven) -> PlugMsgReturn:
                 return PlugMsgReturn.Intercept
     if DEBUG:
         logger.info('没有插件处理此消息')
+    even.setLock(False)
     return PlugMsgReturn.Ignore
 def _send_even(even:StandEven) -> PlugMsgReturn:
     return __eventArrives(even)

@@ -191,11 +191,6 @@ def data_read_auto(filename:str,default = None,path:str = config_path):
 
 #临时列表
 class TempMemory:
-    tm : list= None
-    autosave : bool = None
-    pop_trigger = None #pop函数触发器 FUN(data)
-    name : str = ""
-    limit : int = 0
     #记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
     def __init__(self,
             name:str,
@@ -209,6 +204,7 @@ class TempMemory:
         check_path('templist')
         if name[-5].lower() != '.json':
             name += '.json'
+        self.tm = None
         self.name = name
         self.limit = limit
         self.autosave = autosave

@@ -8,6 +8,8 @@ DEBUG = False
 #是否启用(nonebot使用ws连接，可多对一)
 nonebot = True
 
+#插件Session过期时间(单位s)
+Session_timeout = 300
 #插件管理者
 PLUGADMIN = {
     #腾讯QQ
