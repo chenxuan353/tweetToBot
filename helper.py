@@ -95,7 +95,7 @@ def dictInit(d:dict,*args,endobj:dict = None) -> bool:
     nowunit = None
     nowd = None
     for unit in args:   
-        if nowd == None:
+        if nowd is None:
             nowd = d
         else:
             nowd = nowd[nowunit]
@@ -112,21 +112,31 @@ def dictInit(d:dict,*args,endobj:dict = None) -> bool:
 def dictHas(d:dict,*args) -> bool:
     #参数：待判断字典,键名...
     #判断多层键是否存在
-    nowd = d
+    nowunit = None
+    nowd = None
     for unit in args:
+        if nowd is None:
+            nowd = d
+        else:
+            nowd = nowd[nowunit]
+        nowunit = unit
         if unit not in nowd:
             return False
-        nowd = nowd[unit]
     return True
 def dictGet(d:dict,*args,default = None) -> dict:
     #参数：待判断字典,键名...
     #判断多层键是否存在
-    nowd = d
+    nowunit = None
+    nowd = None
     for unit in args:
+        if nowd is None:
+            nowd = d
+        else:
+            nowd = nowd[nowunit]
+        nowunit = unit
         if unit not in nowd:
             return default
-        nowd = nowd[unit]
-    return nowd
+    return nowd[nowunit]
 def dictSet(d:dict,*args,obj:dict = None) -> None:
     #参数：待初始化字典,键名...
     #初始化层次字典,初始化结构为层层字典嵌套
@@ -135,10 +145,11 @@ def dictSet(d:dict,*args,obj:dict = None) -> None:
     nowd = None
     for unit in args:
         nowunit = unit
-        if nowd == None:
+        if nowd is None:
             nowd = d
         else:
             nowd = nowd[unit]
+        nowunit = unit
         if unit not in nowd:
             nowd[unit] = {}
     if obj:

@@ -1,6 +1,6 @@
 from pluginsinterface.PluginLoader import on_message,Session,on_preprocessor,on_plugloaded
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,plugGet,PluginsManage
-from pluginsinterface.PluginLoader import SendMessage,plugGetListStr
+from pluginsinterface.PluginLoader import SendMessage,plugGetListStr,PlugMsgTypeEnum
 from helper import getlogger
 logger = getlogger(__name__)
 """
@@ -39,7 +39,7 @@ def _(session:Session) -> PlugMsgReturn:
     return PlugMsgReturn.Intercept
 
 #命令注册例
-@on_message(msgfilter='233',bindperm='say233',des='233 - 回复一句233')
+@on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233')
 def _(session:Session) -> PlugMsgReturn:
     session.send('233')
 

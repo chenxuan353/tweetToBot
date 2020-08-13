@@ -119,7 +119,7 @@ class PluginsManage:
         #插件的事件处理，返回值决定消息是否放行，PlugMsgReturn.Intercept拦截、PlugMsgReturn.Ignore放行
         if not self.open:
             return PlugMsgReturn.Ignore
-        session.sourcefiltermsg = session.messagestand
+        session.sourcefiltermsg = session.messagestand.strip()
         session.filtermsg = session.sourcefiltermsg
         for func in self.perfuncs:
             try:
@@ -425,6 +425,13 @@ def on_message(
             filtermsg = session.filtermsg
             if not msgfilter.filter(filtermsg):
                 return PlugMsgReturn.Ignore
+            if bindperm:
+                if not session.authCheck(
+                    PlugMsgTypeEnum.getMsgtype(session.msgtype),
+                    PluginsManageList[func.__module__].groupname,
+                    bindperm
+                    ):
+                    return PlugMsgReturn.Ignore
             #参数处理
             session.argstr = msgfilter.replace(filtermsg)
             res = argfilter.filter(session.argstr)

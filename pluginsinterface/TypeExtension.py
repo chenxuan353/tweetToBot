@@ -32,10 +32,17 @@ class PlugMsgTypeEnum(metaclass=NoInstance):
     def getAllowlist(code) -> list:
         l = []
         for key,value in PlugMsgTypeEnum.__dict__.items():
-            if not key.startswith('__') and key != 'getAllowlist' and value != 'allowall':
+            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall'):
                 if code & value:
                     l.append(key)
         return l
+    @staticmethod
+    def getMsgtype(code) -> str:
+        for key,value in PlugMsgTypeEnum.__dict__.items():
+            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall','plugadmin'):
+                if code & value:
+                    return key
+
 class PlugMsgReturn(Enum):
     """
         插件返回值定义类
