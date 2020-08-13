@@ -11,10 +11,13 @@ logger = getlogger(__name__)
 class PlugMsgFilter:
     """
         使用正则表达式匹配消息起始部分，会忽略标准数据段以外的数据段
+        正则表达式起始不为(时将使用()包裹参数
     """
     def __init__(self,filterstr:str = ''):
         if type(filterstr) != str:
             raise Exception('过滤参数不为文本')
+        if not filterstr.startswith('('):
+            filterstr = '(' + filterstr + ')'
         self.filterstr = filterstr
     def filter(self,smsg:SendMessage) -> list:
         msg = smsg
@@ -28,7 +31,7 @@ class PlugMsgFilter:
         return msg
     @staticmethod
     def reDealStr(pat:str,msg:str) -> list:
-        #使用正则表达式处理字符串
+        #使用正则表达式捕获组处理字符串
         res = []
         resm = re.match(pat,msg, re.M | re.S)
         if resm is None:
