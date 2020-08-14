@@ -8,6 +8,8 @@ from helper import getlogger
 logger = getlogger('START')
 """
 启动文件
+
+注：服务器时区设置 timedatectl set-timezone Asia/Shanghai
 """
 if __name__ == "__main__":
     #加载插件

@@ -98,7 +98,7 @@ async def _(session:Session):
     session.send(msg)
 
 #命令注册例
-@on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233')
+@on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233',at_to_me=False)
 async def _(session:Session) -> PlugMsgReturn:
     session.send('233')
 
@@ -110,11 +110,11 @@ async def _(session:Session) -> PlugMsgReturn:
         text = SendMessage.textCoding('[无法显示的图片]')
     ))
 
-@on_message(msgfilter='爪巴',des='爪巴 - 随机爪巴')
+@on_message(msgfilter='爬',des='爬 - 马上就爬',at_to_me=False)
 async def _(session:Session):
     session.send('呜呜呜,这就爬')
 
-@on_message(msgfilter='复读',des='复读 参数 - 复读参数')
+@on_message(msgfilter='复读',des='复读 参数 - 复读参数',at_to_me=False)
 async def _(session:Session):
     res = await session.waitsend(session.argstr.strip())
     #res['message_id'] 会尽可能返回消息在发送消息的BOT对象返回值中获取消息ID
@@ -126,7 +126,7 @@ async def _(session:Session):
             #bot差异化处理
             bot:NoneBot = session.even.plugObj['bot']
             logger.info('消息ID：{0}'.format(res['message_id']))
-            await bot.delete_msg(message_id=res['message_id'],self_id=session.botuuid)
+            await bot.delete_msg(message_id=res['message_id'],self_id=int(session.botuuid))
     
 @on_message(msgfilter='(绝活)|(异常)|(无内鬼报个错)',des='绝活 参数 - 报个指定消息的异常')
 async def _(session:Session):
