@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from enum import Enum
 """
 插件相关类

@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 #插件装载
 from pluginsinterface.TypeExtension import PlugMsgReturn,PlugMsgTypeEnum
 from pluginsinterface.PlugFilter import PlugArgFilter

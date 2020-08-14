@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from helper import dictInit,dictHas,dictGet,dictSet
 from helper import data_read,data_save
 """

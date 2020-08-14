@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import nonebot
 import traceback
 import time

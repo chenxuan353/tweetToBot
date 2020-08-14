@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.PermissionGroup import authBaleObjectRecognition
 from pluginsinterface.PermissionGroup import authCheck,authAllow,authRemoval,authDeny

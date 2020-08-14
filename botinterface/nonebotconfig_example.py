@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from nonebot.default_config import *
 #也可以在此处对nonebot进行设置
 

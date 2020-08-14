@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.Plugmanagement import async_send_even
 import asyncio

@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import asyncio
 from nonebot import NLPSession, on_natural_language
 from module.msgStream import SendMessage

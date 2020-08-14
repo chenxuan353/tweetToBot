@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import re
 import traceback
 from module.msgStream import SendMessage

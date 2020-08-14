@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from helper import getlogger,TokenBucket,TempMemory
 import tweepy
 import config

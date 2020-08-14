@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 #加载所有插件
 import glob
 import importlib

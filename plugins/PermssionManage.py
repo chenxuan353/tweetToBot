@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from pluginsinterface.PluginLoader import on_message,StandEven,on_preprocessor,on_plugloaded
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,plugGet,PluginsManage
 from pluginsinterface.PluginLoader import SendMessage,plugGetListStr
