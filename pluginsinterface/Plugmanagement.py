@@ -4,6 +4,7 @@ import importlib
 import os
 import traceback
 import functools
+from inspect import getgeneratorstate
 from pluginsinterface.TypeExtension import PlugMsgTypeEnum,PlugMsgReturn
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.PlugSession import sessionManagement,SessionManagement,Session
@@ -151,6 +152,45 @@ class PluginsManage:
                         self.version,
                         self.auther
                     ))
+                return PlugMsgReturn.Ignore
+        return PlugMsgReturn.Ignore
+    async def async_eventArrives(self,session:Session) -> PlugMsgReturn:
+        #插件的事件处理，返回值决定消息是否放行，PlugMsgReturn.Intercept拦截、PlugMsgReturn.Ignore放行
+        if not self.open:
+            return PlugMsgReturn.Ignore
+        session.sourcefiltermsg = session.messagestand.strip()
+        session.filtermsg = session.sourcefiltermsg
+        for func in self.perfuncs:
+            try:
+                res = await func(session)
+                if res == PlugMsgReturn.Intercept:
+                    return PlugMsgReturn.Ignore
+            except:
+                #处理插件异常(前置插件异常时将拦截所有消息的向下传递-即后续函数被忽略)
+                s = traceback.format_exc(limit=10)
+                logger.error(s)
+                logger.error("插件函数执行异常！请检查插件->{name}-{version}-{auther}".format(
+                        name = self.name,
+                        version = self.version,
+                        auther = self.auther
+                    ))
+                return PlugMsgReturn.Ignore
+        for fununit in self.funcs:
+            try:
+                session.filtermsg = session.sourcefiltermsg
+                res = await fununit[0](session)
+                if res == PlugMsgReturn.Intercept:
+                    return res
+            except:
+                #处理插件异常
+                s = traceback.format_exc(limit=10)
+                logger.error(s)
+                logger.error("插件函数执行异常！请检查插件->{name}-{version}-{auther}".format(
+                        name = self.name,
+                        version = self.version,
+                        auther = self.auther
+                    ))
+                return PlugMsgReturn.Ignore
         return PlugMsgReturn.Ignore
     def getPlugDes(self,simple = True) -> str:
         """
@@ -351,12 +391,12 @@ def on_preprocessor(
     def decorate(func):
         nonlocal limitMsgType,allow_anonymous,at_to_me
         @functools.wraps(func)
-        def wrapper(esession:Session) -> PlugMsgReturn:
+        async def wrapper(esession:Session) -> PlugMsgReturn:
             if esession.anonymous and not allow_anonymous or \
                 not esession.atbot and at_to_me or \
                 not esession.msgtype & limitMsgType:
                 return PlugMsgReturn.Intercept
-            res = func(esession)
+            res = await func(esession)
             if res == None:
                 return PlugMsgReturn.Ignore
             return res
@@ -416,7 +456,7 @@ def on_message(
     def decorate(func):
         nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me,defaultperm,bindperm
         @functools.wraps(func)
-        def wrapper(session:Session) -> PlugMsgReturn:
+        async def wrapper(session:Session) -> PlugMsgReturn:
             #消息过滤，
             if session.anonymous and not allow_anonymous or \
                 not session.atbot and at_to_me or \
@@ -446,7 +486,8 @@ def on_message(
                     ))
                 return PlugMsgReturn.Intercept
             session.filterargs = res[1]
-            res = func(session)
+
+            res = await func(session)
             if res == None:
                 if session.hasReply():
                     return PlugMsgReturn.Intercept
@@ -539,3 +580,35 @@ def __eventArrives(even:StandEven) -> PlugMsgReturn:
     return PlugMsgReturn.Ignore
 def _send_even(even:StandEven) -> PlugMsgReturn:
     return __eventArrives(even)
+
+async def async_send_even(even:StandEven) -> PlugMsgReturn:
+    global pluglist,session_check_count
+    if DEBUG:
+        logger.info(even.toStr())
+    session_check_count += 1
+    if session_check_count % 50 == 0:
+        session_check_count = 0
+        sessionManagement.checkExpired()
+    #获取session并设置session对应事件
+    session:Session = sessionManagement.getSession(even.bottype,even.botuuid,even.botgroup,even.uuid,even)
+    session.setEven(even)
+    even.setLock(True)
+    for i in range(len(pluglist)):
+        for plug in pluglist[i]:
+            try:
+                res = await plug.async_eventArrives(session)
+                if res == PlugMsgReturn.Intercept:
+                    if DEBUG:
+                        logger.info('插件{modulename}·{name}拦截了这条消息'.format(
+                            modulename = plug.modulename,
+                            name = plug.name
+                            ))
+            except:
+                s = traceback.format_exc(limit=10)
+                logger.error(s)
+                logger.error('你给路哒哟')
+                return PlugMsgReturn.Intercept
+    if DEBUG:
+        logger.info('没有插件处理此消息')
+    even.setLock(False)
+    return PlugMsgReturn.Ignore

@@ -7,6 +7,8 @@ from pluginsinterface.PlugFilter import SendMessage
 #插件相关类
 from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr,plugGetNameList,plugGetNamePlugDes
 from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,plugGet,on_message,on_preprocessor,on_plugloaded
+#启动
+from pluginsinterface.PlugAsyncio import RunLoop as plugRunLoop
 """
 本类用于创建插件制作与使用者可见类型
 并尽可能保证这些类的稳定性

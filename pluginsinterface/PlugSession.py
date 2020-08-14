@@ -186,13 +186,27 @@ class Session:
     def Reply(self,message:SendMessage):
         """
             向原路径回复消息
+            返回值 (是否发送成功，消息流消息ID)
         """
         return self.even.send(message)
     def send(self,message:SendMessage):
         """
             向原路径回复消息
+            返回值 (是否发送成功，消息流消息ID)
         """
-        return self.Reply(message)
+        return self.even.Reply(message)
+    async def waitReply(self,message:SendMessage,timeout:int = 15):
+        """
+            发送消息并等待消息发送结果
+            超时时间可以设置为1-60
+        """
+        return await self.even.waitsend(message,timeout)
+    async def waitsend(self,message:SendMessage,timeout:int = 15):
+        """
+            发送消息并等待消息发送结果
+            超时时间可以设置为1-60
+        """
+        return await self.even.waitsend(message,timeout)
     def hasReply(self) -> bool:
         """
             是否原路径回复过消息

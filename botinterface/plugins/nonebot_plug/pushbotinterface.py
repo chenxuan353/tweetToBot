@@ -2,7 +2,8 @@ import asyncio
 from nonebot import NLPSession, on_natural_language
 from module.msgStream import SendMessage
 from pluginsinterface.EventHandling import StandEven
-from pluginsinterface.Plugmanagement import _send_even,PlugMsgTypeEnum
+from pluginsinterface.Plugmanagement import PlugMsgTypeEnum
+from pluginsinterface.PlugAsyncio import even_put,runinfo
 import config
 from helper import getlogger,data_save
 logger = getlogger(__name__)
@@ -96,7 +97,7 @@ async def _(session: NLPSession):
             message.append(message.baleUnknownObj('CQ',CQm,{'flag':data.type,'data':data.data}))
     if senduuid in config.PLUGADMIN['cqhttp']:
         msgtype = msgtype | PlugMsgTypeEnum.plugadmin
-    plugObj = {'type':'cqhttp','even':session.event}
+    plugObj = {'type':'cqhttp','even':session.event,'bot':session.bot}
     #生成事件
     even = StandEven(
         'cqhttp',str(session.self_id),message_type,sourceID,
@@ -105,4 +106,7 @@ async def _(session: NLPSession):
         message,plugObj=plugObj,sourceObj=sourceObj
     )
     #发送事件
-    _send_even(even)
+    if runinfo['run']:
+        even_put(even)
+    else:
+        logger.info('事件处理未启动，插件事件不可达！')

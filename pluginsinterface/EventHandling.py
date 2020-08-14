@@ -1,6 +1,8 @@
 import threading
 import queue
 import functools
+import asyncio
+import time
 import module.msgStream as msgStream
 from module.msgStream import SendMessage
 from helper import getlogger
@@ -148,6 +150,28 @@ class StandEven:
         return msgStream.send_msg(self.bottype,self.botuuid,self.botgroup,self.uuid,self.sourceObj,message)
     def send(self,message:SendMessage):
         return self.Reply(message)
+    async def waitReply(self,message:SendMessage,timeout:int = 15) -> tuple:
+        """
+            发送消息并等待消息发送结果
+            超时时间可以设置为1-60
+        """
+        if timeout < 1:
+            timeout = 1
+        res = self.Reply(message)
+        if not res[0]:
+            return res
+        timecount = 0
+        while True:
+            if timecount > timeout or timeout > 60:
+                break
+            sendres = msgStream.id_getRes(res[1])
+            if sendres[0]:
+                return sendres
+            await asyncio.sleep(1)
+            timecount += 1
+        return (False,'获取发送结果超时')
+    async def waitsend(self,message:SendMessage,timeout:int = 15) -> tuple:
+        return await self.waitReply(message,timeout)
     def setMessage(self,message:SendMessage):
         #用于测试，快速修改信息
         if type(message) == str:

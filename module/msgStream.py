@@ -20,8 +20,10 @@ sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
 """
 
 send_count_path = 'msgStream.json'
-send_count = {}
-send_log = {}
+send_count = {} #发送统计
+send_log = {} #发送日志(每对象50条)
+
+#异常统计
 exp_info_path = 'msgStream_expinfo.json'
 exp_info:TempMemory = TempMemory(exp_info_path,limit = 100,autosave=True,autoload=True)
 send_stream = {}
@@ -33,9 +35,25 @@ def init():
         send_count = res[2]
         for bottype in send_count:
             for botuuid in send_count[bottype]:
-                dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid+'.json'),limit = 250,autosave = True,autoload = True))
-
-
+                dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid+'.json'),limit = 50,autosave = True,autoload = True))
+"""
+消息流ID管理器
+"""
+send_newid = 0
+send_idlog = TempMemory('sendidlog.json',limit = 1000)
+def id_getNewID():
+    global send_newid
+    send_newid += 1
+    return send_newid
+def id_appendlog(msgid:int,res):
+    global send_idlog
+    send_idlog.join((msgid,res))
+def id_getRes(msgid:int):
+    global send_idlog
+    res = send_idlog.find((lambda item,val:item[0]==val),msgid)
+    if res:
+        return (True,send_idlog.find((lambda item,val:item[0]==val),msgid)[1])
+    return (False,'未搜索到结果')
 """
 消息类·用于组合与生成消息
 """
@@ -292,9 +310,15 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
     if message_type not in ('private','group'):
         raise Exception('错误，不支持的消息标识')
     if message_type == 'private':
-        bot.sync.send_msg(self_id=bindCQID,user_id=send_id,message=message)
+        res =  bot.sync.send_msg(self_id=bindCQID,user_id=send_id,message=message)
     elif message_type == 'group':
-        bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
+        res =  bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
+        bot.sync.delete_msg
+    return {
+            'stand':'message_id' in res,
+            'message_id':(res['message_id'] if 'message_id' in res else 0),
+            'res':res
+        }
 SUConfig = {
     'cqhttp':SUCqhttpWs
     }
@@ -334,7 +358,7 @@ def exp_check(send_unit,send_me,uniterrcount):
         sendlogger.error('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息发送异常:{message}'.format(**send_unit))
     send_me['last_deal'] = time.time()
 
-def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
+def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,**kw):
     global send_count,send_log,allow_bottype,SUConfig
     if bottype not in allow_bottype:
         logger.info(allow_bottype)
@@ -385,6 +409,7 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     send_unit = {
             'status':None,
             'unittype':'msg',#用于标识错误从属类型(msg、warning)
+            'streamid':streamid,
             'bottype':bottype,
             'botuuid':botuuid,
             'botgroup':botgroup,
@@ -402,7 +427,8 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
         return
     #数据发送
     try:
-        SUConfig[bottype](bottype,botuuid,botgroup,senduuid,sendObj,message)
+        res = SUConfig[bottype](bottype,botuuid,botgroup,senduuid,sendObj,message)
+        id_appendlog(streamid,res)
         sendlogger.info('{bottype}>{botuuid}>{botgroup}>{senduuid} 发送了一条消息:{message}'.format(
                 bottype = send_unit['bottype'],
                 botuuid = send_unit['botuuid'],
@@ -432,7 +458,7 @@ def threadSendDeal(sendstarttime:int,bottype:str,botuuid:str,botgroup:str,senduu
     #保存包含统计信息的数组
     data_save(send_count_path,send_count)
 
-def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,block=True,timeout = 5):
+def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,block=True,timeout = 5) -> tuple:
     """
         发送消息给指定bot的指定对象
 
@@ -444,15 +470,16 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         :param message: 需要发送的数据
         :param block: queue参数，是否等待
         :param timeout: 等待时间，为0则无限等待，默认15s
-        :return: None
+        :return: tuple(是否发送成功，任务id-用于获取返回值)
     """
     if not dictHas(send_stream,bottype,botuuid):
         dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype+'_'+botuuid,threadSendDeal))
         send_stream[bottype][botuuid].run()
     if type(message) == str:
-        message = SendMessage()
-        message.append(message)
+        message = SendMessage(message)
+    send_newid = id_getNewID()
     unit = {
+        'streamid':send_newid,
         'bottype':bottype,
         'botuuid':str(botuuid),
         'botgroup':botgroup,
@@ -467,8 +494,8 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         s = traceback.format_exc(limit=5)
         exp_send('消息推送队列异常或溢出！请检查队列',source = '消息推送队列',flag='异常')
         logger.error(s)
-        return False
-    return True
+        return (False,send_newid)
+    return (True,send_newid)
 def send_msg_kw(*,bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,**kw):
     """
         发送消息给指定bot的指定对象

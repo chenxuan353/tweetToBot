@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
-from pluginsinterface.PluginLoader import plugLoads
+from pluginsinterface.PluginLoader import plugLoads,plugRunLoop
+import asyncio
 #配置
 import config
 #日志输出
@@ -11,10 +12,13 @@ logger = getlogger('START')
 if __name__ == "__main__":
     #加载插件
     plugLoads()
+    #启动事件处理
+    plugRunLoop()
+    loop = asyncio.get_event_loop()
     #加载nonebot
     if config.nonebot:
         import botinterface.nonebotstart as nonebotstart
-        nonebotstart.Run()
-
+        nonebotstart.RunInThread()
+    loop.run_forever()
 
 
