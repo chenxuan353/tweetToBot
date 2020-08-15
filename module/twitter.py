@@ -403,6 +403,10 @@ class TweetCache:
                 return unit[0]
         return -1
     def getTweetSourceID(self,minId:int):
+        """
+            从临时ID获取推特原始ID
+            失败返回-1
+        """
         mintweetID = self.mintweetID
         minId = int(minId)
         for unit in mintweetID:
@@ -429,8 +433,10 @@ class TweetCache:
         if userid not in tweetscache:
             return None
         return tweetscache[userid]
-    #尝试从缓存中获取推文
     def getTweetFromCache(self,tweetid:str,userid:str = None) -> dict:
+        """
+            尝试从缓存中获取推文，推文不存在时返回None
+        """
         tweetscache = self.tweetscache
         tweetid = str(tweetid)
         if userid:

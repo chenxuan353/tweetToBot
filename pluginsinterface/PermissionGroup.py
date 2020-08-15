@@ -80,14 +80,50 @@ def permRegisterPerm(groupname:str,name:str,des:str):
     legalPermissionList['perms'][groupname]['permlist'][name] = des
 def legalPermHas(groupname:str,name:str = None):
     global legalPermissionList
-    if name.startswith('-'):
+    if name is not None and name.startswith('-'):
         name = name[1:]
     if groupname not in legalPermissionList['perms']:
         return False
-    if name != None:
-        if name not in legalPermissionList['perms'][groupname]:
+    if name is not None:
+        if name not in legalPermissionList['perms'][groupname]['permlist']:
             return False
     return True 
+def legalPermGet(groupname:str = None,name:str = None) -> dict:
+    global legalPermissionList
+    if groupname is None:
+        return legalPermissionList['perms']
+    if name is not None and name.startswith('-'):
+        name = name[1:]
+    if groupname not in legalPermissionList['perms']:
+        return {}
+    if name is not None:
+        if name in legalPermissionList['perms'][groupname]['permlist']:
+            return legalPermissionList['perms'][groupname]['permlist'][name]
+    return legalPermissionList['perms'][groupname]
+def legalPermGroupGetDes(group:dict,simple = False) -> str:
+    if simple:
+        #组名，昵称，描述
+        msg = '{1}:{2}:{3}'.format(
+                group['name'],
+                group['nick'],
+                group['des'],
+        )
+    else:
+        regperm = ''
+        for perm in group['permlist']:
+            if regperm:
+                regperm += ','
+            regperm += perm
+        msg = '所属模块：{0}\n组名：{1}\n昵称：{2}\n描述：{3}\n注册权限：{4}'.format(
+                group['moudel'],
+                group['name'],
+                group['nick'],
+                group['des'],
+                regperm,
+        )
+    return msg
+def legalPermGetDes(group:dict,perm:dict) -> str:
+    return "{0}:{1}".format(perm,group['permlist'][perm])
 def illegalPermClear():
     #执行对不存在权限(非法权限)授权的清理
     raise Exception("illegalPermClear 暂未实现")
@@ -239,6 +275,9 @@ def perm_del(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str
     del permissionList[bottype][botuuid][msgtype][uuid][groupname][perm]
     return (True,'成功')
 
+def perm_getList(bottype:str,botuuid:str,msgtype:str,uuid:str) -> dict:
+    global permissionList
+    return dictGet(permissionList,bottype,botuuid,msgtype,uuid,default={})
 def perm_get(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> tuple:
     """
         获取授权单元，不存在时返回False与原因
@@ -343,6 +382,47 @@ def perm_allow(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:s
 """
 权限操作接口
 """
+def authObjGetList(bottype:str,botuuid:str,msgtype:str,uuid:str,page:int = 1) -> str:
+    msg = '--权限列表--'
+    page = page - 1
+    i = 0
+    permlist = perm_getList(bottype,botuuid,msgtype,uuid)
+    for groupname in permlist:
+        for perm in permlist[groupname]:
+            i += 1
+            if i >= page*5 and i < (page+1)*5:
+                msg += '\n' + groupname + ':' + perm
+    lll = i
+    msg += '\n当前页{0}/{1} (共{2}个权限)'.format(page+1,int(lll/5)+1,lll)
+    return msg
+def authLegalGetList(page:int = 1) -> str:
+    msg = '--可用权限列表--'
+    page = page - 1
+    i = 0
+    legalpermlist = legalPermGet()
+    for groupname in legalpermlist:
+        groupdict = legalPermGet(groupname)
+        #i += 1
+        #msg += '\n' + legalPermGroupGetDes(groupdict,simple=True)
+        for perm in legalpermlist[groupname]:
+            i += 1
+            if i >= page*5 and i < (page+1)*5:
+                msg += '\n' + legalPermGetDes(groupdict,perm)
+    lll = i
+    msg += '\n当前页{0}/{1} (共{2}个权限)'.format(page+1,int(lll/5)+1,lll)
+    return msg
+def authLegalGetGroupListDes(page:int = 1) -> str:
+    msg = '--合法权限组列表--'
+    page = page - 1
+    i = 0
+    legalpermlist = legalPermGet()
+    for groupname in legalpermlist:
+        groupdict = legalPermGet(groupname)
+        i += 1
+        msg += '\n' + legalPermGroupGetDes(groupdict,simple=True)
+    lll = i
+    msg += '\n当前页{0}/{1} (共{2}个权限组)'.format(page+1,int(lll/5)+1,lll)
+    return msg
 def authGet(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> dict:
     """
         获取授权单元，不存在时返回空字典

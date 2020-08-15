@@ -47,7 +47,7 @@ class PluginsManage:
         删除时自动从插件列表中移除
 
         :param modulename: 插件所属模块
-        :param name: 插件名称
+        :param name: 插件名称，重名时自动更改名称直至名称不重复(名称后加序号)
         :param version: 插件版本
         :param auther: 插件作者
         :param des: 插件描述
@@ -58,6 +58,7 @@ class PluginsManage:
         global pluglist,PluginsManageList,PluginsManageNameList
         if level < 0 or level > 9:
             raise Exception('插件优先级设置异常！')
+        self.__dict__['lock'] = False
         self.open = True
         self.modulename = modulename
         self.name = name
@@ -68,17 +69,21 @@ class PluginsManage:
         self.funcs = []
         self.perfuncs = []
         self.level = level
+        if self.modulename in PluginsManageList:
+            raise Exception('模块重复注册！')
         if self.name in PluginsManageNameList:
+            logger.info('插件名称重复{0}'.format(self.name))
             i = 1
             while True:
                 self.name = "{0}{1}".format(name,i)
-                if self.name in PluginsManageNameList:
+                if self.name not in PluginsManageNameList:
+                    #保证模块不重名
+                    logger.info('插件名称重设为{0}'.format(self.name))
                     break
-        if self.modulename in PluginsManageList:
-            raise Exception('模块重复注册！')
         pluglist[self.level].append(self)
         PluginsManageNameList[self.name] = self
         PluginsManageList[self.modulename] = self
+        self.__dict__['lock'] = True
     def __del__(self):
         global pluglist,PluginsManageList,PluginsManageNameList
         pluglist[self.level].remove(self)
@@ -88,6 +93,16 @@ class PluginsManage:
         return hash(self.modulename)
     def __eq__(self,other):
         return self.modulename == other.modulename
+    def __setattr__(self,key,value):
+        if self.__dict__['lock']:
+            raise Exception('当前PluginsManage已锁定')
+        self.__dict__[key] = value
+    def __delattr__(self,key):
+        if self.__dict__['lock']:
+            raise Exception('当前PluginsManage已锁定')
+        if key in ('lock'):
+            raise Exception('StandEven类不可删除lock属性')
+        del self.__dict__[key]
     def changelevel(self,level:int = 4):
         global pluglist
         if level < 0 or level > 9:
@@ -108,11 +123,17 @@ class PluginsManage:
             at_to_me
         )
     def addPerFunc(self,func,checkmodule = True) -> bool:
+        """
+            添加前置函数，请勿手动调用
+        """
         if checkmodule and func.__module__ != self.modulename:
             return False
         self.perfuncs.append(func)
         return True
     def addFunc(self,func,funcinfo:tuple,checkmodule = True) -> bool:
+        """
+            添加函数，请勿手动调用
+        """
         if checkmodule and func.__module__ != self.modulename:
             return False
         self.funcs.append((func,funcinfo))
@@ -124,6 +145,7 @@ class PluginsManage:
         session.sourcefiltermsg = session.messagestand.strip()
         session.filtermsg = session.sourcefiltermsg
         for func in self.perfuncs:
+            session.setScope(self.name)
             try:
                 res = func(session)
                 if res == PlugMsgReturn.Intercept:
@@ -139,6 +161,7 @@ class PluginsManage:
                     ))
                 return PlugMsgReturn.Ignore
         for fununit in self.funcs:
+            session.setScope(self.name)
             try:
                 session.filtermsg = session.sourcefiltermsg
                 res = fununit[0](session)
@@ -154,6 +177,7 @@ class PluginsManage:
                         self.auther
                     ))
                 return PlugMsgReturn.Ignore
+        session.delScope()
         return PlugMsgReturn.Ignore
     async def async_eventArrives(self,session:Session) -> PlugMsgReturn:
         #插件的事件处理，返回值决定消息是否放行，PlugMsgReturn.Intercept拦截、PlugMsgReturn.Ignore放行
@@ -162,6 +186,7 @@ class PluginsManage:
         session.sourcefiltermsg = session.messagestand.strip()
         session.filtermsg = session.sourcefiltermsg
         for func in self.perfuncs:
+            session.setScope(self.name)
             try:
                 res = await func(session)
                 if res == PlugMsgReturn.Intercept:
@@ -177,6 +202,7 @@ class PluginsManage:
                     ))
                 return PlugMsgReturn.Ignore
         for fununit in self.funcs:
+            session.setScope(self.name)
             try:
                 session.filtermsg = session.sourcefiltermsg
                 res = await fununit[0](session)
@@ -192,6 +218,7 @@ class PluginsManage:
                         auther = self.auther
                     ))
                 return PlugMsgReturn.Ignore
+        session.delScope()
         return PlugMsgReturn.Ignore
     def getPlugDes(self,simple = True) -> str:
         """
@@ -208,8 +235,16 @@ class PluginsManage:
         if not simple:
             msg = '所属模块：{module}\n插件优先级：{level}'.format(module = self.modulename,level = self.level)
         return msg
-    def getPlugMinDes(self) -> str:
-        msg = "{name}:{des}".format(
+    def getPlugMinDes(self,displaynone:bool = False) -> str:
+        """
+            获取插件超简略描述
+            :return: 字符串
+        """
+        status = ''
+        if displaynone:
+            status = ('启用:' if self.open else '禁用:')
+        msg = "{status}{name}:{des}".format(
+                    status = status,
                     name = self.name,
                     des = self.des.strip().replace('\n',' ')[:15]
                 )
@@ -237,7 +272,11 @@ class PluginsManage:
         """
         if not switch:
             switch = not self.open
-        self.open = switch
+        self.__dict__['open'] = switch
+    def registerPerm(self,perm:str,defaultperm:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,des:str = '无描述'):
+        if not legalPermHas(self.groupname,perm):
+            permRegisterPerm(self.groupname,perm,des)
+        authRegisterDefaultPerm(self.groupname,perm,defaultperm)
 """
 插件注册等静态函数
 """
@@ -421,6 +460,7 @@ def on_preprocessor(
 def on_message(
         msgfilter:PlugMsgFilter = '',argfilter:PlugArgFilter = '',des:str = '',
         bindperm:str = None,defaultperm:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
+        bindsendperm:str = None,
         limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
         allow_anonymous = False,at_to_me = True
         ):
@@ -432,13 +472,17 @@ def on_message(
             返回值 PlugMsgReturn类型
         注：过滤器相关请查看对应过滤类
         权限说明：
+            注：bindperm绑定的权限仅为消息来源权限(群聊时为指定群是否拥有权限),不判定全局管理权限
+            注：defaultperm仅对应bindperm权限
+            注：bindsendperm为检查发送对象权限，即发送人权限，群聊时为群聊里发消息的人,判定全局管理权限
             绑定权限后执行命令前将检查权限，权限不通过则不响应，可多个插件绑定相同权限
             绑定多个重名权限时 defaultperm|默认授权 会合并
         :param msgfilter: PlugMsgFilter类 消息过滤器，可以为正则表达式字符串
         :param argfilter: PlugArgFilter类 参数过滤器，可以为文本 详见PlugArgFilter类注释
         :param des: 函数描述(例：“!翻译 待翻译内容 - 机器翻译”)，可使用 !help 插件昵称 查看描述预览
-        :param bindperm: 函数绑定的权限，大小写字母和数字非数字开头
-        :param defaultperm: 函数的默认授权(默认全部)
+        :param bindperm: 检查消息来源权限，权限名大小写字母和数字非数字开头
+        :param defaultperm: 消息来源权限的默认授权(默认全部)
+        :param bindsendperm: 检查发送对象权限，权限名大小写字母和数字非数字开头
         :param limitMsgType: 消息标识过滤器
         :param allow_anonymous: 是否允许匿名消息
         :param at_to_me: 需要艾特BOT
@@ -453,9 +497,14 @@ def on_message(
         argfilter = PlugArgFilter(argfilter)
     if not isinstance(argfilter,PlugArgFilter):
         raise Exception('参数过滤器参数不兼容！')
-    
+    if type(defaultperm) is not int:
+        raise Exception('默认权限注册异常')
+    if not (bindperm and type(bindperm) == str and bindperm.strip()):
+        bindperm = None
+    if not (bindsendperm and type(bindsendperm) == str and bindsendperm.strip()):
+        bindsendperm = None
     def decorate(func):
-        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me,defaultperm,bindperm
+        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me,defaultperm,bindperm,bindsendperm
         @functools.wraps(func)
         async def wrapper(session:Session) -> PlugMsgReturn:
             #消息过滤，
@@ -471,6 +520,12 @@ def on_message(
                     PlugMsgTypeEnum.getMsgtype(session.msgtype),
                     PluginsManageList[func.__module__].groupname,
                     bindperm
+                    ):
+                    return PlugMsgReturn.Ignore
+            if bindsendperm:
+                if not session.authCheckSend(
+                    PluginsManageList[func.__module__].groupname,
+                    bindsendperm
                     ):
                     return PlugMsgReturn.Ignore
             #参数处理
@@ -500,10 +555,11 @@ def on_message(
                     name = wrapper.__name__,
                     des = des
                     ))
-            if bindperm and type(bindperm) == str and bindperm.strip():
-                if not legalPermHas(func.__module__,bindperm):
-                    permRegisterPerm(PluginsManageList[func.__module__].groupname,bindperm,des)
-                authRegisterDefaultPerm(PluginsManageList[func.__module__].groupname,bindperm,defaultperm)
+            #权限注册
+            if bindperm:
+                PluginsManageList[func.__module__].registerPerm(bindperm,des,defaultperm)
+            if bindsendperm:
+                PluginsManageList[func.__module__].registerPerm(bindsendperm,des,PlugMsgTypeEnum.none)
             PluginsManageList[func.__module__].addFunc(
                 wrapper,
                 PluginsManage.baleFuncInfo(
@@ -529,13 +585,18 @@ def plugGetNameList():
         for plug in PluginsManageList.values():
             NameListCache.append(plug.name)
     return NameListCache
-def plugGetNamePlugDes(name:str):
+def plugGetNamePlug(name:str):
     global PluginsManageList
     for plug in PluginsManageList.values():
         if name == plug.name:
-            return plug.getPlugDes()
+            return plug
+    return None
+def plugGetNamePlugDes(name:str):
+    plug = plugGetNamePlug(name)
+    if plug:
+        return plug.getPlugDes()
     return '未查询到插件'
-def plugGetListStr(page:int = 1):
+def plugGetListStr(page:int = 1,displaynone:bool = False):
     global PluginsManageList
     msg = '插件列表：'
     page = page - 1
@@ -544,9 +605,10 @@ def plugGetListStr(page:int = 1):
     if page > int(lll/5):
         page = 0
     for plug in PluginsManageList.values():
-        i += 1
-        if i >= page*5 and i < (page+1)*5:
-            msg += '\n' + plug.getPlugMinDes()
+        if plug.open or displaynone:
+            i += 1
+            if i >= page*5 and i < (page+1)*5:
+                msg += '\n' + plug.getPlugMinDes(displaynone = displaynone)
     msg += '\n当前页{0}/{1} (共{2}个插件)'.format(page+1,int(lll/5)+1,lll)
     return msg
 """

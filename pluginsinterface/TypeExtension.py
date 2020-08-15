@@ -33,7 +33,7 @@ class PlugMsgTypeEnum(metaclass=NoInstance):
     def getAllowlist(code) -> list:
         l = []
         for key,value in PlugMsgTypeEnum.__dict__.items():
-            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall'):
+            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall','none'):
                 if code & value:
                     l.append(key)
         return l
@@ -52,5 +52,7 @@ class PlugMsgReturn(Enum):
         Intercept 消息拦截
     """
     Ignore = 1 
-    Intercept = 2 
+    Intercept = 2
+    Allow = 1
+    Refuse = 2
 

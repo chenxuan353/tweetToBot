@@ -1,8 +1,10 @@
 # -*- coding: UTF-8 -*-
+#插件标准依赖
 from pluginsinterface.PluginLoader import on_message,Session,on_preprocessor,on_plugloaded
-from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,plugGet,PluginsManage
-from pluginsinterface.PluginLoader import SendMessage,plugGetListStr,PlugMsgTypeEnum
-from pluginsinterface.PluginLoader import PlugArgFilter,plugGetNameList,plugGetNamePlugDes
+from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTypeEnum,PluginsManage
+from pluginsinterface.PluginLoader import PlugArgFilter
+#扩展函数
+from pluginsinterface.PluginLoader import plugGetListStr,plugGetNameList,plugGetNamePlugDes,SendMessage
 import asyncio
 import config
 from nonebot import NoneBot
@@ -15,18 +17,7 @@ logger = getlogger(__name__)
 通用段：text,img
 固定数据键值对：text-当无法解析时将使用此值
 [CX:消息段标识,数据键值对]
-
 """
-mastername = config.mastername
-project_des = config.project_des
-project_addr = config.project_addr
-if not mastername:
-    mastername = '未知'
-if not project_des:
-    project_des = '没有描述'
-if not project_addr:
-    project_addr = '暂无'
-
 @plugRegistered('插件例程',groupname='plugexample')
 def _():
     return {
@@ -41,12 +32,13 @@ def _(plug:PluginsManage):
     #插件管理器使用例(插件管理器回调将在插件全部加载完成后立刻调用)
     #如果当前模块未注册插件则plug为None
     if plug:
+        #plug.switchPlug(False) #关闭插件
         logger.info(plug.getPlugDes(simple=False))
         logger.info(plug.getPlugFuncsDes())
 
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
-    #返回忽略时消息继续传递，返回拦截时消息被拦截
+    #返回PlugMsgReturn.Allow时消息继续传递，返回PlugMsgReturn.Refuse时消息被拦截
     #此行为仅是插件内行为，而on_message注册的函数拦截会将整个消息拦截不让后续插件处理
     #后续插件将使用 even.sourcefiltermsg 参数进行消息后续过滤(str)
     """
@@ -59,43 +51,11 @@ async def _(session:Session) -> PlugMsgReturn:
     """
     msg:str = session.sourcefiltermsg
     if msg.startswith(('!','！')):
-        session.sourcefiltermsg = msg[1:]
-        return PlugMsgReturn.Ignore
-    return PlugMsgReturn.Intercept
+        session.sourcefiltermsg = msg[1:] #修正源消息方便后续函数使用
+        return PlugMsgReturn.Allow
+    return PlugMsgReturn.Refuse
 
-#自动参数过滤器的使用
-argfilter = PlugArgFilter()
-argfilter.addArg(
-    'plugnick',
-    '插件昵称',
-    '需要输入插件的昵称',
-    prefunc=(lambda arg:(arg if arg in plugGetNameList() else None)),
-    canSkip=True,
-    vlimit={'':''}
-    )
-argfilter.addArg(
-    'page',
-    '页码',
-    '帮助的页码',
-    verif='uintnozero',
-    canSkip=True,
-    vlimit={'':1}#设置默认值
-    )
-@on_message(msgfilter='(help)|(帮助)',argfilter=argfilter,des='help或帮助 参数 - 获取帮助信息')
-async def _(session:Session):
-    global mastername,project_des,project_addr
-    page = session.filterargs['page']
-    plugnick = session.filterargs['plugnick']
-    if plugnick != '':
-        session.send(plugGetNamePlugDes(plugnick))
-        return
-    msg = '----帮助----\n维护者：{mastername}\n项目描述：{project_des}\n项目地址：{project_addr}\n'.format(
-            mastername=mastername,
-            project_des=project_des,
-            project_addr=project_addr
-        )
-    msg += plugGetListStr(page)
-    session.send(msg)
+
 
 #命令注册例
 @on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233',at_to_me=False)

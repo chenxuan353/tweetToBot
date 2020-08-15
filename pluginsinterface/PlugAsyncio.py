@@ -38,6 +38,9 @@ def __runAsyncioTask(runinfo):
     runinfo['loop'].run_forever()
     
 def RunLoop():
+    """
+        启动插件处理循环
+    """
     global runinfo
     runinfo['threading'] = threading.Thread(
             group=None, 

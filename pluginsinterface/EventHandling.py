@@ -41,6 +41,9 @@ logger = getlogger(__name__)
     message:SendMessage #消息
 """
 class StandEven:
+    """
+        标准事件，属性与session基本相同
+    """
     def __init__(self,
             bottype:str,
             botuuid:str,

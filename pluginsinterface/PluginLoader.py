@@ -6,8 +6,9 @@ from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.PlugSession import SessionManagement,Session
 from pluginsinterface.PlugFilter import SendMessage
 #插件相关类
-from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr,plugGetNameList,plugGetNamePlugDes
-from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,plugGet,on_message,on_preprocessor,on_plugloaded
+from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr,plugGetNameList
+from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,on_message,on_preprocessor,on_plugloaded
+from pluginsinterface.Plugmanagement import plugGetNamePlug,plugGet,plugGetNamePlugDes
 #启动
 from pluginsinterface.PlugAsyncio import RunLoop as plugRunLoop
 """

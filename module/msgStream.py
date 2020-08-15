@@ -130,6 +130,12 @@ class SendMessage:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.append(infoObj)
+    def gerUrls(self) -> list:
+        res = []
+        for infoObj in self.infoObjs:
+            if infoObj['msgtype'] == 'img':
+                res.append(infoObj['src'])
+        return res
     def __infoObjToStr(self,msgtype,data,Conversion_flag = 'cqhttp'):
         global conversionFunc
         if Conversion_flag not in conversionFunc:
@@ -272,27 +278,81 @@ class SendMessage:
 后续可能从线程模式改为异步模式，以提高效率
 """
 class QueueStream:
-    def __init__(self,name,deal_func,max_size:int = 64,senddur = 0.3):
+    """
+        消息发送队列
+    """
+    def __init__(self,bottype:str,botuuid:str,deal_func,max_size:int = 64,senddur = 0.3):
+        self.name = bottype+">"+botuuid
+        self.bottype = bottype
+        self.botuuid = botuuid
         self.queue = queue.Queue(max_size)
         self.senddur = senddur
+        self.open = True
         self.deal_func = deal_func
         self.dealthread = threading.Thread(
             group=None, 
             target=self.__deal, 
-            name= name + '_QueueDeal',
+            name= self.name + '_QueueDeal',
             daemon=True
         )
     def __deal(self):
         while(True):
+            if not self.open:
+                time.sleep(1)
+                continue
             unit = self.queue.get()
             self.deal_func(**unit)
             time.sleep(self.senddur)
+    def streamSwitch(self,value:bool = None):
+        """
+            切换消息流状态
+            关闭状态的消息流将回绝一切发送请求
+        """
+        if value is None:
+            value = not self.open
+        self.open = value
     def run(self):
         self.dealthread.start()
     def put(self,unit:dict,block=True,timeout = 5):
         if type(unit) != dict:
             raise Exception('无法处理此消息,消息类型不为字典(dict)')
+        if not self.open:
+            id_appendlog(unit['streamid'],{'stand':False,'status':False,'msg':'消息流已关闭'})
+            return
         self.queue.put(unit,timeout = timeout,block=block)
+    def setAllow(self,botgroup,uuid) -> bool:
+        """
+            设置发送允许
+        """
+        group = dictGet(send_count,self.bottype,self.botuuid,botgroup)
+        if group is None:
+            return False
+        if uuid in group and group[uuid] == -1:
+            group[uuid] = 0
+        return True
+    def setDeny(self,botgroup,uuid) -> bool:
+        """
+            设置发送禁止
+        """
+        group = dictGet(send_count,self.bottype,self.botuuid,botgroup)
+        if group is None:
+            return False
+        if uuid in group and group[uuid] != -1:
+            group[uuid] = -1
+        return True
+    def isAllow(self,botgroup,uuid) -> bool:
+        """
+            判断是否允许发送
+        """
+        group = dictGet(send_count,self.bottype,self.botuuid,botgroup)
+        if group is None:
+            return True
+        if uuid in group and group[uuid] == -1:
+            return False
+        return True
+
+def getStream(bottype,botuuid) -> QueueStream:
+    return dictGet(send_stream,bottype,botuuid)
 
 #start = QueueStream('allsendmsg',threadSendDeal)
 #start.run()
@@ -316,7 +376,9 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
         res =  bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
         bot.sync.delete_msg
     return {
-            'stand':'message_id' in res,
+            'stand':'message_id' in res, #标识返回值有无消息ID
+            'status':'message_id' in res,#标识消息有无发送成功(尽可能提供)
+            'msg':('发送成功' if 'message_id' in res else '发送失败'),#消息状态的文本
             'message_id':(res['message_id'] if 'message_id' in res else 0),
             'res':res
         }
@@ -353,8 +415,15 @@ def exp_check(send_unit,send_me,uniterrcount):
         if send_me['error'] % 15 == 0:
             exp_push('warning','连续错误警告，已达到十五次阈值(间断不超过三小时)',send_unit)
         #单元发送错误计数，每15次错误触发一次警告，达到五次时触发第一次警报
-        if uniterrcount == 5 or uniterrcount % 15 == 0:
+        if uniterrcount == 5:
             exp_push('warning','首次连续错误警告，已达到五次阈值(间断不超过三小时)',send_unit)
+        if uniterrcount % 15 == 0:
+            exp_push('warning','连续错误警告，连续错误已达到十五次阈值(间断不超过三小时)',send_unit)
+        if uniterrcount % 30 == 0:
+            stream:QueueStream = getStream(send_unit['bottype'],send_unit['botuuid'])
+            if stream:
+                stream.setDeny(send_unit['botgroup'],send_unit['senduuid'])
+            exp_push('warning','连续错误警告，连续错误已达到三十次阈值(间断不超过三小时)',send_unit)
     else:
         sendlogger.error('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息发送异常:{message}'.format(**send_unit))
     send_me['last_deal'] = time.time()
@@ -446,7 +515,7 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
         send_me['error'] += 1
         send_me['last_error'] = time.time()
         send_me[botgroup][senduuid] += 1
-
+        id_appendlog(send_unit['streamid'],{'stand':False,'status':False,'msg':'消息发送失败'})
         s = traceback.format_exc(limit=5)
         logger.error(s)
         exp_check(send_unit,send_me,send_me[botgroup][senduuid])
@@ -474,7 +543,7 @@ def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,mess
         :return: tuple(是否发送成功，任务id-用于获取返回值)
     """
     if not dictHas(send_stream,bottype,botuuid):
-        dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype+'_'+botuuid,threadSendDeal))
+        dictInit(send_stream,bottype,botuuid,endobj=QueueStream(bottype,botuuid,threadSendDeal))
         send_stream[bottype][botuuid].run()
     if type(message) == str:
         message = SendMessage(message)
