@@ -416,7 +416,7 @@ class SessionManagement:
         for botuuids in self.sessions.values():
             for botgroups in botuuids.values():
                 for uuids in botgroups.values():
-                    for uuid in uuids:
+                    for uuid in list(uuids.keys()):
                         if uuids[uuid].checkExpired(usetime):
                             del uuids[uuid]
 

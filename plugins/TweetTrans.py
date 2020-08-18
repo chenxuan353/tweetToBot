@@ -108,8 +108,9 @@ def getImage(url,maxsize = 50,timeout = 15):
             size += len(chunk)
             if size > maxsize:
                 raise ValueError('response too large')
-        base64code = base64.b64encode(filedata)
-        logger.info(base64code)
+        base64code = str(base64.b64encode(filedata),'utf8')
+        if config.DEBUG:
+            logger.info(base64code)
     except ValueError:
         return (False,'文件大小超出限制或下载超时')
     except:

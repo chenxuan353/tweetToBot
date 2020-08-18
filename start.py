@@ -14,6 +14,7 @@ logger = getlogger('START')
 启动文件
 
 注：服务器时区设置 timedatectl set-timezone Asia/Shanghai
+注：服务器中文环境设置 export LANG="zh_CN.UTF-8"
 """
 if __name__ == "__main__":
     #加载插件
