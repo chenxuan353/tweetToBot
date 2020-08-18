@@ -1,5 +1,9 @@
 # -*- coding: UTF-8 -*-
 from pluginsinterface.PluginLoader import plugLoads,plugRunLoop
+from module.twitter import runTwitterPushThread
+from module.pollingTwitterApi import runPollingTwitterApiThread
+from module.twitterApi import runTwitterApiThread
+from module.pollingRSShub import runPollingRSShubThread
 import asyncio
 #配置
 import config
@@ -17,6 +21,14 @@ if __name__ == "__main__":
     #启动事件处理
     plugRunLoop()
     loop = asyncio.get_event_loop()
+    #启动推送监听
+    if config.twitterpush:
+        runTwitterPushThread()
+        runPollingTwitterApiThread()
+        if config.twitterStream:
+            runTwitterApiThread()
+    if config.RSS_open:
+        runPollingRSShubThread()
     #加载nonebot
     if config.nonebot:
         import botinterface.nonebotstart as nonebotstart

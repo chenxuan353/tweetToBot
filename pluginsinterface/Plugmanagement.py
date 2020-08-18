@@ -320,7 +320,6 @@ def plugLoads(plugpath = 'plugins'):
             plugcount += 1
             if DEBUG:
                 logger.info("成功加载插件："+module_name)
-    permDefaultInit()
     logger.info("插件加载完毕，共加载插件{0}".format(plugcount))
     for func in plugstartfuncs:
         try:
@@ -330,6 +329,8 @@ def plugLoads(plugpath = 'plugins'):
             s = traceback.format_exc(limit=10)
             logger.error(s)
             logger.error("插件启动回调异常！请检查模块->{0}".format(func.__module__))
+    #初始化权限组
+    permDefaultInit()
 
 def plugRegistered(name:str,groupname:str,modulename:str = '',level:int = 4):
     """
@@ -389,6 +390,7 @@ def plugRegistered(name:str,groupname:str,modulename:str = '',level:int = 4):
         #插件注册
         permRegisterGroup(modulename,groupname,name,plugdes['des'])
         plug = PluginsManage(modulename,name,groupname,plugdes['version'],plugdes['auther'],plugdes['des'],level)
+        plug.registerPerm('plugopen',PlugMsgTypeEnum.allowall,'默认生成权限，管理插件的定向禁用与启用')
         logger.info('插件已注册{module}-{name}-{auther}-{version}'.format(
             module = plug.modulename,
             name = plug.name,
@@ -415,7 +417,7 @@ def on_plugloaded():
     return decorate
 def on_preprocessor(
     limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
-    allow_anonymous = True,at_to_me = False
+    allow_anonymous = True,at_to_me = False,sourceAdmin = False
     ):
     """
         前置消息过滤器(仅对模块所属插件生效·以模块名标识)
@@ -427,16 +429,19 @@ def on_preprocessor(
         :param limitMsgType: PlugMsgTypeEnum类 消息标识过滤器
         :param allow_anonymous: 是否允许匿名消息
         :param at_to_me: 需要艾特BOT
+        :param sourceAdmin: 需要是来源管理员(私聊则为自己，群聊则为管理员，临时聊天统一为False)
     """
     def decorate(func):
-        nonlocal limitMsgType,allow_anonymous,at_to_me
+        nonlocal limitMsgType,allow_anonymous,at_to_me,sourceAdmin
         @functools.wraps(func)
-        async def wrapper(esession:Session) -> PlugMsgReturn:
-            if esession.anonymous and not allow_anonymous or \
-                not esession.atbot and at_to_me or \
-                not esession.msgtype & limitMsgType:
+        async def wrapper(session:Session) -> PlugMsgReturn:
+            f = (lambda a,b: not(a or not a and b)) #如果a为真，或a为假但b为真。判断通过条件的反值
+            if f(allow_anonymous,not session.anonymous) or \
+                f(not at_to_me,session.atbot) or \
+                not (session.msgtype & limitMsgType) or \
+                f(not sourceAdmin,session.senduuidinfo['sourceAdmin']) and not session.msgtype & PlugMsgTypeEnum.plugadmin:
                 return PlugMsgReturn.Intercept
-            res = await func(esession)
+            res = await func(session)
             if res == None:
                 return PlugMsgReturn.Ignore
             return res
@@ -459,10 +464,10 @@ def on_preprocessor(
     return decorate
 def on_message(
         msgfilter:PlugMsgFilter = '',argfilter:PlugArgFilter = '',des:str = '',
-        bindperm:str = None,defaultperm:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
+        bindperm:str = None,
         bindsendperm:str = None,
         limitMsgType:PlugMsgTypeEnum = PlugMsgTypeEnum.allowall,
-        allow_anonymous = False,at_to_me = True
+        allow_anonymous = False,at_to_me = True,sourceAdmin = False
         ):
     """
         注册消息函数(消息过滤器,参数过滤器,函数描述,消息类型限制,群聊限制-暂未实现,是否允许匿名,需要指定BOT)
@@ -473,19 +478,17 @@ def on_message(
         注：过滤器相关请查看对应过滤类
         权限说明：
             注：bindperm绑定的权限仅为消息来源权限(群聊时为指定群是否拥有权限),不判定全局管理权限
-            注：defaultperm仅对应bindperm权限
             注：bindsendperm为检查发送对象权限，即发送人权限，群聊时为群聊里发消息的人,判定全局管理权限
             绑定权限后执行命令前将检查权限，权限不通过则不响应，可多个插件绑定相同权限
-            绑定多个重名权限时 defaultperm|默认授权 会合并
         :param msgfilter: PlugMsgFilter类 消息过滤器，可以为正则表达式字符串
         :param argfilter: PlugArgFilter类 参数过滤器，可以为文本 详见PlugArgFilter类注释
         :param des: 函数描述(例：“!翻译 待翻译内容 - 机器翻译”)，可使用 !help 插件昵称 查看描述预览
         :param bindperm: 检查消息来源权限，权限名大小写字母和数字非数字开头
-        :param defaultperm: 消息来源权限的默认授权(默认全部)
         :param bindsendperm: 检查发送对象权限，权限名大小写字母和数字非数字开头
         :param limitMsgType: 消息标识过滤器
         :param allow_anonymous: 是否允许匿名消息
         :param at_to_me: 需要艾特BOT
+        :param sourceAdmin: 需要是来源管理员(私聊则为自己，群聊则为管理员，临时聊天统一为False)
     """
     global PluginsManageList,logger
     #logger.info('on_msg初始化')
@@ -497,20 +500,27 @@ def on_message(
         argfilter = PlugArgFilter(argfilter)
     if not isinstance(argfilter,PlugArgFilter):
         raise Exception('参数过滤器参数不兼容！')
-    if type(defaultperm) is not int:
-        raise Exception('默认权限注册异常')
     if not (bindperm and type(bindperm) == str and bindperm.strip()):
         bindperm = None
     if not (bindsendperm and type(bindsendperm) == str and bindsendperm.strip()):
         bindsendperm = None
     def decorate(func):
-        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,at_to_me,defaultperm,bindperm,bindsendperm
+        nonlocal msgfilter,argfilter,des,limitMsgType,allow_anonymous,sourceAdmin,at_to_me,bindperm,bindsendperm
         @functools.wraps(func)
         async def wrapper(session:Session) -> PlugMsgReturn:
-            #消息过滤，
-            if session.anonymous and not allow_anonymous or \
-                not session.atbot and at_to_me or \
-                not session.msgtype & limitMsgType:
+            #消息过滤
+            f = (lambda a,b: not(a or not a and b)) #如果a为真，或a为假但b为真。判断通过条件的反值
+            if f(allow_anonymous,not session.anonymous) or \
+                f(not at_to_me,session.atbot) or \
+                not (session.msgtype & limitMsgType) or \
+                f(not sourceAdmin,session.senduuidinfo['sourceAdmin']) and not session.msgtype & PlugMsgTypeEnum.plugadmin:
+                return PlugMsgReturn.Ignore
+            #检查插件是否启用
+            if not session.authCheck(
+                PlugMsgTypeEnum.getMsgtype(session.msgtype),
+                PluginsManageList[func.__module__].groupname,
+                'plugopen'
+                ):
                 return PlugMsgReturn.Ignore
             filtermsg = session.filtermsg
             if not msgfilter.filter(filtermsg):
@@ -522,7 +532,7 @@ def on_message(
                     bindperm
                     ):
                     return PlugMsgReturn.Ignore
-            if bindsendperm:
+            if bindsendperm and not session.msgtype & PlugMsgTypeEnum.plugadmin:
                 if not session.authCheckSend(
                     PluginsManageList[func.__module__].groupname,
                     bindsendperm
@@ -555,11 +565,11 @@ def on_message(
                     name = wrapper.__name__,
                     des = des
                     ))
-            #权限注册
-            if bindperm:
-                PluginsManageList[func.__module__].registerPerm(bindperm,des,defaultperm)
-            if bindsendperm:
-                PluginsManageList[func.__module__].registerPerm(bindsendperm,des,PlugMsgTypeEnum.none)
+            #权限注册(此处不需要)
+            #if bindperm:
+            #    PluginsManageList[func.__module__].registerPerm(bindperm,PlugMsgTypeEnum.none,des)
+            #if bindsendperm:
+            #    PluginsManageList[func.__module__].registerPerm(bindsendperm,PlugMsgTypeEnum.none,des)
             PluginsManageList[func.__module__].addFunc(
                 wrapper,
                 PluginsManage.baleFuncInfo(
@@ -598,7 +608,7 @@ def plugGetNamePlugDes(name:str):
     return '未查询到插件'
 def plugGetListStr(page:int = 1,displaynone:bool = False):
     global PluginsManageList
-    msg = '插件列表：'
+    msg = '-插件列表-'
     page = page - 1
     i = 0
     lll = len(PluginsManageList)
@@ -666,6 +676,7 @@ async def async_send_even(even:StandEven) -> PlugMsgReturn:
                             modulename = plug.modulename,
                             name = plug.name
                             ))
+                    return PlugMsgReturn.Intercept
             except:
                 s = traceback.format_exc(limit=10)
                 logger.error(s)

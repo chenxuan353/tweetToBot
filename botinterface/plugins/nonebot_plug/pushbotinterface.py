@@ -39,8 +39,10 @@ async def _(session: NLPSession):
     msgtype = PlugMsgTypeEnum.unknown
     message_type = session.event['message_type']
     sourceObj = {
-        'message_type':session.event['message_type']
+        'message_type':session.event['message_type'],
+        'sub_type':session.event['sub_type']
     }
+    sourceAdmin = False
     nick = sourceID
     nickname = ''
     card = ''
@@ -49,6 +51,8 @@ async def _(session: NLPSession):
         msgtype = PlugMsgTypeEnum.private
         if session.event['sub_type'] != 'friend':
             msgtype = PlugMsgTypeEnum.tempprivate
+        else:
+            sourceAdmin = True
         if session.event['sub_type'] == 'other':
             anonymous = True
     elif message_type == 'group':
@@ -66,6 +70,11 @@ async def _(session: NLPSession):
         else:
             if 'card' in session.event['sender']:
                 card = session.event['sender']['card']
+            if 'role' in session.event['sender']:
+                role = session.event['sender']['role']
+                if role in ('owner','admin'):
+                    sourceAdmin = True
+            
         groupinfo = StandEven.baleToStandGroupInfo(groupuuid,'',5,card)
     else:
         return
@@ -76,7 +85,7 @@ async def _(session: NLPSession):
         nick = nickname
     if card != '':
         nick = card
-    senduuidinfo = StandEven.baleToStandSenduuidInfo(senduuid,nick,nickname)
+    senduuidinfo = StandEven.baleToStandSenduuidInfo(senduuid,nick,nickname,sourceAdmin)
     atbot = session.event['to_me']
 
     cqhttpmsg = session.event['message']
@@ -95,13 +104,13 @@ async def _(session: NLPSession):
             for key,value in data.data.items():
                 CQm += ',' + key + '=' + value
             CQm += ']'
-            message.append(message.baleUnknownObj('CQ',CQm,{'flag':data.type,'data':data.data}))
+            message.append(message.baleUnknownObj('cqhttp',CQm,data.type,data.data))
     if senduuid in config.PLUGADMIN['cqhttp']:
         msgtype = msgtype | PlugMsgTypeEnum.plugadmin
     plugObj = {'type':'cqhttp','even':session.event,'bot':session.bot}
     #生成事件
     even = StandEven(
-        'cqhttp',str(session.self_id),message_type,sourceID,
+        'cqhttp',str(session.self_id),PlugMsgTypeEnum.getMsgtype(msgtype),sourceID,
         msgtype,anonymous,atbot,
         groupuuid,groupinfo,senduuid,senduuidinfo,
         message,plugObj=plugObj,sourceObj=sourceObj

@@ -2,8 +2,9 @@
 from pluginsinterface.TypeExtension import PlugMsgTypeEnum
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.PermissionGroup import authBaleObjectRecognition
-from pluginsinterface.PermissionGroup import authCheck,authAllow,authRemoval,authDeny
+from pluginsinterface.PermissionGroup import authCheck,authAllow,authRemoval,authDeny,authDenyRemoval,authCheckDeny
 import time
+from inspect import isfunction
 import config
 from module.msgStream import SendMessage
 from helper import getlogger
@@ -27,6 +28,13 @@ class Session:
     def __init__(self,even:StandEven = None,timeout = Session_timeout):
         self.__dict__['__lock'] = False
         self.__dict__['__corelock'] = False
+        self.__dict__['__coretype'] = (
+                    'even','timeout','create_timestamp','lastuse_timestamp',
+                    'bottype','botuuid','botgroup','uuid','senduuid',
+                    'msgtype','anonymous','atbot','senduuidinfo','sourceObj',
+                    'message','messagestand','globalscope','scope','__coretype',
+                    'groupinfo','plugObj','groupuuid'
+                )
         self.even = even
         self.globalscope = {}
         self.scope = ''
@@ -40,10 +48,15 @@ class Session:
             self.botuuid = even.botuuid
             self.botgroup = even.botgroup
             self.uuid = even.uuid
+            self.groupuuid = even.groupuuid
+            self.groupinfo = even.groupinfo
+            self.sourceObj = even.sourceObj
             self.senduuid = even.senduuid
+            self.senduuidinfo = even.senduuidinfo
             self.msgtype = even.msgtype
             self.anonymous = even.anonymous
             self.atbot = even.atbot
+            self.plugObj = even.plugObj
             self.message:SendMessage = even.message
             self.messagestand = self.message.toStandStr()
         self.__dict__['__corelock'] = True
@@ -52,53 +65,47 @@ class Session:
             self.__dict__[name] = value
         if self.__dict__['__lock']:
             raise Exception("当前session已锁定")
-        if name in (
-                    'even','timeout','create_timestamp','lastuse_timestamp',
-                    'bottype','botuuid','botgroup','uuid','senduuid',
-                    'msgtype','anonymous','atbot'
-                    'message','messagestand','globalscope','scope'
-                ):
+        if name in self.__dict__['__coretype']:
             if self.__dict__['__corelock']:
                 raise Exception("当前session核心已锁定")
             self.__dict__[name] = value
-        if self.__dict__['scope']:
+        if name in self.__dict__:
+            self.__dict__[name] = value
+            return
+        if 'scope' in self.__dict__ and self.__dict__['scope']:
             self.__dict__['globalscope'][self.__dict__['scope']][name] = value
             return
         self.__dict__[name] = value
     def __delattr__(self,name):
-        if name in ('__lock','__corelock'):
+        if name in ('__lock','__corelock','__coretype'):
             raise Exception("不可删除键值")
         if self.__dict__['__lock']:
             raise Exception("当前session已锁定")
-        if name in (
-                    'even','timeout','create_timestamp','lastuse_timestamp',
-                    'bottype','botuuid','botgroup','uuid','senduuid',
-                    'msgtype','anonymous','atbot'
-                    'message','messagestand','globalscope','scope'
-                ):
+        if name in self.__dict__['__coretype']:
             if self.__dict__['__corelock']:
                 raise Exception("当前session核心已锁定")
             del self.__dict__[name]
-        if self.__dict__['scope']:
+        if 'scope' in self.__dict__ and self.__dict__['scope']:
             del self.__dict__['globalscope'][self.__dict__['scope']][name]
             return
         del self.__dict__[name]
-    def __getattribute__(self, name):
-        if name in self.__dict__:
-            if name in (
-                        'even','timeout','create_timestamp','lastuse_timestamp',
-                        'bottype','botuuid','botgroup','uuid','senduuid',
-                        'msgtype','anonymous','atbot'
-                        'message','messagestand','globalscope','scope'
-                    ):
-                return self.__dict__[name]
-            if not self.__dict__['scope']:
+    def __getattribute1(self, name):
+        selfdict = super(Session,self).__getattribute__('__dict__')
+        if name is '__dict__':
+            return selfdict
+        if name in selfdict:
+            if name in selfdict['__coretype']:
+                return selfdict[name]
+            if not selfdict['scope']:
                 """
                     只有在无作用域时返回无作用域状态的值
                 """
-                return self.__dict__[name]
-        if name in self.__class__.__dict__:
-            return self.__class__.__dict__[name]
+                return selfdict[name]
+        if name is '__class__':
+            return selfdict
+        selfclass = super(Session,self).__getattribute__('__class__')
+        if name in selfclass.__dict__:
+            return selfclass.__dict__[name]
         super().__getattribute__(name)
     def __getattr__(self, name):
         """
@@ -123,9 +130,15 @@ class Session:
         self.botuuid = even.botuuid
         self.botgroup = even.botgroup
         self.uuid = even.uuid
+        self.groupuuid = even.groupuuid
+        self.groupinfo = even.groupinfo
+        self.sourceObj = even.sourceObj
+        self.senduuid = even.senduuid
+        self.senduuidinfo = even.senduuidinfo
         self.msgtype = even.msgtype
         self.anonymous = even.anonymous
         self.atbot = even.atbot
+        self.plugObj = even.plugObj
         self.message:SendMessage = even.message
         self.messagestand = self.message.toStandStr()
         self.__dict__['__corelock'] = True
@@ -142,16 +155,18 @@ class Session:
         if self.timeout <= 0:
             return True
         return usetime > self.lastuse_timestamp and (usetime - self.lastuse_timestamp) > self.timeout
-    def delScope(self,name):
+    def delScope(self):
         """
             删除session作用域，请勿手动操作
         """
         self.__dict__['scope'] = ''
-    def setScope(self):
+    def setScope(self,name):
         """
             设置session作用域，请勿手动操作
         """
-        self.__dict__['scope'] = ''
+        if name not in self.globalscope:
+            self.globalscope[name] = {}
+        self.__dict__['scope'] = name
     def setLock(self,value:bool):
         """
             设置session锁，请勿手动操作
@@ -168,13 +183,8 @@ class Session:
         """
         self.__dict__['globalscope'] = {}
         self.__dict__['scope'] = ''
-        for key in self.__dict__:
-            if key not in (
-                    'even','timeout','create_timestamp','lastuse_timestamp',
-                    'bottype','botuuid','botgroup','uuid',
-                    'msgtype','anonymous','atbot'
-                    'message','messagestand','globalscope','scope'
-                ):
+        for key in list(self.__dict__.keys()):
+            if key not in self.__dict__['__coretype'] and not key.startswith('__') and not isfunction(self.__dict__[key]):
                 del self.__dict__[key]
     def authCheck(self,msgtype:str,groupname:str,perm:str) -> bool:
         """
@@ -191,6 +201,11 @@ class Session:
         if self.senduuid in Admin:
             return True
         return authCheck(self.bottype,self.botuuid,'private',self.senduuid,groupname,perm)
+    def authCheckSendDeny(self,groupname:str,perm:str) -> bool:
+        """
+            检查组Session对应发送对象的指定私聊权限，判断全局管理员权限
+        """
+        return authCheckDeny(self.bottype,self.botuuid,'private',self.senduuid,groupname,perm)
     def __authBaleIdentifyObj(self) -> dict:
         return authBaleObjectRecognition(
                 self.bottype,
@@ -231,7 +246,39 @@ class Session:
             groupname,
             perm
         )
-    
+    def authDenySelf(self,
+            groupname:str,perm:str,
+            overlapping = True
+        ) -> tuple:
+        """
+            授权禁止
+        """
+        objectRecognition = self.__authBaleIdentifyObj()
+        return authDeny(
+            self.bottype,
+            self.botuuid,
+            PlugMsgTypeEnum.getMsgtype(self.msgtype),
+            self.uuid,
+            groupname,
+            perm,
+            objectRecognition = objectRecognition,
+            overlapping = overlapping
+        )
+    def authDenyRemovalSelf(self,
+            groupname:str,perm:str
+        ) -> tuple:
+        """
+            取消授权
+        """
+        return authDenyRemoval(
+            self.bottype,
+            self.botuuid,
+            PlugMsgTypeEnum.getMsgtype(self.msgtype),
+            self.uuid,
+            groupname,
+            perm
+        )
+
     def authAllow(self,
             bottype:str,botuuid:str,msgtype:str,
             uuid:str,groupname:str,perm:str,
@@ -291,6 +338,23 @@ class Session:
             objectRecognition = objectRecognition,
             overlapping = overlapping
         )
+    def authDenyRemoval(self,
+            bottype:str,botuuid:str,msgtype:str,
+            uuid:str,groupname:str,perm:str
+        ) -> tuple:
+        """
+            取消授权,msgtype要求为文本类型
+        """
+        if type(msgtype) is not str:
+            raise Exception("msgtype要求为文本类型")
+        return authDenyRemoval(
+            bottype,
+            botuuid,
+            msgtype,
+            uuid,
+            groupname,
+            perm
+        )
     def Reply(self,message:SendMessage):
         """
             向原路径回复消息
@@ -334,7 +398,7 @@ class SessionManagement:
         session:Session = dictGet(self.sessions,bottype,botuuid,botgroup,uuid)
         if usetime is None:
             usetime = time.time()
-        if session.checkExpired(usetime):
+        if session.checkExpired(int(usetime)):
             session.reset()
         session.setEven(even)
         session.refresh()

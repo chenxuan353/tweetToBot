@@ -79,57 +79,49 @@ def exp_send(msg:str,flag = '警告'):
     msgStream.exp_send(msg,source='推特API流',flag=flag)
 
 listenlistconfig = 'twitterlistenlist.json'
-listenlist = list(data_read_auto(listenlistconfig,default=[]))
-def addListen(userid:int = None,screen_name:str = None) -> tuple:
-    global listenlist
-    if not userid and not screen_name:
-        raise Exception('未指定用户')
-    #添加侦听，添加成功返回用户信息
-    userinfo = twitter.tweetcache.getUserInfo(userid = userid,screen_name= screen_name)
-    if not userinfo:
-        return (False,msgStream.SendMessage('此用户不在缓存中，无法操作'))
-    if userinfo['id_str'] in listenlist:
-        return (False,msgStream.SendMessage('用户已存在！'))
-    listenlist.append(userinfo['id_str'])
+listenlist = list(data_read_auto(listenlistconfig,default=['1109751762733301760']))
+def addListen(userid:str) -> tuple:
+    global listenlist,listenlistconfig
+    userid = str(userid)
+    if userid in listenlist:
+        return (False,'用户已存在！')
+    listenlist.append(userid)
     if not data_save(listenlistconfig,listenlist)[0]:
         exp_send('推送侦听保存失败')
-    msg = twitter.tweetevendeal.userinfoToStr(userinfo)
-    return (True,msg.insert(msg.baleTextObj("添加成功！\n")))
-def delListen(userid:int = None,screen_name:str = None) -> tuple:
-    global listenlist
-    if not userid and not screen_name:
-        raise Exception('未指定用户')
-    #添加侦听，添加成功返回用户信息
-    userinfo = twitter.tweetcache.getUserInfo(userid = userid,screen_name= screen_name)
-    if not userinfo:
-        if not userid:
-            return (False,msgStream.SendMessage('此用户不在缓存中，无法使用用户名操作'))
-    if str(userid) not in listenlist:
-        return (False,msgStream.SendMessage('侦听中不存在此用户！'))
-    listenlist.remove(str(userid))
+    return (True,"添加成功！")
+def delListen(userid:str) -> tuple:
+    global listenlist,listenlistconfig
+    userid = str(userid)
+    if userid not in listenlist:
+        return (False,'侦听中不存在此用户！')
+    if len(listenlist) == 1:
+        return (False,'禁止全部移除，辅助监听至少需要一个监听对象。')
+    listenlist.remove(userid)
     if not data_save(listenlistconfig,listenlist)[0]:
         exp_send('推送侦听保存失败')
-    return (True,msgStream.SendMessage('移除成功'))
+    return (True,'移除成功')
 def getListenList(page:int = 0) -> tuple:
     global listenlist
-    msg = msgStream.SendMessage('推送流侦听列表')
+    msg = '推送流侦听列表'
     lll = len(listenlist)
     if lll == 0:
-        return msgStream.SendMessage('推送流侦听列表为空')
+        return '推送流侦听列表为空'
     i = 0
     for userid in listenlist:
-        i += 1
         if i >= page*5 and i < (page+1)*5:
             userinfo = twitter.tweetcache.getUserInfo(userid = userid)
-            if userinfo:
-                msg.append(msg.baleTextObj('\n{0}({1}),{2}'.format(userinfo['screen_name'],userinfo['name'],userinfo['id'])))
+            if userinfo is not None:
+                msg += '\n{0}({1}),{2}'.format(userinfo['screen_name'],userinfo['name'],userinfo['id'])
             else:
-                msg.append(msg.baleTextObj('\n用户不在缓存中(不明),{0}'.format(userid)))
-    msg.append('\n当前页{0}/{1} (总{2})'.format(page,int(lll/5),lll))
+                msg += '\n无缓存(不明),{0}'.format(userid)
+        i += 1
+    msg += '\n当前页{0}/{1} (总{2})'.format(page,int(lll/5),lll)
     return msg
 
 #维持侦听流运行
 def Run():
+    time.sleep(7)
+    logger.info("StreamTweetApi 已启动")
     #五分钟内至多重启五次
     run_info['isRun'] = True
     run_info['lastRunTime'] = int(time.time())
@@ -139,10 +131,10 @@ def Run():
             time.sleep(3) #保持运行标记为否时堵塞执行
         if run_info['errorCount'] > 5:
             exp_send('重试次数过多，停止重试...')
-            while run_info['error_cout'] > 5:
+            while run_info['errorCount'] > 5:
                 time.sleep(1) #错误次数达到上限时暂停运行
-        if run_info['error_cout'] > 0:
-            exp_send('推特流异常正在尝试重启，'+'第 ' + str(run_info['error_cout']) + ' 次尝试...')
+        if run_info['errorCount'] > 0:
+            exp_send('推特流异常正在尝试重启，'+'第 ' + str(run_info['errorCount']) + ' 次尝试...')
         try:
             #创建监听流
             run_info['apiStream'] = tweepy.Stream(auth = api.auth, listener=myStreamListener)
@@ -156,15 +148,14 @@ def Run():
             run_info['isRun'] = False
             exp_send('推特流被主动停止...')
             logger.info('推特流被主动停止')
-        if run_info['error_cout'] > 0 and int(time.time()) - run_info['last_reboot'] > 300:
-            run_info['last_reboot'] = int(time.time()) #两次重启间隔五分钟以上视为重启成功
-            run_info['error_cout'] = 0 #重置计数
-        run_info['error_cout'] = run_info['error_cout'] + 1
+        if run_info['errorCount'] > 0 and int(time.time()) - run_info['lastRunTime'] > 300:
+            run_info['lastRunTime'] = int(time.time()) #两次重启间隔五分钟以上视为重启成功
+            run_info['lastErrTime'] = int(time.time()) #两次重启间隔五分钟以上视为重启成功
+            run_info['errorCount'] = 0 #重置计数
+        run_info['errorCount'] = run_info['errorCount'] + 1
 
 #运行推送线程
 def runTwitterApiThread():
-    time.sleep(5)
-    logger.info("StreamTweetApi 已启动")
     #推特流维护线程
     run_info['ListenThread'] = threading.Thread(
         group=None, 

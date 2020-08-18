@@ -27,6 +27,8 @@ groupPermissionList = {
 
 #授权权限表
 permissionList = data_read_auto(config_filename,default={})
+def permissionList_save():
+    return data_save(config_filename,permissionList)
 
 """
 合法权限与角色及默认授权表
@@ -38,7 +40,7 @@ permissionList = data_read_auto(config_filename,default={})
 
 ·模块授权注册
 固定标识:{权限组名:{模块名:'',组名:'',组昵称:'',组描述:'',权限列表:{权限名:{权限元对象},权限名:{},...}}}
-perms:{groupname:{moudel:'',name:'',nick:'',des:'xxx',premlist:{perm:{},perm:{},...}}}
+perms:{groupname:{module:'',name:'',nick:'',des:'xxx',premlist:{perm:{},perm:{},...}}}
 ·权限元对象
 权限名、权限描述
 
@@ -54,7 +56,7 @@ def permNameCheck(name:str):
         #权限组验证不通过
         return False
     return True
-def permRegisterGroup(moudelname:str,groupname:str,groupnick:str,groupdes:str,permlist:dict = {}):
+def permRegisterGroup(modulename:str,groupname:str,groupnick:str,groupdes:str,permlist:dict = {}):
     global legalPermissionList
     if not permNameCheck(groupname):
         raise Exception("权限组注册异常,{0} 不能作为权限组组名".format(groupname))
@@ -63,7 +65,7 @@ def permRegisterGroup(moudelname:str,groupname:str,groupnick:str,groupdes:str,pe
     if type(permlist) != dict:
         raise Exception("权限组注册异常,名为 {0} 的组，权限列表不为字典".format(groupname))
     legalPermissionList['perms'][groupname] = {
-        'moudel':moudelname,
+        'module':modulename,
         'name':groupname,
         'nick':groupnick,
         'des':groupdes,
@@ -103,7 +105,7 @@ def legalPermGet(groupname:str = None,name:str = None) -> dict:
 def legalPermGroupGetDes(group:dict,simple = False) -> str:
     if simple:
         #组名，昵称，描述
-        msg = '{1}:{2}:{3}'.format(
+        msg = '{0}:{1}:{2}'.format(
                 group['name'],
                 group['nick'],
                 group['des'],
@@ -115,7 +117,7 @@ def legalPermGroupGetDes(group:dict,simple = False) -> str:
                 regperm += ','
             regperm += perm
         msg = '所属模块：{0}\n组名：{1}\n昵称：{2}\n描述：{3}\n注册权限：{4}'.format(
-                group['moudel'],
+                group['module'],
                 group['name'],
                 group['nick'],
                 group['des'],
@@ -123,7 +125,7 @@ def legalPermGroupGetDes(group:dict,simple = False) -> str:
         )
     return msg
 def legalPermGetDes(group:dict,perm:dict) -> str:
-    return "{0}:{1}".format(perm,group['permlist'][perm])
+    return "{0}:{1}:{2}".format(group['nick'],perm,group['permlist'][perm])
 def illegalPermClear():
     #执行对不存在权限(非法权限)授权的清理
     raise Exception("illegalPermClear 暂未实现")
@@ -198,11 +200,11 @@ def permDefaultInit():
 """
 插件权限注册接口
 """
-def authRegisterGroup(moudelname:str,groupname:str,groupnick:str,groupdes:str):
+def authRegisterGroup(modulename:str,groupname:str,groupnick:str,groupdes:str):
     """
         注册插件权限组
     """
-    return permRegisterGroup(moudelname,groupname,groupnick,groupdes)
+    return permRegisterGroup(modulename,groupname,groupnick,groupdes)
 def authRegisterPerm(groupname:str,name:str,des:str):
     """
         注册插件权限
@@ -241,6 +243,7 @@ bottype:{botuuid:{botgroup:{uuid:{groupname:{prem:{unit},...}}}}}
 
 """
 from helper import dictInit,dictHas,dictGet,dictSet
+#核心函数
 def perm_add(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str,authunit:dict) -> tuple:
     """
         设定权限
@@ -259,12 +262,9 @@ def perm_add(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str
     global permissionList
     if not legalPermHas(groupname,perm):
         return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = perm))
-    #初始化层次字典
-    res = dictInit(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm,endobj=authunit)
-    if res:
-        return (True,'成功')
-    else:
-        return (False,'')
+    dictSet(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm,obj=authunit)
+    permissionList_save()
+    return (True,'成功')
 def perm_del(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> tuple:
     global permissionList
     if not legalPermHas(groupname,perm):
@@ -273,8 +273,9 @@ def perm_del(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str
     if not dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm):
         return (False,"{groupname}->{perm},权限未曾授权".format(groupname = groupname,perm = perm))
     del permissionList[bottype][botuuid][msgtype][uuid][groupname][perm]
+    permissionList_save()
     return (True,'成功')
-
+#信息获取函数
 def perm_getList(bottype:str,botuuid:str,msgtype:str,uuid:str) -> dict:
     global permissionList
     return dictGet(permissionList,bottype,botuuid,msgtype,uuid,default={})
@@ -307,7 +308,7 @@ def perm_uuidGet(bottype:str,botuuid:str,msgtype:str,uuid:str) -> dict:
     return default
 def perm_uuidAuthGet(bottype:str,botuuid:str,msgtype:str,uuid:str) -> dict:
     return dictGet(permissionList,bottype,botuuid,msgtype,uuid,default={}.copy())
-
+#扩展函数
 def perm_checkdeny(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> bool:
     """
         检查权限是否被显式禁用
@@ -318,38 +319,40 @@ def perm_checkdeny(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,pe
     default:dict = dictGet(legalPermissionList['default'],msgtype,default={})
     if dictHas(default,groupname,'-*'):
         return True
-    if not perm.startswith('-') and dictHas(default,groupname,'-'+perm):
+    if dictHas(default,groupname,'-'+perm):
         return True
     nowtime = time.time()
     def authcheck(authunit:dict):
         if authunit == None:
             return False
         if 'expireTimestamp' in authunit:
-            if authunit['expireTimestamp'] > 0 and nowtime > authunit['expireTimestamp']:
+            if authunit['expireTimestamp'] <= 0 or nowtime > authunit['expireTimestamp']:
                 return True
         else:
             return True
         return True
     if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-*')):
         return True
-    if not perm.startswith('-') and authcheck(dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-'+perm)):
+    if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-'+perm)):
         return True
     return False
 def perm_check(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> bool:
     global legalPermissionList,permissionList
+    if perm.startswith('-'):
+        raise Exception('无法检测')
     default:dict = dictGet(legalPermissionList['default'],msgtype,default={})
     if dictHas(default,groupname,'-*'):
         return False
-    if not perm.startswith('-') and dictHas(default,groupname,'-'+perm):
+    if dictHas(default,groupname,'-'+perm):
         return False
     res = dictHas(default,groupname,'*')
     res = res or dictHas(default,groupname,perm)
     nowtime = time.time()
     def authcheck(authunit:dict):
-        if authunit == None:
+        if authunit is None:
             return False
         if 'expireTimestamp' in authunit:
-            if authunit['expireTimestamp'] > 0 and nowtime > authunit['expireTimestamp']:
+            if authunit['expireTimestamp'] <= 0 or nowtime > authunit['expireTimestamp']:
                 return True
         else:
             return True
@@ -358,9 +361,9 @@ def perm_check(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:s
         return res
     if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-*')):
         return False
-    if not perm.startswith('-') and authcheck(dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-'+perm)):
+    if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,'-'+perm)):
         return False
-    if authcheck(dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,'*')):
+    if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,'*')):
         return True
     if authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm)):
         return True
@@ -389,13 +392,13 @@ def authObjGetList(bottype:str,botuuid:str,msgtype:str,uuid:str,page:int = 1) ->
     permlist = perm_getList(bottype,botuuid,msgtype,uuid)
     for groupname in permlist:
         for perm in permlist[groupname]:
-            i += 1
             if i >= page*5 and i < (page+1)*5:
                 msg += '\n' + groupname + ':' + perm
+            i += 1
     lll = i
     msg += '\n当前页{0}/{1} (共{2}个权限)'.format(page+1,int(lll/5)+1,lll)
     return msg
-def authLegalGetList(page:int = 1) -> str:
+def authLegalGetList(findgroupname = '',page:int = 1) -> str:
     msg = '--可用权限列表--'
     page = page - 1
     i = 0
@@ -404,23 +407,27 @@ def authLegalGetList(page:int = 1) -> str:
         groupdict = legalPermGet(groupname)
         #i += 1
         #msg += '\n' + legalPermGroupGetDes(groupdict,simple=True)
-        for perm in legalpermlist[groupname]:
-            i += 1
-            if i >= page*5 and i < (page+1)*5:
-                msg += '\n' + legalPermGetDes(groupdict,perm)
+        if not findgroupname or findgroupname == groupname:
+            for perm in legalpermlist[groupname]['permlist']:
+                if i >= page*5 and i < (page+1)*5:
+                    msg += '\n' + legalPermGetDes(groupdict,perm)
+                i += 1
     lll = i
     msg += '\n当前页{0}/{1} (共{2}个权限)'.format(page+1,int(lll/5)+1,lll)
     return msg
 def authLegalGetGroupListDes(page:int = 1) -> str:
     msg = '--合法权限组列表--'
+    legalpermlist = legalPermGet()
     page = page - 1
     i = 0
-    legalpermlist = legalPermGet()
+    lll = len(legalpermlist)
+    if page > int(lll/5):
+        page = 0
     for groupname in legalpermlist:
         groupdict = legalPermGet(groupname)
+        if i >= page*5 and i < (page+1)*5:
+            msg += '\n' + legalPermGroupGetDes(groupdict,simple=True)
         i += 1
-        msg += '\n' + legalPermGroupGetDes(groupdict,simple=True)
-    lll = i
     msg += '\n当前页{0}/{1} (共{2}个权限组)'.format(page+1,int(lll/5)+1,lll)
     return msg
 def authGet(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> dict:
@@ -480,10 +487,20 @@ def authAllow(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:st
     uuid = str(uuid)
     if not legalPermHas(groupname,perm):
         return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = perm))
-    if overlapping and dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm):
+    nowtime = time.time()
+    def authcheck(authunit:dict):
+        if authunit is None:
+            return False
+        if 'expireTimestamp' in authunit:
+            if authunit['expireTimestamp'] <= 0 or nowtime > authunit['expireTimestamp']:
+                return True
+        else:
+            return True
+        return False
+    if overlapping and authcheck(dictGet(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm)):
         return (False,'授权重复！')
-    createTimestamp = (kw['createTimestamp'] if kw['createTimestamp'] else time.time())
-    expireTimestamp = (kw['expireTimestamp'] if kw['expireTimestamp'] else 0)
+    createTimestamp = (kw['createTimestamp'] if 'createTimestamp' in kw else time.time())
+    expireTimestamp = (kw['expireTimestamp'] if 'expireTimestamp' in kw else 0)
     authunit = {
         'bottype':bottype,
         'botuuid':botuuid,
@@ -526,8 +543,8 @@ def authDeny(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str
 
     if overlapping and dictHas(permissionList,bottype,botuuid,msgtype,uuid,groupname,perm):
         return (False,'授权重复！')
-    createTimestamp = (kw['createTimestamp'] if kw['createTimestamp'] else time.time())
-    expireTimestamp = (kw['expireTimestamp'] if kw['expireTimestamp'] else 0)
+    createTimestamp = (kw['createTimestamp'] if 'createTimestamp' in kw else time.time())
+    expireTimestamp = (kw['expireTimestamp'] if 'expireTimestamp'in kw else 0)
     authunit = {
         'bottype':bottype,
         'botuuid':botuuid,
@@ -540,13 +557,24 @@ def authDeny(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str
         'objectRecognition':objectRecognition
     }
     return perm_deny(bottype,botuuid,msgtype,uuid,groupname,perm,authunit)
-def authCheck(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str):
+def authDenyRemoval(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> tuple:
+    if not legalPermHas(groupname,'-'+perm):
+        return (False,"{groupname}->{perm},此权限不存在".format(groupname = groupname,perm = '-'+perm))
+    return perm_del(bottype,botuuid,msgtype,uuid,groupname,'-'+perm)
+def authCheck(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> bool:
     """
         权限检查，检查是否拥有指定权限
     """
     botuuid = str(botuuid)
     uuid = str(uuid)
     return perm_check(bottype,botuuid,msgtype,uuid,groupname,perm)
+def authCheckDeny(bottype:str,botuuid:str,msgtype:str,uuid:str,groupname:str,perm:str) -> bool:
+    """
+        权限检查，检查是否拥有指定权限
+    """
+    botuuid = str(botuuid)
+    uuid = str(uuid)
+    return perm_checkdeny(bottype,botuuid,msgtype,uuid,groupname,perm)
 
 
 

@@ -4,7 +4,7 @@ import requests
 import xmltodict
 import traceback
 from datetime import datetime
-from html.parser import HTMLParser
+
 import config
 from helper import getlogger,TokenBucket
 logger = getlogger(__name__)
@@ -24,7 +24,7 @@ proxies = {
         }
 #RSS源访问及处理,支持更换根url
 class RSSDealPackage:
-    def __init__(self,url:str,path:str,rssLastBuild:int = 0,useUpdataCache = True,headers = headers,proxies = proxies,timelimit:int = 15):
+    def __init__(self,url:str,path:str,rssLastBuild:int = 0,useUpdataCache = False,headers = headers,proxies = proxies,timelimit:int = 1):
         #源URL,每次访问最短时限-单位秒-默认15
         #useUpdataCache:使用更新缓存，开启后将使用缓存
         #rssLastBuild:最后
@@ -42,6 +42,10 @@ class RSSDealPackage:
         #最近一次阅读的完整数据缓存
         self.data = {}
         self.lasttest = False
+        #标题缓存
+        self.title = ''
+        self.description = ''
+        self.link = ''
     def getLastReadTime(self):
         return self.lastReadTime
     def setUrl(self,url:str,timelimit:int = None):
@@ -71,14 +75,14 @@ class RSSDealPackage:
     def getData(self,updatacache = True) -> tuple:
         #获取页面数据(是否更新缓存)
         try:
-            r = requests.get(self.url+self.path,headers=self.headers,proxies=self.proxies)
+            r = requests.get(self.url+self.path,headers=self.headers,proxies=self.proxies,timeout = 15)
             if r.status_code != 200:
-                return (False,'页面错误 {code}'.format(code=r.status_code))
+                return (False,'页面错误 {code},url = {url}'.format(code=r.status_code,url = self.url))
             data = xmltodict.parse(r.text)
         except:
             s = traceback.format_exc(limit=10)
             logger.warning(s)
-            return (False,'读取页面时出错')
+            return (False,'读取页面时出错,url = {url}'.format(url = self.url))
         if updatacache and self.useUpdataCache:
             self.data = data
         return (True,data)
@@ -86,7 +90,7 @@ class RSSDealPackage:
         return 'lastBuildDate' in pkg and pkg['lastBuildDate'] != 0
     def itempkgCanGetUpdates(self,pkg):
         return 'pubDate' in pkg and pkg['pubDate'] != 0
-    def baleItemToStandRssPkg(self,item):
+    def baleItemToStandRssPkg(self,item,channel = {}):
         """
             <item>
                 <title>标题</title>
@@ -100,6 +104,7 @@ class RSSDealPackage:
         #将item数据打包到标准RSS数据包
         checkfunc = (lambda item,key:item[key] if key in item else '')
         return {
+            'channel_title':checkfunc(channel,'title'),
             'title':checkfunc(item,'title'),
             'link':checkfunc(item,'link'),
             'description':checkfunc(item,'description'),
@@ -135,10 +140,18 @@ class RSSDealPackage:
             'item':[]
         }
         if 'item' in channel:
-            for i in range(0,len(channel['item'])):
-                item = channel['item'][i]
-                data = self.baleItemToStandRssPkg(item)
+            if type(channel['item']) is list:
+                for i in range(0,len(channel['item'])):
+                    item = channel['item'][i]
+                    data = self.baleItemToStandRssPkg(item,res)
+                    res['item'].append(data)
+            else:
+                item = channel['item']
+                data = self.baleItemToStandRssPkg(item,res)
                 res['item'].append(data)
+        self.title = res['title']
+        self.description = res['description']
+        self.link = res['link']
         return res
     def findUpdata(self,updatareadtime = True) -> tuple:
         #查找更新(是否更新阅读时间-默认是)
@@ -154,12 +167,16 @@ class RSSDealPackage:
         for item in rsspkg['item']:
             if item['pubTimestamp'] > self.rssLastBuild:
                 updatalist.append(item)
-        if updatareadtime:
-            self.rssLastBuild = rsspkg['lastBuildTimestamp']
+        if updatalist:
+            #防止误判，仅查找到有效更新时更新
+            if updatareadtime:
+                self.rssLastBuild = rsspkg['lastBuildTimestamp']
         self.lastReadTime = time.time()
         return (True,updatalist)
+    def isNull(self):
+        return self.title == ''
 
-defaultUrls = config.RSShub_urls if config.RSShub_urls else {}
+defaultUrls = config.RSShub_urls if config.RSShub_urls else []
 class RSShubsPackage:
     def __init__(self,urls:list = defaultUrls):
         self.urls = urls
@@ -173,8 +190,8 @@ class RSShubsPackage:
         #单位秒
         t = 0
         lurls = len(self.urls)
-        for urlunit in self.urls:
-            t += urlunit[1]/lurls
+        for pkg in self.paths.values():
+            t += pkg.getWaitTime()/lurls
         return t+1
     def getUrl(self) -> str:
         url = self.urls[self.nowcount]
@@ -205,7 +222,19 @@ class RSShubsPackage:
     def getUpdata(self,path:str) -> tuple:
         #获取指定路径的更新
         pkg:RSSDealPackage = self.getPath_createnew(path)
+        if pkg.isNull():
+            pkg.findUpdata()
+            return (False,'轮询未初始化，重新初始化中...')
         url = self.getUrl()
         pkg.setUrl(url)
         return pkg.findUpdata()
-        
+    def testconnect(self,path:str) -> bool:
+        """
+            测试连接
+        """
+        #获取指定路径的更新
+        pkg = RSSDealPackage(self.urls[0],path)
+        res = pkg.findUpdata(updatareadtime=False)
+        del pkg
+        return res[0]
+

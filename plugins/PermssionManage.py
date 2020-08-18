@@ -44,15 +44,35 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
+
 @on_message(msgfilter='合法权限组列表',argfilter=argfilter,bindsendperm='infocheck',des='合法权限组列表 页码 - 合法权限组列表')
 async def _(session:Session):
     page = session.filterargs['page']
     msg = authLegalGetGroupListDes(page)
     session.send(msg)
+
+argfilter = PlugArgFilter()
+argfilter.addArg(
+    'groupname',
+    '权限组',
+    '需要输入有效的权限组名称',
+    prefunc=(lambda arg:(arg if permNameCheck(arg) else None)),
+    vlimit={'':None},
+    canSkip=True
+    )
+argfilter.addArg(
+    'page',
+    '页码',
+    '页码',
+    verif='uintnozero',
+    canSkip=True,
+    vlimit={'':1}#设置默认值
+    )
 @on_message(msgfilter='合法权限列表',argfilter=argfilter,bindsendperm='infocheck',des='合法权限列表 页码 - 合法权限列表')
 async def _(session:Session):
+    groupname = session.filterargs['groupname']
     page = session.filterargs['page']
-    msg = authLegalGetList(page)
+    msg = authLegalGetList(groupname,page)
     session.send(msg)
 @on_message(msgfilter='查看授权',argfilter=argfilter,des='查看授权 页码 - 查看授权权限')
 async def _(session:Session):
@@ -60,7 +80,7 @@ async def _(session:Session):
     msg = authObjGetList(session.bottype,
                         session.botuuid,
                         PlugMsgTypeEnum.getMsgtype(session.msgtype),
-                        session.senduuid,
+                        session.uuid,
                         page
                     )
     session.send(msg)
@@ -107,7 +127,7 @@ async def _(session:Session):
     res = session.authAllow(session.bottype,session.botuuid,msgtype,uuid,groupname,perm)
     session.send(res[1])
 
-@on_message(msgfilter='取消远程授权',argfilter=argfilter,bindsendperm='manage',des='取消远程授权 消息来源标识 消息来源ID 权限组 权限名 - 消息来源标识为群聊、私聊中的任意一项')
+@on_message(msgfilter='远程取消授权',argfilter=argfilter,bindsendperm='manage',des='远程取消授权 消息来源标识 消息来源ID 权限组 权限名 - 消息来源标识为群聊、私聊中的任意一项')
 async def _(session:Session):
     msgtype = session.filterargs['msgtype']
     uuid = session.filterargs['uuid']

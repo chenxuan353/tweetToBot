@@ -100,11 +100,16 @@ class StandEven:
             'sendnick':sendnick
         }
     @staticmethod
-    def baleToStandSenduuidInfo(uuid,nick,name):
+    def baleToStandSenduuidInfo(uuid,nick,name,sourceAdmin):
+        """
+            打包标准信息
+            sourceAdmin：是否是来源管理员，群聊则为是否是群聊管理，私聊则自己是自己的管理
+        """
         return {
             'uuid':uuid,
             'nick':nick,
             'name':name,
+            'sourceAdmin':sourceAdmin,
         }
     def setLock(self,value:bool):
         self.lock = value

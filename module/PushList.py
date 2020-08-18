@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 from helper import dictInit,dictHas,dictGet,dictSet
-from helper import data_read,data_save
+from helper import data_read,data_save,check_path
 """
     推送列表
     监测对象UUID与推送单元关联表
@@ -17,15 +17,16 @@ from helper import data_read,data_save
     createobj:额外的创建对象信息
     lasteditobj:额外的最后编辑对象信息
 """
+
 class PushList:
-    puth_type = '' 
-    push_list = {} #推送对象与推送单元的关联
-    spy_relate = {} #监测对象与推送单元的关联(用于创建推送触发器)
-    spylist = [] #直接监听列表(通过触发器更新)
     def __init__(self,puth_type:str,configfilename:str,basepath:str = 'pushlist'):
+        self.push_list = {} #推送对象与推送单元的关联
+        self.spy_relate = {} #监测对象与推送单元的关联(用于创建推送触发器)
+        self.spylist = [] #直接监听列表(通过触发器更新)
         self.puth_type = puth_type #推送标识(RSS、tweet等)
         self.configfilename = configfilename
         self.basepath = basepath
+        check_path(basepath)
 
     def pushcheck_trigger(self,unit,**pushunit) -> bool:
         return True
@@ -52,14 +53,15 @@ class PushList:
                 for botgroups in botuuids.values():
                     for pushTo in botgroups.values():
                         #pushTo['config']
-                        for pushunit in pushTo['pushlist']:
-                            PushUnits.append(pushunit)
+                        for spyuuid in pushTo['pushlist']:
+                            PushUnits.append(pushTo['pushlist'][spyuuid])
         return PushUnits
     def resetSpyRelate(self):
         PushUnits = self.getAllPushUnit()
         self.spy_relate.clear()
         for pushunit in PushUnits:
             self.__addToSpyRelate(pushunit)
+            self.__addToSpyList(pushunit['spyuuid'])
 
     def init(self):
         self.load()
@@ -73,7 +75,7 @@ class PushList:
         if not path:
             path = self.basepath
         data = data_read(filename,path)
-        if data[0] != False:
+        if data[0] is not False:
             self.clear()
             self.push_list = data[2].copy()
             self.resetSpyRelate()
@@ -130,11 +132,14 @@ class PushList:
 
     #单元增删
     def hasPushunit(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str) -> bool:
-        return dictHas(self.push_list,bottype,botuuid,receivegroup,receiveuuid,spyuuid)
+        return dictHas(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',spyuuid)
     def hasPushunit_kw(self,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw) -> bool:
         return self.hasPushunit(bottype,botuuid,receivegroup,receiveuuid,spyuuid)
     def findPushunit(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str) -> dict:
-        return dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,spyuuid)
+        """
+            查询推送单元，找到返回单元，找不到返回None
+        """
+        return dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',spyuuid)
     def findPushunit_kw(self,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw) -> dict:
         return self.findPushunit(bottype,botuuid,receivegroup,receiveuuid,spyuuid)
 
@@ -155,19 +160,19 @@ class PushList:
             self.spylist.append(spyuuid)
     def __addToSpyRelate(self,pushunit):
         spyuuid = pushunit['spyuuid']
-        dictInit(self.spy_relate,spyuuid,endobj=set())
-        spyunit:set = self.spy_relate[spyuuid]
-        spyunit.add(pushunit)
+        dictInit(self.spy_relate,spyuuid,endobj=[])
+        spyunit:list = self.spy_relate[spyuuid]
+        spyunit.append(pushunit)
     def __addPushunit(self,pushunit,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw):
         if not self.pushcheck_trigger(pushunit,**pushunit):
             return (False,"单元检查不通过！")
-        dictSet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,spyuuid,obj=pushunit)
+        dictSet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',spyuuid,obj=pushunit)
         self.__addToSpyRelate(pushunit)
         self.__addToSpyList(spyuuid)
         return (True,"成功！")
-    def addPushunit(self,pushunit:dict,defaultConfig:dict):
-        #非覆盖式单元添加(添加的单元，默认推送对象配置)
+    def addPushunit(self,pushunit:dict,defaultConfig:dict) -> dict:
         """
+            非覆盖式单元添加(添加的单元，默认推送对象配置)
             pushunit['bottype'] = bottype
             pushunit['botuuid'] = botuuid
             pushunit['receivegroup'] = receivegroup
@@ -194,6 +199,7 @@ class PushList:
         res = self.__addPushunit(pushunit,**pushunit)
         if not res[0]:
             return res
+        self.save()
         return res
     def __delToSpyList(self,spyuuid):
         if spyuuid not in self.spylist:
@@ -205,10 +211,12 @@ class PushList:
         spyuuid = pushunit['spyuuid']
         if spyuuid not in self.spy_relate:
             return
-        spylist:set = self.spy_relate[spyuuid]
-        spylist.discard(pushunit)
+        spylist:list = self.spy_relate[spyuuid]
+        spylist.remove(pushunit)
+        if len(spylist) == 0:
+            del self.spy_relate[spyuuid]
     def __delPushunit(self,pushunit,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw):
-        recpoint = dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid)
+        recpoint = dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist')
         searchpushunit = recpoint[spyuuid]
         if pushunit != searchpushunit:
             return (False,"待删除推送对象与已存在的推送对象不符")
@@ -222,13 +230,14 @@ class PushList:
         res = self.__delPushunit(pushunit,**pushunit)
         if not res[0]:
             return res
+        self.save()
         return res
     
     #资讯获取接口
     def getPushTo(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str):
-        return dictGet(self.spylist,bottype,botuuid,receivegroup,receiveuuid)
+        return dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid)
     def getPushTo_kw(self,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,**kw):
-        return dictGet(self.spylist,bottype,botuuid,receivegroup,receiveuuid)
+        return dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid)
     def getUnitPushToConfig(self,pushunit):
         return self.getPushTo_kw(**pushunit)
     def baleSendTarget(self,pushunit,message):
@@ -242,29 +251,44 @@ class PushList:
         sendtarget['message'] = message
         return sendtarget
 
-    #返回监测对象关联的推送单元组,监测对象不存在时返回空列表[]
-    def getLitsFromTweeUserID(self,spyuuid:str) -> list:
+    def getLitsFromSpyID(self,spyuuid:str) -> list:
+        """
+            返回监测对象关联的推送单元组,监测对象不存在时返回空列表[]
+        """
         return list(dictGet(self.spy_relate,spyuuid,default=[]))
-    #返回推送对象关联的推送单元组,推送对象不存在时返回空列表[]
+    def getLitsFromTweeUserID(self,spyuuid:str) -> list:
+        """
+            返回监测对象关联的推送单元组,监测对象不存在时返回空列表[]
+        """
+        return list(dictGet(self.spy_relate,str(spyuuid),default=[]))
     def getLitsFromPushTo(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str) -> list:
-        res = dictGet(self.spylist,bottype,botuuid,receivegroup,receiveuuid,default=None)
+        """
+            返回推送对象关联的推送单元组,推送对象不存在时返回空列表[]
+        """
+        res = dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',default=None)
         if not res:
             return []
-        return list(res['pushlist'].values())
-    #返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表{}
+        return list(res.values())
     def getLitsFromPushToAndID(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str) -> dict:
-        res = dictGet(self.spylist,bottype,botuuid,receivegroup,receiveuuid,default=None)
+        """
+            返回推送对象关联的推送单元组-带ID,推送对象不存在时返回空列表{}
+        """
+        res = dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',default=None)
         if not res:
             return {}
-        return res['pushlist']
-    #返回推送对象关联的推送属性组,推送对象不存在时返回空字典{}
+        return res.copy()
     def getConfigFromPushTo(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str) -> dict:
+        """
+            返回推送对象关联的推送属性组,推送对象不存在时返回空字典{}
+        """
         pushto = self.getPushTo(bottype,botuuid,receivegroup,receiveuuid)
         if not pushto:
             return {}
         return pushto['config']
-    #移除某个监测对象关联的所有推送单元,参数-监测对象UUID 返回值-(布尔型-是否成功,字符串-消息)
     def delPushunitFromSpyUUID(self,spyuuid:str) -> tuple:
+        """
+            移除某个监测对象关联的所有推送单元,参数-监测对象UUID 返回值-(布尔型-是否成功,字符串-消息)
+        """
         if spyuuid not in self.spy_relate:
             return (False,'此用户不在监测列表中！')
         table = self.getLitsFromTweeUserID(spyuuid)
@@ -273,16 +297,20 @@ class PushList:
         for pushunit in table:
             self.delPushunit(pushunit)
         return (True,'移除成功！')
-    #移除某个推送对象关联的所有推送单元,参数-消息类型，对象ID，CQID 返回值-(布尔型-是否成功,字符串-消息)
     def delPushunitFromPushTo(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str) -> tuple:
+        """
+            移除某个推送对象关联的所有推送单元,参数-消息类型，对象ID，CQID 返回值-(布尔型-是否成功,字符串-消息)
+        """
         table = self.getLitsFromPushTo(bottype,botuuid,receivegroup,receiveuuid)
         if table == []:
             return (True,'移除成功！')
         for pushunit in table:
             self.delPushunit(pushunit)
         return (True,'移除成功！')
-    #移除某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
     def removePushunit(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str) -> tuple:
+        """
+            移除某个推送单元,参数-消息类型，对象ID 返回值-(布尔型-是否成功,字符串-消息)
+        """
         pushunit = self.findPushunit(bottype,botuuid,receivegroup,receiveuuid,spyuuid)
         if not pushunit:
             return (False,'推送单元不存在！')
@@ -297,6 +325,7 @@ class PushList:
         if not pushto:
             return (False,'推送对象不存在！')
         res = self.setPushToAttr_trigger(pushto['config'],setkey,setvalue)
+        self.save()
         return res
     #设置指定推送单元的特定属性
     def setPushunitAttr(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,setkey,setvalue):
@@ -307,6 +336,7 @@ class PushList:
         if not pushunit:
             return (False,'推送单元不存在！')
         res = self.setPushUnitAttr_trigger(pushto['config'],pushunit['pushconfig'],setkey,setvalue)
+        self.save()
         return res
 
 

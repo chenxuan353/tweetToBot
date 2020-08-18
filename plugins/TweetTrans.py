@@ -10,6 +10,8 @@ import re
 import traceback
 import requests
 import os
+import random
+import time
 import base64
 from io import BytesIO
 import asyncio
@@ -175,21 +177,21 @@ def deal_trans(arg,template) -> dict:
 def getTransImg(even:StandEven,senduuid,sendname,tweetid,trans):
     try:
         #使用64进制减少长度
-        tasktype = encode_b64(int(time.time()),offset = 0)
+        tasktype = encode_b64(int(time.time()),offset = 0) + '_' + str(random.randint(0,1000))
         #检查推文缓存
         tweet_name = 's'
         tweet = tweetcache.getTweetFromCache(tweetid)
         if tweet is not None:
-            logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet_cache['userinfo']['name'] + ')')
+            logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['userinfo']['name'] + ')')
             #logger.info(tweet)
             tweet_cache = tweet
             tweet_name = tweet_cache['userinfo']['name']
         tt = TweetTrans()
         res = tt.getTransFromTweetID(
-            str(tweet_id),
+            str(tweetid),
             trans,
             tweet_name,
-            encode_b64(uuid,offset=0)+'-'+str(tasktype)
+            str(tasktype)
             )
         if res[0]:
             imgurl = trans_img_path + encode_b64(group_id,offset=0)+'-'+str(tasktype) + '.png'
@@ -248,7 +250,7 @@ argfilter.addArg(
     prefunc=getRealTweetID,
     verif='uint'
     )
-@on_message(msgfilter='([!！]烤推)|([!！]t)|(#)',bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
+@on_message(msgfilter='([!！]烤推)|([!！]t)|(#)',argfilter=argfilter,bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
 async def _(session:Session):
     if not rate_limit_bucket.consume(1):
         await session.send("烤推繁忙，请稍后再试")

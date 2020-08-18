@@ -10,6 +10,7 @@ import traceback
 #引入配置
 import config
 
+from datetime import datetime, timedelta, timezone
 from module.msgStream import SendMessage
 import module.msgStream as msgStream
 from helper import dictInit,dictHas,dictGet,dictSet
@@ -17,7 +18,7 @@ from helper import data_read,data_save,TempMemory,data_read_auto,file_exists,che
 from module.PushList import PushList
 
 #日志输出
-from helper import getlogger
+from helper import getlogger,check_path,data_read_auto,data_save
 logger = getlogger(__name__)
 logger_Event = getlogger(__name__+'_event',printCMD=False)
 #引入测试方法
@@ -30,7 +31,7 @@ except:
 推送唯一性检验及推送流
 '''
 baseconfigpath = 'tweitter'
-
+DEBUG = config.DEBUG
 #10进制与64进制互相转换(由于增速过快，缩写ID不设偏移)
 def encode_b64(n:int,offset:int = 0) -> str:
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
@@ -66,7 +67,7 @@ def decode_b64(str,offset:int = 0) -> int:
 推送列表
 """
 class TweePushList(PushList):
-    defaulttemplate = "$ifrelate $nick $typestr $relate_name 的推文： $else $nick的推特更新了 $end ：\n$text $imgs $relatestart---------------\n$relate_text $relate_imgs$relateend\n链接：$link\n临时推文ID：#$tempID"
+    defaulttemplate = "$ifrelate $nick $typestr了 $relate_user_name 的推文$else $nick的推特更新了$end：\n$text $imgs $relatestart---------------\n$relate_text $relate_imgs$relateend\n跟推延时：$senddur\n链接：$link\n临时推文ID：#$tempID"
     pushunit_base_config = {
         #是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
         'upimg':0,
@@ -122,7 +123,7 @@ class TweePushList(PushList):
         'change_ID','change_name','change_description',
         'change_headimg','change_followers'
         )
-    def __init__(self,init:bool = False,fileprefix:str = '',pushtype:str = 'tweet',baseconfigpath = baseconfigpath):
+    def __init__(self,init:bool = False,fileprefix:str = 'pushs',pushtype:str = 'tweet',baseconfigpath = baseconfigpath):
         super().__init__(pushtype,fileprefix + '_' + pushtype + '.json',basepath = baseconfigpath)
         self.baseconfigpath = baseconfigpath
         self.PushTemplate = {}
@@ -145,7 +146,7 @@ class TweePushList(PushList):
         if not filename:
             filename = self.pushTemplateFile
         data = data_read(filename,path)
-        if data[0] is False:
+        if data[0] is True:
             self.PushTemplate = data[2]
             return (True,data[1])
         return data
@@ -182,6 +183,9 @@ class TweePushList(PushList):
                         spyobj,
                         createobj,
                         lasteditobj)
+
+    def addPushunit(self,pushunit:dict):
+        return super().addPushunit(pushunit,self.pushunit_default_config)
 
     #添加与删除模版及模版管理
     def pushTemplateAddCover(self,name,config:dict):
@@ -222,16 +226,21 @@ class TweePushList(PushList):
         return (True,'设置成功')
     
     #信息打包
-    def baleForConfig(self,nick = '',des = '',upimg = 0,template = '',push:dict = {}):
-        return {
-            'upimg':upimg,
+    def baleForConfig(self,nick = '',des = '',upimg = None,template = None,push:dict = {}):
+        res = {
+            #'upimg':upimg,
             'unit':{
                 'nick':nick,
                 'des':des,
             },
-            'template':template,
+            #'template':template,
             'push':push
         }
+        if upimg is not None:
+            res['upimg'] = upimg
+        if template is not None:
+            res['template'] = template
+        return res
     #信息获取
     def getMergeConfKey(self,pushtoconfig:dict,config:dict = None,key = None):
         mergeConf = {
@@ -242,42 +251,43 @@ class TweePushList(PushList):
             },
             'template':'',
             'push':{}
-        }.update(self.pushunit_default_config)
+        }
+        mergeConf.update(self.pushunit_default_config)
         if not key:
-            mergeConf['upimg'] = pushtoconfig['upimg'] if pushtoconfig['upimg'] else mergeConf['upimg']
-            mergeConf['unit'].update(pushtoconfig['unit'] if pushtoconfig['unit'] else {})
-            mergeConf['template'] = pushtoconfig['template'] if pushtoconfig['template'] else mergeConf['template']
-            mergeConf['push'].update(pushtoconfig['push'] if pushtoconfig['push'] else {})
+            mergeConf['upimg'] = pushtoconfig['upimg'] if 'upimg' in pushtoconfig else mergeConf['upimg']
+            mergeConf['unit'].update(pushtoconfig['unit'] if 'unit' in pushtoconfig else {})
+            mergeConf['template'] = pushtoconfig['template'] if 'template' in pushtoconfig else mergeConf['template']
+            mergeConf['push'].update(pushtoconfig['push'] if 'push' in pushtoconfig else {})
             if config:
-                mergeConf['upimg'] = config['upimg'] if config['upimg'] else mergeConf['upimg']
-                mergeConf['unit'].update(config['unit'] if config['unit'] else {})
-                mergeConf['template'] = config['template'] if config['template'] else config['template']
-                mergeConf['push'].update(config['push'] if config['push'] else {})
+                mergeConf['upimg'] = config['upimg'] if 'upimg' in config else mergeConf['upimg']
+                mergeConf['unit'].update(config['unit'] if 'unit' in config else {})
+                mergeConf['template'] = config['template'] if 'template' in config else mergeConf['template']
+                mergeConf['push'].update(config['push'] if 'push' in config else {})
             return mergeConf
         elif key == 'upimg':
-            mergeConf['upimg'] = pushtoconfig['upimg'] if pushtoconfig['upimg'] else mergeConf['upimg']
+            mergeConf['upimg'] = pushtoconfig['upimg'] if 'upimg' in pushtoconfig else mergeConf['upimg']
             if config:
-                mergeConf['upimg'] = config['upimg'] if config['upimg'] else mergeConf['upimg']
+                mergeConf['upimg'] = config['upimg'] if 'upimg' in config else mergeConf['upimg']
             return mergeConf['upimg']
         elif key == 'template':
-            mergeConf['template'] = pushtoconfig['template'] if pushtoconfig['template'] else mergeConf['template']
+            mergeConf['template'] = pushtoconfig['template'] if 'template' in pushtoconfig else mergeConf['template']
             if config:
-                mergeConf['template'] = config['template'] if config['template'] else config['template']
+                mergeConf['template'] = config['template'] if 'template'in config else mergeConf['template']
             return mergeConf['template']
         elif key in ('nick','des'):
-            mergeConf['unit'].update(pushtoconfig['unit'] if pushtoconfig['unit'] else {})
+            mergeConf['unit'].update(pushtoconfig['unit'] if 'unit' in pushtoconfig else {})
             if config:
-                mergeConf['unit'].update(config['unit'] if config['unit'] else {})
+                mergeConf['unit'].update(config['unit'] if 'unit' in config else {})
             return mergeConf['unit'][key]
         else:
-            mergeConf['push'].update(pushtoconfig['push'] if pushtoconfig['push'] else {})
+            mergeConf['push'].update(pushtoconfig['push'] if 'push' in pushtoconfig else {})
             if config:
-                mergeConf['push'].update(config['push'] if config['push'] else {})
+                mergeConf['push'].update(config['push'] if 'push' in config else {})
             if key not in mergeConf['push']:
                 return None
             return mergeConf['push'][key]
     def getUnitConfKey(self,pushunit,key):
-        return self.getMergeConfKey(self.getUnitPushToConfig(pushunit),pushunit['config'],key)
+        return self.getMergeConfKey(self.getUnitPushToConfig(pushunit),pushunit['pushconfig'],key)
 
     #触发器
     def pushcheck_trigger(self,unit,**pushunit) -> bool:
@@ -362,45 +372,44 @@ class TweePushList(PushList):
             return (True,'属性值已更新{0}->{1}'.format(sourval,setvalue))
 """
 推特信息缓存
+加入推文使用addTweetToCache
 """
 class TweetCache:
     def __init__(self,baseconfigpath = baseconfigpath):
         self.baseconfigpath = baseconfigpath
         #缩写推特ID(缓存条)
         #单元：[缩写ID,推特ID]
-        self.newtweetid = 0
-        self.mintweetID = data_read_auto('mintweetID.json',default=[],path=baseconfigpath)
+        self.newTemptweetid = data_read_auto('newTemptweetid.json',default=0,path = baseconfigpath)
+        self.mintweetID = TempMemory('mintweetID',path = baseconfigpath,limit = 10000,autosave = True,autoload = True)
         #推特用户缓存(1000条)
-        self.userinfolist = TempMemory('userinfolist.json',path = baseconfigpath,limit = 1000,autosave = False,autoload = False)
+        self.userinfolist = TempMemory('userinfolist',path = baseconfigpath,limit = 1000,autosave = False,autoload = False)
         self.tweetspath = os.path.join(baseconfigpath,'tweetscache')
+        check_path(self.tweetspath)
         #推文缓存(150条/监测对象)
         #监测ID->缓存内容
         self.tweetscache = {}
     #推文相关
-    def getNewID(self):
-        newtweetid = self.newtweetid
-        newtweetid += 1
-        if newtweetid > 9999:
-            newtweetid = 1
-        return newtweetid
+    def __getNewID(self):
+        self.newTemptweetid += 1
+        if self.newTemptweetid > 9999:
+            self.newTemptweetid = 1
+        data_save('newTemptweetid.json',self.newTemptweetid,path = baseconfigpath)
+        return self.newTemptweetid
     def getTweetTempID(self,tweetid:int):
         mintweetID = self.mintweetID
         tweetid = int(tweetid)
-        for unit in mintweetID:
-            if unit[1] == tweetid:
-                return unit[0]
-        newtweetid = self.getNewID()
-        if len(mintweetID) > 9998:
-            mintweetID.pop(0)
-        mintweetID.append((newtweetid,tweetid))
-        data_save('mintweetID.json',mintweetID,path=baseconfigpath)
-        return newtweetid
+        item = mintweetID.find((lambda item,val: item[1] == val),tweetid)
+        if item is not None:
+            return item[0]
+        newTemptweetid = self.__getNewID()
+        mintweetID.join((newTemptweetid,tweetid))
+        return newTemptweetid
     def findTweetTempID(self,tweetid:int):
         mintweetID = self.mintweetID
         tweetid = int(tweetid)
-        for unit in mintweetID:
-            if unit[1] == tweetid:
-                return unit[0]
+        item = mintweetID.find((lambda item,val: item[1] == val),tweetid)
+        if item is not None:
+            return item[0]
         return -1
     def getTweetSourceID(self,minId:int):
         """
@@ -409,18 +418,18 @@ class TweetCache:
         """
         mintweetID = self.mintweetID
         minId = int(minId)
-        for unit in mintweetID:
-            if unit[0] == minId:
-                return unit[1]
+        item = mintweetID.find((lambda item,val: item[0] == val),minId)
+        if item is not None:
+            return item[1]
         return -1
     def addTweetToCache(self,tweetinfo):
         tweetscache = self.tweetscache
-        userid = tweetinfo['user']['id_str']
+        userid = tweetinfo['user_id_str']
         #判断缓存中是否已经存在此推文
-        if self.findTweetTempID(tweetinfo['id']) != -1:
+        if self.getTweetFromCache(tweetinfo['id'],tweetinfo['user_id_str']) is not None:
             return
         if userid not in tweetscache:
-            tweetscache[userid] = TempMemory(userid+'_tweets.json',path = self.tweetspath,limit = 150,autosave = False,autoload = False)
+            tweetscache[userid] = TempMemory(userid+'_tweets',path = self.tweetspath,limit = 150,autosave = True,autoload = True)
         if 'TempID' not in tweetinfo:
             tweetinfo['TempID'] = self.getTweetTempID(tweetinfo['id'])
         tweetscache[userid].join(tweetinfo)
@@ -428,39 +437,48 @@ class TweetCache:
     def getTweetsFromCache(self,userid:str) -> TempMemory:
         tweetscache = self.tweetscache
         userid = str(userid)
-        if file_exists(os.path.join(self.tweetspath,userid+'_tweets.json')):
-            tweetscache[userid] = TempMemory(userid+'_tweets.json',path = self.tweetspath,limit = 150,autosave = False,autoload = False)
+        if userid not in tweetscache:
+            if file_exists(os.path.join(self.tweetspath,userid+'_tweets.json')):
+                tweetscache[userid] = TempMemory(userid+'_tweets',path = self.tweetspath,limit = 150,autosave = True,autoload = True)
         if userid not in tweetscache:
             return None
         return tweetscache[userid]
-    def getTweetFromCache(self,tweetid:str,userid:str = None) -> dict:
+    def getTweetFromCache(self,tweetid:int,userid:str = None) -> dict:
         """
             尝试从缓存中获取推文，推文不存在时返回None
         """
         tweetscache = self.tweetscache
-        tweetid = str(tweetid)
+        tweetid = int(tweetid)
         if userid:
             tcache = self.getTweetsFromCache(userid)
             if not tcache:
                 return None
-            res = tweetscache[userid].find((lambda item,val:item['id_str'] == val),tweetid)
+            res = tweetscache[userid].find((lambda item,val:item['id'] == val),tweetid)
             return res
         for userid in tweetscache:
-            res = tweetscache[userid].find((lambda item,val:item['id_str'] == val),tweetid)
+            res = tweetscache[userid].find((lambda item,val:item['id'] == val),tweetid)
             if res:
                 return res
         return None
     #用户相关
-    #尝试从缓存中获取用户信息,返回用户信息表
-    def getUserInfo(self, userid:int = None,screen_name:str = None) -> list:
-        userid = int(userid)
+    def getUserInfo(self, userid:int = None,screen_name:str = None) -> dict:
+        """
+            尝试从缓存中获取用户信息,返回用户信息表
+        """
         if userid:
+            userid = int(userid)
             tu = self.userinfolist.find((lambda item,val:item['id'] == val),int(userid))
         elif screen_name:
             tu = self.userinfolist.find((lambda item,val:item['screen_name'] == val),screen_name)
         else:
             raise Exception("无效的参数")
         return tu
+    def getUserInfoFromllikename(self, name:str) -> dict:
+        """
+            模糊匹配用户昵称查找用户
+        """
+        return self.userinfolist.find((lambda item,val:item['name'].find(val) != -1),name)
+
 """
 status处理
 """
@@ -477,12 +495,19 @@ class TweetStatusDeal:
             screen_name,
             profile_image_url,
             profile_image_url_https,
-            **kw
+            default_profile_image,
+            default_profile,
+            protected,
+            followers_count,
+            friends_count,
+            verified,
+            statuses_count,
+            created_at
         ):
         """
             userinfo标准字典
             {
-                'version':'1.0',
+                'version':'1.2',
                 'notable':...,#用户是否值得关注
                 'id':...,
                 'id_str':...,
@@ -491,17 +516,19 @@ class TweetStatusDeal:
                 'screen_name':...,
                 'profile_image_url':...,
                 'profile_image_url_https':...,
-                #可选字段
                 'default_profile_image':...,
                 'default_profile':...,
                 'protected':...,
                 'followers_count':...,
                 'friends_count':...,
                 'verified':...,
+                'statuses_count':...,
+                'created_at':...,
             }
         """
         userinfo = {
                 'version':'1.0',
+                'notable':notable,
                 'id':int(id),
                 'id_str':str(id),
                 'name':name,
@@ -509,57 +536,108 @@ class TweetStatusDeal:
                 'screen_name':screen_name,
                 'profile_image_url':profile_image_url,
                 'profile_image_url_https':profile_image_url_https,
+                'default_profile_image':default_profile_image,
+                'default_profile':default_profile,
+                'protected':protected,
+                'followers_count':followers_count,
+                'friends_count':friends_count,
+                'verified':verified,
+                'statuses_count':statuses_count,
+                'created_at':created_at
             }
-        userinfo.update(kw)
         return userinfo
     def bale_tweetinfo(self,
-        notable,
         tweettype,
-        timestamp,
+        notable,
+        createtimestamp,
         id,
         text,
         user_id,
-        user_name,
-        imgs:list = [],
-        userinfo:dict = None,
+        user_sname,
+        media:list,
+        userinfo:dict,
+        relate_id = None,
+        relate_user_id = None,
+        relate_user_sname = None,
+        relate_userinfo = None,
         relate_notable:bool = False,#不存在的推文肯定不值得关注
         relate:dict = None
         ):
         """
             tweetinfo标准字典
             {
-                'version':'1.0',
+                'version':'1.2',
                 'type':...,#推文标识
                 'notable':...,#推文是否值得关注
-                'timestamp':...,
+                'createtimestamp':...,#创健时间戳
+                'createtimestr':...,#创建时间文本
+                'createtimestrsimple':...,#简化的时间文本
                 'id':...,
                 'id_str':...,
+                'minID':...,#压缩ID
                 'text':...,
-                'imgs':{imgsrc1,imgsrc2,...},
+                'media':{...,...},#媒体域
+                'link':...,#推文链接
                 'user_id':...,
                 'user_id_str':...,
-                'user_name':...,
-                'userinfo':{userinfo},
+                'user_sname':...,#用户sname
+                'userinfo':{userinfo},#用户对象
                 #依赖对象(可以为空)
-                'relate_notable':...,
-                'relate':{tweetinfo},
+                'hasrelate':...,#是否存在依赖
+                'relate_notable':...,#依赖是否值得重视
+                'relate_id':...,#依赖的推文ID
+                'relate_id_str':...,#依赖的推文ID文本
+                'relate_user_id':...,#依赖的推文用户ID
+                'relate_user_id_str':...,#依赖的推文用户ID文本
+                'relate_user_sname':...,#依赖的推文用户名
+                'relate_userinfo':{userinfo},#依赖的用户信息
+                'relate':{tweetinfo},#依赖的推文
             }
+            媒体域：
+                media_obj['id'] = media_unit['id']
+                media_obj['id_str'] = media_unit['id_str']
+                media_obj['type'] = media_unit['type']
+                media_obj['media_url'] = media_unit['media_url']
+                media_obj['media_url_https'] = media_unit['media_url_https']
         """
+        if relate is None and relate_id is not None and relate_user_sname is not None:
+            res = self.tweetcache.getTweetFromCache(relate_id,relate_user_sname)
+            if res is not None:
+                relate = res
+        if relate_userinfo is None and relate_user_id is not None and relate_user_sname is not None:
+            if relate is not None:
+                relate_userinfo = relate['userinfo']
+            else:
+                res = self.tweetcache.getUserInfo()
+                if res is not None:
+                    relate_userinfo = res
+
         tweetinfo = {
-                'version':'1.0',
+                'version':'1.2',
                 'type':tweettype,
-                'timestamp':timestamp,
+                'notable':notable,
+                'createtimestamp':createtimestamp,
+                'createtimestr':time.strftime("%Y{0}%m{1}%d{2} %H:%M:%S",time.localtime(createtimestamp)).format('年','月','日'),
+                'createtimestrsimple':time.strftime("%H:%M:%S", time.localtime(createtimestamp)),
                 'id':int(id),
                 'id_str':str(id),
+                'minID':encode_b64(int(id)),
                 'text':str(text),
-                'imgs':imgs.copy(),
+                'media':media,
                 'user_id':int(user_id),
                 'user_id_str':str(user_id),
-                'user_name':user_name,
-                'userinfo':(userinfo.copy() if userinfo else None),
+                'user_sname':user_sname,
+                'userinfo':userinfo,
+                'link':"https://twitter.com/{0}/status/{1}".format(user_sname,id),
                 #依赖对象(可以为空)
+                'hasrelate':(relate is not None),
                 'relate_notable':relate_notable,
-                'relate':(relate.copy() if relate else None),
+                'relate_id':(int(relate_id) if relate_id is not None else None),
+                'relate_id_str':(str(relate_id) if relate_id is not None else None),
+                'relate_user_id':(int(relate_user_id) if relate_user_id is not None else None),
+                'relate_user_id_str':(str(relate_user_id) if relate_user_id is not None else None),
+                'relate_user_sname':relate_user_sname,
+                'relate':relate
             }
         return tweetinfo
     def bale_userinfo_kw(self,*,
@@ -570,42 +648,69 @@ class TweetStatusDeal:
             screen_name,
             profile_image_url,
             profile_image_url_https,
+            default_profile_image,
+            default_profile,
+            protected,
+            followers_count,
+            friends_count,
+            verified,
+            statuses_count,
+            created_at,
             **kw
         ):
         return self.bale_userinfo(
-            notable,
-            id,
-            name,
-            description,
-            screen_name,
-            profile_image_url,
-            profile_image_url_https,
-            **kw)
+                notable,
+                id,
+                name,
+                description,
+                screen_name,
+                profile_image_url,
+                profile_image_url_https,
+                default_profile_image,
+                default_profile,
+                protected,
+                followers_count,
+                friends_count,
+                verified,
+                statuses_count,
+                created_at
+            )
     def bale_tweetinfo_kw(self,*,
-        notable,
         tweettype,
-        timestamp,
+        notable,
+        createtimestamp,
         id,
         text,
         user_id,
-        user_name,
+        user_sname,
+        imgs:list,
+        userinfo:dict,
+        relate_id = None,
+        relate_user_id = None,
+        relate_user_sname = None,
+        relate_notable:bool = False,#不存在的推文肯定不值得关注
+        relate:dict = None,
         **kw):
-        imgs:list = (kw['imgs'] if kw['imgs'] else [])
-        userinfo:dict = (kw['userinfo'] if kw['userinfo'] else None)
-        relate_notable:dict = (kw['relate_notable'] if kw['relate_notable'] else False) #不存在的推文肯定不值得关注
-        relate:dict = (kw['relate'] if kw['relate'] else None)
+        relate_id:int = (kw['relate_id'] if 'relate_id' in kw else None)
+        relate_user_id:int = (kw['relate_user_id'] if 'relate_user_id' in kw else None)
+        relate_user_sname:str = (kw['relate_user_sname'] if 'relate_user_sname' in kw else None)
+        relate_notable:dict = (kw['relate_notable'] if 'relate_notable' in kw else False) #不存在的推文肯定不值得关注
+        relate:dict = (kw['relate'] if 'relate'in kw else None)
         return self.bale_tweetinfo(
-                    notable,
-                    tweettype,
-                    timestamp,
-                    id,
-                    text,
-                    user_id,
-                    user_name,
-                    imgs,
-                    userinfo,
-                    relate_notable,#不存在的推文肯定不值得关注
-                    relate
+                        tweettype,
+                        notable,
+                        createtimestamp,
+                        id,
+                        text,
+                        user_id,
+                        user_sname,
+                        imgs,
+                        userinfo,
+                        relate_id,
+                        relate_user_id,
+                        relate_user_sname,
+                        relate_notable,#不存在的推文肯定不值得关注
+                        relate
                     )
 
     #用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或粉丝大于10000)
@@ -614,7 +719,6 @@ class TweetStatusDeal:
         if checkspy and pushlist.hasSpy(user['id_str']):
             return True
         if not user['default_profile_image'] and \
-            not user['default_profile'] and \
             not user['protected'] and \
             (int(user['followers_count'] / ((user['friends_count']+1))) > 5000 or user['followers_count'] > 10000):
             return True
@@ -624,7 +728,7 @@ class TweetStatusDeal:
         """
             userinfo标准字典
             {
-                'version':'1.0',
+                'version':'1.2',
                 'notable':...,#用户是否值得关注
                 'id':...,
                 'id_str':...,
@@ -633,7 +737,6 @@ class TweetStatusDeal:
                 'screen_name':...,
                 'profile_image_url':...,
                 'profile_image_url_https':...,
-                #可选字段
                 'default_profile_image':...,
                 'default_profile':...,
                 'protected':...,
@@ -645,7 +748,7 @@ class TweetStatusDeal:
             }
         """
         userinfo = {}
-        userinfo['version'] = '1.0'
+        userinfo['version'] = '1.2'
         userinfo['id'] = user.id
         userinfo['id_str'] = user.id_str
         userinfo['name'] = user.name
@@ -663,47 +766,59 @@ class TweetStatusDeal:
         userinfo['created_at'] = int(user.created_at.timestamp())
         userinfo['notable'] = self.isNotableUser(userinfo,checkspy)
         return userinfo
-    #重新包装推特信息
     def get_tweet_info(self,tweet,checkspy:bool = True):
         """
+            重新包装推特信息
             tweetinfo标准字典
             {
-                'version':'1.0',
+                'version':'1.2',
                 'type':...,#推文标识
                 'notable':...,#推文是否值得关注
-                'timestamp':...,
+                'createtimestamp':...,#创健时间戳
+                'createtimestr':...,#创建时间文本
+                'createtimestrsimple':...,#简化的时间文本
                 'id':...,
                 'id_str':...,
+                'minID':...,#压缩ID
                 'text':...,
-                'imgs':{imgsrc1,imgsrc2,...},
+                'media':{...,...},#媒体域
+                'link':...,#推文链接
                 'user_id':...,
                 'user_id_str':...,
-                'user_name':...,
-                'userinfo':{userinfo},
+                'user_sname':...,#用户sname
+                'userinfo':{userinfo},#用户对象
                 #依赖对象(可以为空)
-                'relate_notable':...,
-                ''
-                'relate':{tweetinfo},
+                'hasrelate':...,#是否存在依赖
+                'relate_notable':...,#依赖是否值得重视
+                'relate_id':...,#依赖的推文ID
+                'relate_id_str':...,#依赖的推文ID文本
+                'relate_user_id':...,#依赖的推文用户ID
+                'relate_user_id_str':...,#依赖的推文用户ID文本
+                'relate_user_sname':...,#依赖的推文用户名
+                'relate_userinfo':{userinfo},#依赖的用户信息
+                'relate':{tweetinfo},#依赖的推文
             }
+            媒体域：
+                media_obj['id'] = media_unit['id']
+                media_obj['id_str'] = media_unit['id_str']
+                media_obj['type'] = media_unit['type']
+                media_obj['media_url'] = media_unit['media_url']
+                media_obj['media_url_https'] = media_unit['media_url_https']
         """
-        tweetinfo = {}
-        tweetinfo['version'] = '1.0'
-        tweetinfo['type'] = ''
-        tweetinfo['created_at'] = int(tweet.created_at.timestamp())
-        tweetinfo['timestamp'] = tweetinfo['created_at']
-        tweetinfo['id'] = tweet.id
-        tweetinfo['id_str'] = tweet.id_str
+        userinfo = self.get_userinfo(tweet.user,checkspy)
+
+        tweettext = ''
         #尝试获取全文
         if hasattr(tweet,'extended_tweet') or hasattr(tweet,'full_text'):
             if hasattr(tweet,'full_text'):
-                tweetinfo['text'] = tweet.full_text.replace('&lt;','<').replace('&gt;','>')
+                tweettext = tweet.full_text
             else:
-                tweetinfo['text'] = tweet.extended_tweet['full_text'].replace('&lt;','<').replace('&gt;','>')
+                tweettext = tweet.extended_tweet['full_text']
         else:
-            tweetinfo['text'] = tweet.text.replace('&lt;','<').replace('&gt;','>')
+            tweettext = tweet.text
+        tweettext = tweettext.replace('&lt;','<').replace('&gt;','>')
 
-        #处理媒体信息
-        tweetinfo['extended_entities'] = []
+        media = []
         if hasattr(tweet,'extended_entities'):
             #图片来自本地媒体时将处于这个位置
             if 'media' in tweet.extended_entities:
@@ -714,7 +829,7 @@ class TweetStatusDeal:
                     media_obj['type'] = media_unit['type']
                     media_obj['media_url'] = media_unit['media_url']
                     media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
+                    media.append(media_obj)
         elif hasattr(tweet,'entities'):
             #图片来自推特时将处于这个位置
             if 'media' in tweet.entities:
@@ -725,15 +840,18 @@ class TweetStatusDeal:
                     media_obj['type'] = media_unit['type']
                     media_obj['media_url'] = media_unit['media_url']
                     media_obj['media_url_https'] = media_unit['media_url_https']
-                    tweetinfo['extended_entities'].append(media_obj)
-        tweetinfo['imgs'] = []
-        for unit in tweetinfo['extended_entities']:
-            tweetinfo['imgs'].append(unit['media_url_https'])
-        tweetinfo['user'] = self.get_userinfo(tweet.user,checkspy)
-        tweetinfo['user_id'] = tweetinfo['user']['user_id']
-        tweetinfo['user_id_str'] = tweetinfo['user']['user_id_str']
-        tweetinfo['user_name'] = tweetinfo['user']['user_name']
-        tweetinfo['notable'] = tweetinfo['user']['notable']
+                    media.append(media_obj)
+        tweetinfo = self.bale_tweetinfo(
+            'none',
+            userinfo['notable'],
+            int(tweet.created_at.now(timezone(timedelta(hours=0))).timestamp()),
+            tweet.id,
+            tweettext,
+            userinfo['id'],
+            userinfo['screen_name'],
+            media,
+            userinfo
+        )
         return tweetinfo
    
     def deal_tweet_type(self, status):
@@ -748,8 +866,6 @@ class TweetStatusDeal:
         else:
             return 'none' #未分类(主动发推)
     def deal_tweet(self, status) -> dict:
-        pushlist = self.pushlist
-        tweetcache = self.tweetcache
         """
         推文
         type:推文标识
@@ -757,49 +873,66 @@ class TweetStatusDeal:
         #监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
         tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
-        tweetinfo['status'] = status #原始数据
+        #tweetinfo['status'] = status #原始数据
 
         if tweetinfo['type'] == 'retweet':#大多数情况是被转推
             #转推时被转推对象与转推对象同时值得关注时视为值得关注
-            tweetinfo['retweeted'] = self.get_tweet_info(status.retweeted_status,True)
-            tweetinfo['retweeted']['type'] = 'relate'
-            
-            tweetinfo['relate'] = tweetinfo['retweeted']
+            tweetinfo['relate'] = self.get_tweet_info(status.retweeted_status,True)
+            tweetinfo['relate']['type'] = 'relate'
+            tweetinfo['relate_id'] = tweetinfo['relate']['id']
+            tweetinfo['relate_id_str'] = tweetinfo['relate']['id_str']
+            tweetinfo['relate_user_id'] = tweetinfo['relate']['user_id']
+            tweetinfo['relate_user_id_str'] = tweetinfo['relate']['user_id_str']
+            tweetinfo['relate_user_sname'] = tweetinfo['relate']['user_sname']
+            tweetinfo['relate_userinfo'] = tweetinfo['relate']['userinfo']
             tweetinfo['relate_notable'] = (tweetinfo['notable'] and tweetinfo['relate']['notable'])
         elif tweetinfo['type'] == 'quoted':
-            tweetinfo['quoted'] = self.get_tweet_info(status.quoted_status,True)
-            tweetinfo['quoted']['type'] = 'relate'
-            
-            tweetinfo['relate'] = tweetinfo['quoted']
+            tweetinfo['relate'] = self.get_tweet_info(status.quoted_status,True)
+            tweetinfo['relate']['type'] = 'relate'
+            tweetinfo['relate_id'] = tweetinfo['relate']['id']
+            tweetinfo['relate_id_str'] = tweetinfo['relate']['id_str']
+            tweetinfo['relate_user_id'] = tweetinfo['relate']['user_id']
+            tweetinfo['relate_user_id_str'] = tweetinfo['relate']['user_id_str']
+            tweetinfo['relate_user_sname'] = tweetinfo['relate']['user_sname']
+            tweetinfo['relate_userinfo'] = tweetinfo['relate']['userinfo']
             tweetinfo['relate_notable'] = (tweetinfo['notable'] and tweetinfo['relate']['notable'])
-        elif tweetinfo['type'] != 'none':
-            tweetinfo['relate'] = {
-                'id':status.in_reply_to_status_id,
-                'id_str':status.in_reply_to_status_id_str,
-                'text':'',
-                'user':{
-                    'id':status.in_reply_to_user_id,
-                    'id_str':status.in_reply_to_user_id_str,
-                    'screen_name':status.in_reply_to_screen_name,
-                }
-            }
-            tweetinfo['relate']['notable'] = pushlist.hasSpy(tweetinfo['relate']['user']['id_str'])
-            tweetinfo['relate_notable'] = (tweetinfo['notable'] and tweetinfo['relate']['notable'])
-
-            if pushlist.hasSpy(tweetinfo['Related_user']['id_str']):
-                tweetinfo['relate_notable'] = True
-            else:
-                userinfo = tweetcache.getUserInfo(tweetinfo['Related_user']['id'])
-                if userinfo:
-                    tweetinfo['relate_notable'] = self.isNotableUser(userinfo,False)
-                else:
-                    tweetinfo['relate_notable'] = False
-        else:
-            tweetinfo['relate_notable'] = False
+        elif tweetinfo['type'] != 'none' and tweetinfo['type'] != 'reply_to_user':
+            tweetinfo['hasrelate'] = True
             tweetinfo['relate'] = None
+            tweetinfo['relate_id'] = status.in_reply_to_status_id
+            tweetinfo['relate_id_str'] = status.in_reply_to_status_id_str
+            tweetinfo['relate_user_id'] = status.in_reply_to_user_id
+            tweetinfo['relate_user_id_str'] = status.in_reply_to_user_id_str
+            tweetinfo['relate_user_sname'] = status.in_reply_to_screen_name
+            tweetinfo['relate_userinfo'] = None
+            tweetinfo['relate_notable'] = False
+            res = self.tweetcache.getTweetFromCache(tweetinfo['relate_id'],tweetinfo['relate_user_sname'])
+            if res is not None:
+                tweetinfo['relate'] = res
+            if tweetinfo['relate'] is not None:
+                tweetinfo['relate_userinfo'] = tweetinfo['relate']['userinfo']
+            else:
+                res = self.tweetcache.getUserInfo(userid=tweetinfo['relate_id'])
+                if res is not None:
+                    tweetinfo['relate_userinfo'] = res
+            if tweetinfo['relate_userinfo'] is not None:
+                tweetinfo['relate_notable'] = tweetinfo['relate_userinfo']['notable']
+            if tweetinfo['relate'] is not None:
+                tweetinfo['relate_notable'] = tweetinfo['relate']['notable'] and tweetinfo['relate_notable']
+            tweetinfo['relate_notable'] = tweetinfo['notable'] and tweetinfo['relate_notable']
+        else:
+            tweetinfo['hasrelate'] = False
+            tweetinfo['relate'] = None
+            tweetinfo['relate_id'] = None
+            tweetinfo['relate_id_str'] = None
+            tweetinfo['relate_user_id'] = None
+            tweetinfo['relate_user_id_str'] = None
+            tweetinfo['relate_user_sname'] = None
+            tweetinfo['relate_userinfo'] = None
+            tweetinfo['relate_notable'] = False
         
         #推文是否值得关注
-        if pushlist.hasSpy(tweetinfo['user']['id_str']):
+        if self.pushlist.hasSpy(tweetinfo['user_id']):
             tweetinfo['tweetNotable'] = True
         else:
             tweetinfo['tweetNotable'] = (not tweetinfo['relate'] or tweetinfo['relate_notable']) and tweetinfo['notable']
@@ -813,7 +946,7 @@ class TweetStatusDeal:
 """
 class tweetToStrTemplate(string.Template):
     delimiter = '$'
-    idpattern = '[a-z]+_[a-z_]+'
+    idpattern = '[a-z_]+'
 class TweetEventDeal:
     def __init__(self,tweetstatusdeal:TweetStatusDeal,pushlist:TweePushList = None,tweetcache:TweetCache = None,baseconfigpath = baseconfigpath):
         self.baseconfigpath = baseconfigpath
@@ -831,14 +964,25 @@ class TweetEventDeal:
         """
             运行数据比较
             用于监测用户的信息修改
+            userinfo标准字典
             {
+                'version':'1.2',
+                'notable':...,#用户是否值得关注
                 'id':...,
                 'id_str':...,
                 'name':...,
                 'description':...,
                 'screen_name':...,
                 'profile_image_url':...,
-                'profile_image_url_https':...
+                'profile_image_url_https':...,
+                'default_profile_image':...,
+                'default_profile':...,
+                'protected':...,
+                'followers_count':...,
+                'friends_count':...,
+                'verified':...,
+                'statuses_count':...,
+                'created_at':...,
             }
             data['grouptype'] = 'userupdata'
             data['unittype'] = data[1]
@@ -854,21 +998,23 @@ class TweetEventDeal:
         evens = []
         old_userinfo = userinfolist.find((lambda item,val:item['id'] == val),userinfo['id'])
         if old_userinfo != None:
-            def compareChanges(key,data):
+            def compareChanges(key,cdata):
                 if key not in old_userinfo:
                     return None
                 if old_userinfo[key] != userinfo[key]:
                     #禁止粉丝数逆增长
-                    if key == 'followers_count' and old_userinfo[key] > userinfo[key]:
+                    if key == 'followers_count' and old_userinfo[key] >= userinfo[key]:
+                        return None
+                    if key == 'friends_count' and old_userinfo[key] >= userinfo[key]:
                         return None
                     data = {}
                     data['grouptype'] = 'userupdata'
-                    data['unittype'] = data[1]
+                    data['unittype'] = cdata[1]
                     data['user_id'] = userinfo['id']
                     data['user_id_str'] = str(userinfo['id_str'])
                     data['user_name'] = str(userinfo['name'])
                     data['user_screen_name'] = str(userinfo['screen_name'])
-                    data['des'] = data[0]
+                    data['des'] = cdata[0]
                     data['userinfo'] = userinfo.copy()
                     data['oldkey'] = old_userinfo[key]
                     data['newkey'] = userinfo[key]
@@ -881,16 +1027,24 @@ class TweetEventDeal:
                     #粉丝数更新仅对千整数推送事件
                     if key == 'followers_count' and old_userinfo[key] % 1000 != 0:
                         return None
-                    even = self.bale_event(data['grouptype'],data['unittype'],data['user_id_str'],data)
-                    evens.append(even)
-                    return even
+                    if key not in ('friends_count','protected','verified','default_profile_image','default_profile','statuses_count'):
+                        even = self.bale_event(data['grouptype'],data['unittype'],data['user_id_str'],data)
+                        evens.append(even)
+                        return even
                 return None
             checkkeys = {
                 'name':('昵称','ID'),
                 'description':('描述','description'),
-                'screen_name':('昵称','name'),
+                'screen_name':('用户名','name'),
                 'profile_image_url_https':('头像','headimg'),
-                'followers_count':('粉丝数','followers')
+                'followers_count':('粉丝数','followers'),
+                #以下仅更新，无事件
+                'friends_count':('关注数','friends_count'),
+                'protected':('推文受保护','protected'),
+                'verified':('通过验证的账户','verified'),
+                'default_profile_image':('头图','default_profile_image'),
+                'default_profile':('是否是默认头图','default_profile'),
+                'statuses_count':('发推数','statuses_count'),
                 }
             for key in checkkeys:
                 compareChanges(key,checkkeys[key])                    
@@ -903,10 +1057,12 @@ class TweetEventDeal:
         if checkuser:
             tweetinfo = res['tweetinfo']
             #notable = res['notable']
-            evens = self.checkUserInfoUpdata(tweetinfo['user'])
-            if tweetinfo['relate'] and tweetinfo['relate']['version']:
-                evens.append(self.checkUserInfoUpdata(tweetinfo['relate']['user']))
-            res['userevens'] = evens
+            events = self.checkUserInfoUpdata(tweetinfo['userinfo'])
+            if tweetinfo['relate'] is not None:
+                relateevens = self.checkUserInfoUpdata(tweetinfo['relate']['userinfo'])
+                for event in relateevens:
+                    events.append(event)
+            res['userevens'] = events
         return res
     #打包事件(事件组，事件元，引起变化的用户ID，事件数据)
     def bale_event(self,grouptype:str,unittype:str,spyid:str,data):
@@ -995,6 +1151,9 @@ class TweetEventDeal:
             'change_headimg':1, #头像更改(默认开启)
             'change_followers':1, #每N千粉推送一次关注数据(默认开启)
         """
+        if DEBUG:
+            triggermsg = self.eventToStr(event)
+            logger.info(triggermsg)
         pushlist = self.pushlist
         if event['grouptype'] == 'listen':
             units = pushlist.getLitsFromTweeUserID(event['spyid'])
@@ -1028,12 +1187,12 @@ class TweetEventDeal:
     def eventTrigger(self,event:dict,pushunit:dict):
         if event['grouptype'] in ('listen','reverse'):
             tweetinfo = event['data']
-            nick = self.pushlist.getUnitConfKey('nick')
-            template = self.pushlist.getUnitConfKey('template')
-            msg = self.tweetToMsg(tweetinfo,nick = nick,template = template)
+            nick = self.pushlist.getUnitConfKey(pushunit,'nick')
+            template = self.pushlist.getUnitConfKey(pushunit,'template')
+            msg = self.tweetToMsg(tweetinfo,nick = nick,template = template,simple=False)
             self.send_msg_pushunit(pushunit,msg)
         elif event['grouptype'] == 'userupdata':
-            nick = self.pushlist.getUnitConfKey('nick')
+            nick = self.pushlist.getUnitConfKey(pushunit,'nick')
             msg = self.userUpdataToMsg(event['data'],nick)
             self.send_msg_pushunit(pushunit,msg)
         else:
@@ -1043,9 +1202,9 @@ class TweetEventDeal:
         msg = '触发事件{0}-{1}来自{2}：\n'.format(event['grouptype'],event['unittype'],event['spyid'])
         if event['grouptype'] in ('listen','reverse'):
             tweetinfo = event['data']
-            msg = msg + self.tweetToMsg(tweetinfo)
+            msg = msg + self.tweetToMsg(tweetinfo,simple=True).toSimpleStr()
         elif event['grouptype'] == 'userupdata':
-            msg = msg + self.userUpdataToMsg(event['data'])
+            msg = msg + self.userUpdataToMsg(event['data']).toSimpleStr()
         else:
             msg = msg + '事件转换失败，{0} 未知事件组'.format(event['grouptype'])
         return msg
@@ -1065,7 +1224,7 @@ class TweetEventDeal:
         else:
             return '未知'
     #用户信息转文本
-    def userinfoToStr(self,userinfo:dict,simple = True) -> SendMessage:
+    def userinfoToStr(self,userinfo:dict,simple = True) -> str:
         """
             userinfo标准字典
             {
@@ -1104,110 +1263,200 @@ class TweetEventDeal:
             if 'protected' in userinfo:
                 msg.append("\n推文受保护：{0}".format(('是' if userinfo['protected'] else '否')))
             if 'created_at' in userinfo:
-                timestr = time.strftime("%Y年%m月%d %H:%M:%S", time.localtime(userinfo['created_at']))
+                timestr = time.strftime("%Y{0}%m{1}%d{2} %H:%M:%S",time.localtime(userinfo['created_at'])).format('年','月','日')
                 msg.append("\n账户创建时间：{0}".format(timestr))
         return msg
 
     #生成推文数据map
-    def tweetinfoGetMap(self,tweetinfo:dict):
+    def tweetinfoGetMap(self,tweetinfo:dict,nick = ''):
+        """
+            tweetinfo标准字典
+            {
+                'version':'1.2',
+                'type':...,#推文标识
+                'notable':...,#推文是否值得关注
+                'createtimestamp':...,#创健时间戳
+                'createtimestr':...,#创建时间文本
+                'createtimestrsimple':...,#简化的时间文本
+                'id':...,
+                'id_str':...,
+                'minID':...,#压缩ID
+                'text':...,
+                'media':{...,...},#媒体域
+                'link':...,#推文链接
+                'user_id':...,
+                'user_id_str':...,
+                'user_sname':...,#用户sname
+                'userinfo':{userinfo},#用户对象
+                #依赖对象(可以为空)
+                'hasrelate':...,#是否存在依赖
+                'relate_notable':...,#依赖是否值得重视
+                'relate_id':...,#依赖的推文ID
+                'relate_id_str':...,#依赖的推文ID文本
+                'relate_user_id':...,#依赖的推文用户ID
+                'relate_user_id_str':...,#依赖的推文用户ID文本
+                'relate_user_sname':...,#依赖的推文用户名
+                'relate_userinfo':{userinfo},#依赖的用户信息
+                'relate':{tweetinfo},#依赖的推文
+            }
+            媒体域：
+                media_obj['id'] = media_unit['id']
+                media_obj['id_str'] = media_unit['id_str']
+                media_obj['type'] = media_unit['type']
+                media_obj['media_url'] = media_unit['media_url']
+                media_obj['media_url_https'] = media_unit['media_url_https']
+        """
         tweetcache = self.tweetcache
-        if 'argmap' in tweetinfo:
-            tweetinfo['argmap']['senddur'] = str(int(time.time()) - int(tweetinfo['timestmap']))
-            return tweetinfo['argmap']
         argmap = {
                 'type':tweetinfo['type'],#推文状态
                 'typestr':self.tweetTypeToStr(tweetinfo['type']),#推文状态
-                'user_uuid':tweetinfo['user_id'],#用户唯一ID
-                'user_ID':tweetinfo['user_name'],#用户@ID
-                'user_name':(tweetinfo['userinfo']['screen_name'] if tweetinfo['userinfo'] else '@'+tweetinfo['user_name']),#用户名
-                'timestmap':tweetinfo['timestmap'],
-                'fulltime':time.strftime("%Y年%m月%d %H:%M:%S", time.localtime(int(tweetinfo['timestmap']))),
-                'time':time.strftime("%H:%M:%S", time.localtime(int(tweetinfo['timestmap']))),
-                'senddur':str(int(time.time()) - int(tweetinfo['timestmap'])),
-                'ID':tweetinfo['id_str'],
-                'minID':encode_b64(int(tweetinfo['id'])),
-                'tempID':tweetcache.findTweetTempID(int(tweetinfo['id'])),
+                'user_id':tweetinfo['user_id_str'],#用户唯一ID
+                'user_sname':tweetinfo['user_sname'],#用户@ID
+                'user_name':tweetinfo['userinfo']['name'],#用户名
+                'nick':(nick if nick else tweetinfo['userinfo']['name']),#用户昵称
+                'timestamp':tweetinfo['createtimestamp'],
+                'fulltime':tweetinfo['createtimestr'],
+                'time':tweetinfo['createtimestrsimple'],
+                'senddur':int(time.time()) - int(tweetinfo['createtimestamp']),
+                'id':tweetinfo['id_str'],
+                'minid':tweetinfo['minID'],
+                'tempID':tweetcache.findTweetTempID(int(tweetinfo['id'])) if 'TempID' not in tweetinfo else tweetinfo['TempID'],
                 'text':tweetinfo['text'],
+                'mintext':tweetinfo['text'][:15].replace('\r',' ').replace('\n',' ').strip(),
                 'imgs':'[!imgs!]',
-                'link':"https://twitter.com/{0}/status/{1}".format(tweetinfo['user_name'],tweetinfo['id_str'])
+                'link':tweetinfo['link'],
+                'hasrelate':False
             }
+        argmap['senddur'] = '{0}分钟'.format(round(argmap['senddur']/60,2))
+        if tweetinfo['type'] != 'none':
+            argmap['relate_type'] = 'relate'
+            argmap['relate_typestr'] = '依赖推文'
+            argmap['relate_user_id'] = tweetinfo['relate_user_id_str']
+            argmap['relate_user_sname'] = tweetinfo['relate_user_sname']
+            argmap['relate_id'] = tweetinfo['relate_id_str']
+            argmap['relate_minid'] = encode_b64(tweetinfo['relate_id'],offset=0)
+            argmap['relate_tempID'] = tweetinfo['relate']['TempID'] if tweetinfo['relate'] and 'TempID' in tweetinfo['relate'] else '未知'
+            argmap['relate_imgs'] = '[!relateimgs!]'
+            argmap['relate_link'] = "https://twitter.com/{0}/status/{1}".format(argmap['relate_user_sname'],argmap['relate_id'])
+            if tweetinfo['relate_userinfo'] is None:
+                argmap['relate_user_name'] = '@' + tweetinfo['relate_user_sname']
+            else:
+                argmap['relate_user_name'] = tweetinfo['relate_userinfo']['name']
+            if tweetinfo['relate'] is None:
+                argmap['hasrelate'] = False
+                argmap['relate_timestamp'] = argmap['timestamp']
+                argmap['relate_fulltime'] = argmap['fulltime']
+                argmap['relate_time'] = argmap['time']
+                argmap['relate_senddur'] = argmap['senddur']
+                argmap['relate_text'] = ''
+                argmap['relate_mintext'] = ''
+            else:
+                if tweetinfo['type'] == 'retweet':
+                    argmap['hasrelate'] = False
+                    argmap['text'] = tweetinfo['relate']['text']
+                    argmap['mintext'] = tweetinfo['relate']['text'][:15].replace('\r',' ').replace('\n',' ').strip()
+                else:
+                    argmap['hasrelate'] = True
+                    argmap['relate_timestamp'] = tweetinfo['relate']['createtimestamp']
+                    argmap['relate_fulltime'] = tweetinfo['relate']['createtimestr']
+                    argmap['relate_time'] = tweetinfo['relate']['createtimestrsimple']
+                    argmap['relate_senddur'] = int(time.time()) - int(tweetinfo['relate']['createtimestamp'])
+                    argmap['relate_text'] = tweetinfo['relate']['text']
+                    argmap['relate_mintext'] = tweetinfo['relate']['text'][:15].replace('\r',' ').replace('\n',' ').strip()
+                    argmap['relate_senddur'] = '{0}分钟'.format(round(argmap['relate_senddur']/60,2))
+
+            argmap['relate_nick'] = argmap['relate_user_name']
         if argmap['tempID'] == -1:
             argmap['tempID'] = '未生成'
-        tweetinfo['argmap'] = argmap
         return argmap
     #将推特数据应用到模版
-    def tweetToMsg(self,tweetinfo:dict,nick = None,template:str = None) -> SendMessage:
+    def tweetToMsg(self,tweetinfo:dict,nick = None,template:str = None,simple = False) -> SendMessage:
         if not template:
-            template = "推文ID：$ID\n推文标识：$typestr\n发布用户：$nick($user_ID)\n推文内容：$text $imgs\n发布时间：$fulltime"
-            template = template + "\n$relatestart---------------\n"
-            template = template + "依赖推文ID：$relate_ID\n依赖用户：$relate_user_name($relate_user_ID)\n依赖内容：$relate_text $relate_imgs\n发布时间：$relate_fulltime"
-            template = template + "$relateend\n临时推文ID：#$tempID"
-        
+            if not simple:
+                template = "推文ID：$id\n推文标识：$typestr\n发布用户：$nick(@$user_sname)\n推文内容：\n$text $imgs\n发布时间：$fulltime"
+                template += "$relatestart\n---------------\n"
+                template += "依赖推文ID：$relate_id\n依赖用户：$relate_user_name(@$relate_user_sname)\n依赖内容：\n$relate_text $relate_imgs\n发布时间：$relate_fulltime"
+                template += "$relateend\n临时推文ID：#$tempID"
+            else:
+                template = "$typestr,#$tempID,$minid,$mintext"
         #特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
         #特殊变量(仅识别一次) $ifrelate 依赖存在时 $else 不存在时 $end
-        msg = SendMessage()
         #生成模版参数地图
-        argmap = self.tweetinfoGetMap(tweetinfo)
-        if tweetinfo['relate']:
-            if not argmap['relate']:
-                relate = self.tweetinfoGetMap(tweetinfo['relate'])
-                for key in relate:
-                    argmap['relate_'+key] = relate[key]
-                argmap['relate_imgs'] = '[!relate_imgs!]'
-                argmap['relate'] = True
-        else:
-            argmap['relate'] = False
-        argmap['nick'] = nick
-        if not argmap['nick'] or argmap['nick'].strip() == '':
-            argmap['nick'] = argmap['user_name']
+        argmap = self.tweetinfoGetMap(tweetinfo,nick)
         #模版处理
-        if not argmap['relate']:
-            res = template.split('$relatestart',maxsplit = 1)
-            template = res[0]
-            if res[1]:
-                res = res[1].split('$relateend',maxsplit = 1)
-                if res[1]:
-                    template = template + res[1]
+        res = template.split('$relatestart',maxsplit = 1)
+        template = res[0]
+        if len(res) > 1:
+            res = res[1].split('$relateend',maxsplit = 1)
+            if argmap['hasrelate']:
+                template += res[0]
+            if len(res) > 1:
+                template += res[1]
 
         res = template.split('$ifrelate',maxsplit=1)
         template = res[0]
-        if res[1]:
+        if len(res) > 1:
             res = res[1].split('$else',maxsplit = 1)
-            if argmap['relate']:
-                template = template + res[0]
-            else:
-                if res[1]:
-                    template = template + res[1]
+            if argmap['type'] != 'none':
+                template += res[0]
+            res = res[1].split('$end',maxsplit = 1)
+            if len(res) > 1:
+                if argmap['type'] == 'none':
+                    template += res[0]
+                template += res[1]
         #应用模版
         st = tweetToStrTemplate(template)
         stres = st.safe_substitute(argmap)
         #处理图片(仅处理一次)
-        lock = False
-        relate_lock = False
-        spls = stres.partition('[!imgs!]')
-        for spl in spls:
-            if spl == '':
-                continue
-            sspls = spl.split('[!relate_imgs!]')
-            for sspl in sspls:
-                if sspl == '':
-                    continue
-                if sspl == '[!imgs!]':
-                    if lock:
-                        msg.append('[图片]')
-                        continue
-                    for src in argmap['imgs']:
-                        msg.append(msg.baleImgObj(src))
-                    lock = True
-                elif sspl == '[!relate_imgs!]':
-                    if relate_lock:
-                        msg.append('[图片]')
-                        continue
-                    for src in argmap['relate_imgs']:
-                        msg.append(msg.baleImgObj(src))
-                    relate_lock = True
-                else:
-                    msg.append(sspl.replace('[!imgs!]','[图片]').replace('[!relate_imgs!]','[图片]'))
+        """
+            media_obj['id'] = media_unit['id']
+            media_obj['id_str'] = media_unit['id_str']
+            media_obj['type'] = media_unit['type']
+            media_obj['media_url'] = media_unit['media_url']
+            media_obj['media_url_https'] = media_unit['media_url_https']
+        """
+        #生成媒体
+        msg:SendMessage = SendMessage()
+        mediatype = ''
+        for media_obj in tweetinfo['media']:
+            if media_obj['type'] == 'photo':
+                mediatype += '图片 '
+            elif media_obj['type'] == 'video':
+                mediatype += '视频 '
+            elif media_obj['type'] == 'animated_gif':
+                mediatype += 'GIF '
+            msg.append(msg.baleImgObj(media_obj['media_url']))
+        imgs = msg.toStandStr()
+        if mediatype:
+            imgs = '\n媒体 {0} ({1}个):\n{2}'.format(
+                mediatype,
+                len(tweetinfo['media']),
+                imgs
+            )
+        
+        #生成依赖媒体
+        relateimgs = ''
+        if argmap['hasrelate'] and tweetinfo['relate'] is not None:
+            msg:SendMessage = SendMessage()
+            mediatype = ''
+            for media_obj in tweetinfo['relate']['media']:
+                if media_obj['type'] == 'photo':
+                    mediatype += '图片 '
+                elif media_obj['type'] == 'video':
+                    mediatype += '视频 '
+                elif media_obj['type'] == 'animated_gif':
+                    mediatype += 'GIF '
+                msg.append(msg.baleImgObj(media_obj['media_url']))
+            relateimgs = msg.toStandStr()
+            if mediatype:
+                relateimgs = '\n依赖媒体 {0} ({1}个):\n{2}'.format(
+                    mediatype,
+                    len(tweetinfo['relate']['media']),
+                    relateimgs
+                )
+        stres = stres.replace('[!imgs!]',imgs,1).replace('[!relateimgs!]',relateimgs,1)
+        stres = stres.replace('[!imgs!]','[不可重复显示图片A]').replace('[!relateimgs!]','[不可重复显示图片B]')
+        msg = SendMessage(stres)
         return msg
     def userUpdataToMsg(self,userupdata:dict,nick:str = None,template:str = None) -> SendMessage:
         """
@@ -1222,7 +1471,6 @@ class TweetEventDeal:
             data['oldkey'] = old_userinfo[key]
             data['newkey'] = userinfo[key]
         """
-
         if nick and nick.strip() == '':
             nick = None
         userupdata['nick'] = (nick if nick else userupdata['user_screen_name'])
@@ -1230,15 +1478,14 @@ class TweetEventDeal:
             template = "{nick}({user_name})的{des}更新了：{oldkey}->{newkey}"
         msg = SendMessage()
         stl = template.format(**userupdata)
-        res = stl.split('[旧头像]',maxsplit = 1)
-        msg.append(res[0])
-        if res[1]:
-            msg.append(msg.baleImgObj(userupdata['oldimg']))
-            res = res[1].split('[新头像]',maxsplit = 1)
-            msg.append(res[0])
-            if res[1]:
-                msg.append(msg.baleImgObj(userupdata['newimg']))
-                msg.append(res[1])
+        msg.append(msg.baleImgObj(userupdata['oldimg']))
+        oldimgstr = msg.toStandStr()
+        msg.clear()
+        msg.append(msg.baleImgObj(userupdata['newimg']))
+        newimgstr = msg.toStandStr()
+        stl.replace('[旧头像]',oldimgstr)
+        stl.replace('[新头像]',newimgstr)
+        msg = SendMessage(stl)
         return msg
 
     #图片保存(文件名,下载url,基目录-'img',是否覆盖-否),返回值->(是否成功，描述，文件路径，完整文件名)
@@ -1266,14 +1513,18 @@ class TweetEventDeal:
     def send_msg_kw(self,target):
         return msgStream.send_msg(**target)
     def send_msg_pushunit(self,pushunit,message:SendMessage):
+        if not isinstance(message,msgStream.SendMessage):
+            if not isinstance(message,int):
+                raise TypeError('不支持的消息类型')
+            message = SendMessage(message)
         if not pushlist.getUnitConfKey(pushunit,'upimg') and isinstance(message,msgStream.SendMessage):
             message.designatedTypeToStr('img')
-        return msgStream.send_msg(**pushlist.baleSendTarget(pushunit,message))
+        return msgStream.send_msg_kw(**pushlist.baleSendTarget(pushunit,message))
 
-pushlist = TweePushList(init = True)
-tweetcache = TweetCache()
-tweetstatusdeal = TweetStatusDeal(pushlist,tweetcache)
-tweetevendeal = TweetEventDeal(tweetstatusdeal)
+pushlist:TweePushList = TweePushList(init = True)
+tweetcache:TweetCache = TweetCache()
+tweetstatusdeal:TweetStatusDeal = TweetStatusDeal(pushlist,tweetcache)
+tweetevendeal:TweetEventDeal = TweetEventDeal(tweetstatusdeal,pushlist,tweetcache)
 
 #新事件缓存
 newevenscache = TempMemory('evencache',limit = 100)
@@ -1346,7 +1597,7 @@ def on_resFromDealSourceData(notable,tweetinfo,userevens):
             on_even(even,'推文推送')
             #被动推送
             if tweetinfo['relate'] and \
-                tweetinfo['relate']['version'] and \
+                'version' in tweetinfo['relate'] and \
                 tweetinfo['relate']['notable'] and \
                 tweetinfo['type'] in ('quoted','reply_to_status','reply_to_user'):#被动推送标识检查
                 even = tweetevendeal.bale_event('reverse',tweetinfo['type'],tweetinfo['relate']['user_id'],tweetinfo)
@@ -1362,17 +1613,19 @@ def on_resFromDealSourceData(notable,tweetinfo,userevens):
         s = traceback.format_exc(limit=5)
         logger.error(s)
 def on_status(status,merge = False):
+    global tweetcache
+    res = tweetevendeal.dealSourceData(status)
     try:
-        res = tweetevendeal.dealSourceData(status)
         if merge:
             #检查推文是否被处理过，处理过的推文直接忽略
             if tweetcache.findTweetTempID(res['tweetinfo']['id']) > 0:
                 return
+        tweetcache.addTweetToCache(res['tweetinfo'])
         on_resFromDealSourceData(**res)
     except:
         s = traceback.format_exc(limit=5)
         msgStream.exp_send('推文源数据处理时异常',source='推文源',flag = '错误')
-        logger.error(status)
+        logger.error(res)
         logger.error(s)
 
 #事件处理队列(消耗事件)
@@ -1386,7 +1639,7 @@ def eventDeal():
         except:
             s = traceback.format_exc(limit=5)
             logger.warning(s)
-        run_info['queque'].task_done()
+        run_info['Eventqueque'].task_done()
 
 #预处理提交(预处理,默认进行合并检查)
 def submitStatus(status,merge:bool = True,source = '未知',timeout = 5,block=True):
@@ -1409,13 +1662,13 @@ def submitDeal():
         run_info['Submitqueque'].task_done()
 
 #运行推送线程
-def runTwitterApiThread():
+def runTwitterPushThread():
     logger.info("TwitterEvenPush 已启动")
     #预处理队列维护线程
     run_info['SubmitStatusThread'] = threading.Thread(
         group=None, 
         target=submitDeal, 
-        name='tweetPushDealThread',
+        name='tweetSubmitStatusDealThread',
         daemon=True
     )
     run_info['SubmitStatusThread'].start()

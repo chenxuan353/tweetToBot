@@ -23,7 +23,8 @@ def _():
 def _(plug:PluginsManage):
     if plug:
         #注册权限
-        plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
+        plug.registerPerm('manage',des = '全局管理权限',defaultperm=PlugMsgTypeEnum.none)
+        plug.registerPerm('selfmanage',des = '管理自己插件的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('infocheck',des = '信息查看权限',defaultperm=PlugMsgTypeEnum.none)
 
 @on_preprocessor()
@@ -52,7 +53,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='(help)|(帮助)',argfilter=argfilter,des='help或帮助 插件名 页码 - 获取帮助信息，插件名与页码可选，不显示被禁用插件')
+@on_message(msgfilter='(help)|(帮助)',argfilter=argfilter,des='help或帮助 插件名 页码 - 获取帮助信息，插件名与页码可选，不显示被禁用插件',at_to_me=False)
 async def _(session:Session):
     mastername = config.mastername
     project_des = config.project_des
@@ -87,31 +88,64 @@ argfilter.addArg(
     prefunc=(lambda arg:(arg if arg in plugGetNameList() else None)),
     canSkip=False
     )
-@on_message(msgfilter='禁用插件',argfilter=argfilter,bindsendperm='manage',des='禁用插件 插件名 - 启用插件')
+@on_message(msgfilter='全局禁用插件',argfilter=argfilter,bindsendperm='manage',des='全局禁用插件 插件名 - 启用插件')
 async def _(session:Session):
     plugnick = session.filterargs['plugnick']
     plug:PluginsManage = plugGetNamePlug(plugnick)
     if plug:
         if not plug.open:
-            session.send('插件{0}未启用'.format(plugnick))
+            session.send('插件 {0} 未启用'.format(plugnick))
         else:
             plug.switchPlug(False)
-            session.send('插件{0}禁用成功'.format(plugnick))
+            session.send('插件 {0} 禁用成功'.format(plugnick))
     else:
-        session.send('未查找到插件')
+        session.send('未查找到名为 {0} 的插件'.format(plugnick))
 
-@on_message(msgfilter='启用插件',argfilter=argfilter,bindsendperm='manage',des='启用插件 插件名 - 启用插件')
+@on_message(msgfilter='全局启用插件',argfilter=argfilter,bindsendperm='manage',des='全局启用插件 插件名 - 启用插件')
 async def _(session:Session):
     plugnick = session.filterargs['plugnick']
     plug:PluginsManage = plugGetNamePlug(plugnick)
     if plug:
         if plug.open:
-            session.send('插件{0}已经是启用状态'.format(plugnick))
+            session.send('插件 {0} 已经是启用状态'.format(plugnick))
         else:
             plug.switchPlug(True)
-            session.send('插件{0}启用成功'.format(plugnick))
+            session.send('插件 {0} 启用成功'.format(plugnick))
     else:
-        session.send('未查找到插件')
+        session.send('未查找到名为 {0} 的插件'.format(plugnick))
+
+
+@on_message(msgfilter='禁用插件',argfilter=argfilter,sourceAdmin=True,des='禁用插件 插件名 - 在当前聊天中禁用插件')
+async def _(session:Session):
+    plugnick = session.filterargs['plugnick']
+    plug:PluginsManage = plugGetNamePlug(plugnick)
+    if plug:
+        if session.authCheckSendDeny(plug.groupname,'plugopen'):
+            session.send('插件 {0} 未启用'.format(plugnick))
+        else:
+            res = session.authDenySelf(plug.groupname,'plugopen')
+            if not res[0]:
+                session.send('插件 {0} 禁用失败，{1}'.format(plugnick,res[1]))
+                return
+            session.send('插件 {0} 禁用成功'.format(plugnick))
+    else:
+        session.send('未查找到名为 {0} 的插件'.format(plugnick))
+
+@on_message(msgfilter='启用插件',argfilter=argfilter,sourceAdmin=True,des='启用插件 插件名 - 在当前聊天中启用插件')
+async def _(session:Session):
+    plugnick = session.filterargs['plugnick']
+    plug:PluginsManage = plugGetNamePlug(plugnick)
+    if plug:
+        if not session.authCheckSendDeny(plug.groupname,'plugopen'):
+            session.send('插件 {0} 已启用'.format(plugnick))
+        else:
+            res = session.authDenyRemovalSelf(plug.groupname,'plugopen')
+            if not res[0]:
+                session.send('插件 {0} 启用失败，{1}'.format(plugnick,res[1]))
+                return
+            session.send('插件 {0} 启用成功'.format(plugnick))
+    else:
+        session.send('未查找到名为 {0} 的插件'.format(plugnick))
 
 argfilter = PlugArgFilter()
 argfilter.addArg(

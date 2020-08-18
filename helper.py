@@ -102,7 +102,7 @@ def dictInit(d:dict,*args,endobj:dict = None) -> bool:
         nowunit = unit
         if unit not in nowd:
             nowd[unit] = {}
-    if endobj:
+    if endobj is not None:
         if nowd[nowunit] == {}:
             nowd[nowunit] = (endobj.copy() if type(endobj) == dict else endobj)
             return True
@@ -144,15 +144,14 @@ def dictSet(d:dict,*args,obj:dict = None) -> None:
     nowunit = None
     nowd = None
     for unit in args:
-        nowunit = unit
         if nowd is None:
             nowd = d
         else:
-            nowd = nowd[unit]
+            nowd = nowd[nowunit]
         nowunit = unit
         if unit not in nowd:
             nowd[unit] = {}
-    if obj:
+    if obj is not None:
         nowd[nowunit] = obj
 
 """
@@ -170,7 +169,7 @@ def data_read(filename:str,path:str = config_path) -> tuple:
         logger.warning('load IOError: 未找到文件或文件不存在-'+os.path.join(cache_base_path,path,filename))
         return (False,'配置文件读取失败')
     except:
-        logger.critical('数据文件读取解析异常')
+        logger.critical('数据文件读取解析异常,'+os.path.join(cache_base_path,path,filename))
         s = traceback.format_exc(limit=10)
         logger.critical(s)
         return (False,'配置文件解析异常')
@@ -181,12 +180,15 @@ def data_read(filename:str,path:str = config_path) -> tuple:
 def data_save(filename:str,data,path:str = config_path,object_hook=None) -> tuple:
     try:
         fw = open(os.path.join(cache_base_path,path,filename),mode = 'w',encoding='utf-8')
-        json.dump(data,fw,ensure_ascii=False,indent=4,object_hook=object_hook)
+        if object_hook:
+            json.dump(data,fw,ensure_ascii=False,indent=4,object_hook=object_hook)
+        else:
+            json.dump(data,fw,ensure_ascii=False,indent=4)
     except IOError:
         logger.error('save IOError: 未找到文件或文件不存在-'+os.path.join(cache_base_path,path,filename))
         return (False,'配置文件写入失败')
     except:
-        logger.critical('数据文件写入异常')
+        logger.critical('数据文件写入异常,'+os.path.join(cache_base_path,path,filename))
         s = traceback.format_exc(limit=10)
         logger.error(s)
         return (False,'配置文件写入异常')

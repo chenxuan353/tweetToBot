@@ -115,3 +115,17 @@ pushunit_default_config = {
         'change_followers':1, #每N千粉推送一次关注数据(默认开启)
     }
 }
+
+"""
+RSShub推送配置
+"""
+#是否启用RSS订阅
+RSS_open = True
+#RSS代理配置
+RSS_proxy = '' #127.0.0.1:10809
+RSS_level = 5 #默认轮询优先级(5则为五轮监测一次)，不建议修改，范围0-15
+RSS_interval = 5 #轮间监测间隔 单位秒，建议值1-15，实际默认间隔约为 轮询优先级*轮间监测间隔
+#RSShub地址(支持多个)
+RSShub_urls = [
+    'https://rsshub.app',
+]

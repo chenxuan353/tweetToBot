@@ -7,9 +7,10 @@ import threading
 import asyncio
 import os
 import re
+import json
 import config
 #日志输出
-from helper import getlogger,TempMemory,data_read,data_save,data_read_auto
+from helper import getlogger,TempMemory,data_read,data_save,data_read_auto,check_path
 logger = getlogger(__name__)
 sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
 """
@@ -19,13 +20,14 @@ sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
 推送时检查推送健康度 发现多次无法连接的情况会将信息提交
 本模块同时负责保存与推送重要信息
 """
+check_path(os.path.join('templist','msgStream'))
 
 send_count_path = 'msgStream.json'
 send_count = {} #发送统计
 send_log = {} #发送日志(每对象50条)
 
 #异常统计
-exp_info_path = 'msgStream_expinfo.json'
+exp_info_path = 'msgStream_expinfo'
 exp_info:TempMemory = TempMemory(exp_info_path,limit = 100,autosave=True,autoload=True)
 send_stream = {}
 allow_bottype = ['cqhttp','dingding']
@@ -36,7 +38,7 @@ def init():
         send_count = res[2]
         for bottype in send_count:
             for botuuid in send_count[bottype]:
-                dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid+'.json'),limit = 50,autosave = True,autoload = True))
+                dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid),limit = 50,autosave = True,autoload = True))
 """
 消息流ID管理器
 """
@@ -94,6 +96,8 @@ class SendMessage:
         self.infoObjs:list = list()
         if msg and type(msg) == str:
             self.infoObjs = self.parsingToObjlist(msg)
+    def clear(self):
+        self.infoObjs:list = list()
     def removeAllTypeObj(self,msgtype):
         self.infoObjs = list(filter((lambda obj:obj['msgtype']!=msgtype),self.infoObjs))
     def designatedTypeToStr(self,msgtype):
@@ -125,11 +129,13 @@ class SendMessage:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.insert(index,infoObj)
+        return self
     def append(self,infoObj):
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
         self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.append(infoObj)
+        return self
     def gerUrls(self) -> list:
         res = []
         for infoObj in self.infoObjs:
@@ -261,17 +267,23 @@ class SendMessage:
             'text':str(text),
         }
     @staticmethod
-    def baleUnknownObj(bottype,alt,data):
+    def baleUnknownObj(bottype,alt,flag,data:dict):
         """
             打包不明数据段(bot标识-不指向此bot是不明段将被alt替代,alt-错误替代,data-数据包)
+            data只能是单层数据包
         """
-        return {
+        res = {
             'msgtype':'unknown',
             'bottype':bottype,
-            'text':'[未知]',
-            'alt':alt,
-            'data':data
+            'flag':flag,
+            'text':'[来自{0}]'.format(bottype),
+            'alt':alt
         }
+        for key,value in data.items():
+            if type(value) not in (str,bool,int,float):
+                raise Exception("数据包字段异常")
+            res['data_'+key] = str(value)
+        return res
 
 """
 消息流
@@ -362,7 +374,7 @@ from helper import dictInit,dictHas,dictGet,dictSet
 def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
     if not sendObj:
         raise Exception('错误，来源OBJ不存在')
-    message_type = sendObj['message_type']
+    message_type = botgroup
     send_id = senduuid
     bindCQID = botuuid
     message = message.toStr('cqhttp')
@@ -388,9 +400,9 @@ SUConfig = {
 
 def exp_send(msg:SendMessage,source = '未知',flag = '信息',other:dict = None):
     global exp_info
-    if type(msg) == str:
-        msg = SendMessage(msg)
-    if not isinstance(msg,SendMessage):
+    if isinstance(msg,SendMessage):
+        msg = msg.toStandStr()
+    if type(msg) != str:
         raise Exception('不支持的消息类型')
     exp_info.join({
         'source':source,
@@ -449,7 +461,7 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
             'last_change':0,
             'last_deal':0,
         })
-        dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid+'.json'),limit = 250,autosave = True,autoload = True))
+        dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid),limit = 250,autosave = True,autoload = True))
     dictInit(send_count,bottype,botuuid,botgroup)
 
     #二阶段初始化
@@ -485,7 +497,7 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
             'botgroup':botgroup,
             'senduuid':senduuid,
             'sendObj':sendObj,
-            'message':message,
+            'message':message.toStandStr(),
             'sendtime':time.time(),
             'senddur':time.time()-sendstarttime,
             'dealsenddur':time.time()-dealstarttime
@@ -606,6 +618,7 @@ def getMsgStreamUnitErr(bottype:str,botuuid:str,botgroup:str,senduuid:str):
     return unit
 def getMsgStreamInfo(bottype:str,botuuid:str):
     unit = getCountUnit(bottype,botuuid)
+    stream:QueueStream = getStream(bottype,botuuid)
     if not unit:
         return "未查询到相关信息！"
     pushhealth = getPushHealth(bottype,botuuid)
@@ -622,12 +635,19 @@ def getMsgStreamInfo(bottype:str,botuuid:str):
         'group':{},
         'private':{}
     """
-    return """
-    健康度：{1}\n
-    发送计数：{total_send}\n
-    错误计数：{total_error}\n
-    回绝计数：{total_refuse}\n
-    短时错误计数：{error}
-    """.format(pushhealth,**unit)
+    status = round(stream.queue.size()*100/64,2)
+    if status < 15:
+        status = '畅通'
+    elif status < 40:
+        status = '空闲'
+    elif status < 60:
+        status = '拥挤'
+    elif status < 80:
+        status = '警告'
+    elif status < 90:
+        status = '异常'
+    else:
+        status = '阻塞'
+    return "健康度：{0}\n队列状态：{1}\n发送计数：{total_send}\n错误计数：{total_error}\n回绝计数：{total_refuse}\n短时错误计数：{error}".format(pushhealth,status,**unit)
 
 

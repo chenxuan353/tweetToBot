@@ -19,6 +19,8 @@ class PlugMsgFilter:
             raise Exception('过滤参数不为文本')
         if not filterstr.startswith('('):
             filterstr = '(' + filterstr + ')'
+        if filterstr.find(r'\b)') == -1:
+            filterstr = filterstr.replace(')',r'\b)')
         self.filterstr = filterstr
     def filter(self,smsg:SendMessage) -> list:
         msg = smsg
@@ -109,7 +111,7 @@ class PlugArgFilter:
         """
             打包并添加参数分离限制表
 
-            执行顺序 prefunc -> verif|类型验证 -> vlimit -> re -> func -> verif|类型转换
+            执行顺序 prefunc -> vlimit -> verif|类型验证 -> re -> func -> verif|类型转换
             :param name: 参数名，作为返回表的键值，不能重复
             :param nick: 错误时返回的参数昵称
             :param des: 参数介绍，错误时作为返回参数之一，也作为自动参数列表依据()
@@ -229,15 +231,15 @@ class PlugArgFilter:
             return True
         veriffun = {
             'int':{
-                'verif':(lambda arg:arg.isdecimal()),
+                'verif':(lambda arg:type(arg) is int or type(arg) is str and arg.isdecimal()),
                 'res':int
             },
             'uint':{
-                'verif':(lambda arg:arg.isdecimal() and int(arg) >= 0),
+                'verif':(lambda arg:(type(arg) is int or type(arg) is str and arg.isdecimal()) and int(arg) >= 0),
                 'res':int
             },
             'uintnozero':{
-                'verif':(lambda arg:arg.isdecimal() and int(arg) > 0),
+                'verif':(lambda arg:(type(arg) is int or type(arg) is str and arg.isdecimal()) and int(arg) > 0),
                 'res':int
             },
             'float':{'verif':vfloat,'res':float},
@@ -278,16 +280,6 @@ class PlugArgFilter:
                             else:
                                 return (False,ad['nick'],'数值无效(PF)',ad['des'])
                         arg = (newarg if type(newarg) != tuple else newarg[1])
-                    if ad['verif'] in veriffun:
-                        vf = veriffun[ad['verif']]
-                    else:
-                        vf = veriffun['other']
-                    if vf['verif'] is not None and not vf['verif'](arg):
-                        if ad['canSkip']:
-                            arglists[ad['name']] = ad['vlimit']['']
-                            continue
-                        else:
-                            return (False,ad['nick'],'数值无效(PF)',ad['des'])
                     
                     if ad['vlimit'] is not None and len(ad['vlimit']) > 1:
                         if arg in ad['vlimit']:
@@ -295,14 +287,28 @@ class PlugArgFilter:
                                 arg = ad['vlimit'][arg]
                         elif '*' in ad['vlimit']:
                             if ad['vlimit']['*'] != '':
-                                arg = ad['vlimit']['*']
+                                if ad['vlimit']['*'] == '*':
+                                    arg = arg
+                                else:
+                                    arg = ad['vlimit']['*']
                         else:
                             if ad['canSkip']:
                                 arglists[ad['name']] = ad['vlimit']['']
                                 continue
                             else:
                                 return (False,ad['nick'],'非法参数(不被允许的值)',ad['des'])
-                    
+
+                    if ad['verif'] in veriffun:
+                        vf = veriffun[ad['verif']]
+                    else:
+                        vf = veriffun['other']
+                    if 'verif' in vf and vf['verif'] is not None and not vf['verif'](arg):
+                        if ad['canSkip']:
+                            arglists[ad['name']] = ad['vlimit']['']
+                            continue
+                        else:
+                            return (False,ad['nick'],'数值无效(VP)',ad['des'])
+
                     if ad['re'] is not None:
                         arg = reDealStr(ad['re'],arg)
                         if arg is None:
@@ -324,8 +330,11 @@ class PlugArgFilter:
                         elif arg is None:
                             return (False,ad['des'],'参数不符合规则(fun)',ad['des'])
                         
-                    if vf['res'] is not None:
-                        arg = vf['res'](arg)
+                    if 'res' in vf and vf['res'] is not None:
+                        try:
+                            arg = vf['res'](arg)
+                        except:
+                            return (False,ad['des'],'参数类型错误(VT)',ad['des'])
                     identify = True
                     arglists[ad['name']] = arg
                     break

@@ -7,6 +7,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 from pluginsinterface.PluginLoader import plugGetListStr,plugGetNameList,plugGetNamePlugDes,SendMessage
 import asyncio
 import config
+import random
 from nonebot import NoneBot
 from helper import getlogger
 logger = getlogger(__name__)
@@ -35,6 +36,7 @@ def _(plug:PluginsManage):
         #plug.switchPlug(False) #关闭插件
         logger.info(plug.getPlugDes(simple=False))
         logger.info(plug.getPlugFuncsDes())
+        plug.registerPerm('say233',des = '使用233的权限',defaultperm=PlugMsgTypeEnum.group)
 
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
@@ -58,7 +60,7 @@ async def _(session:Session) -> PlugMsgReturn:
 
 
 #命令注册例
-@on_message(msgfilter='233',bindperm='say233',defaultperm=PlugMsgTypeEnum.group,des='233 - 回复一句233',at_to_me=False)
+@on_message(msgfilter='233',bindperm='say233',des='233 - 回复一句233',at_to_me=False)
 async def _(session:Session) -> PlugMsgReturn:
     session.send('233')
 
@@ -74,11 +76,22 @@ async def _(session:Session) -> PlugMsgReturn:
 async def _(session:Session):
     session.send('呜呜呜,这就爬')
 
+@on_message(msgfilter='爪巴',des='爪巴 - 随机爪巴',at_to_me=False)
+async def _(session:Session):
+    ss = ('我爬 我现在就爬Orz',
+            '我爪巴','你给爷爬OuO',
+            '呜呜呜别骂了 再骂BOT就傻了TAT',
+            '就不爬>_<',
+            '欺负可爱BOT 建议超级加倍TuT'
+        )
+    index = random.randint(0,len(ss)-1)
+    session.send(ss[index])
+
 @on_message(msgfilter='复读',des='复读 参数 - 复读参数',at_to_me=False)
 async def _(session:Session):
     res = await session.waitsend(session.argstr.strip())
     #res['message_id'] 会尽可能返回消息在发送消息的BOT对象返回值中获取消息ID
-    session.send('可能的话会在五秒后撤回消息...')
+    #session.send('可能的话会在五秒后撤回消息...')
     await asyncio.sleep(5)
     if res[0]:
         res = res[1]
@@ -90,6 +103,9 @@ async def _(session:Session):
     
 @on_message(msgfilter='(绝活)|(异常)|(无内鬼报个错)',des='绝活 参数 - 报个指定消息的异常')
 async def _(session:Session):
-    raise Exception(session.argstr.strip())
+    exception = ('')
+    index = random.randint(0,len(exception)-1)
+    session.send(exception[index])
+    #raise Exception(session.argstr.strip())
 
 
