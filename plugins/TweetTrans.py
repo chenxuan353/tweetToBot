@@ -137,7 +137,7 @@ async def _(session:Session):
         msg.append(msg.baleImgObj(urls[0]))
         session.send(msg)
         return
-    message = SendMessage(session.filtermsg).toSimpleStr()
+    message = SendMessage(session.argstr).toSimpleStr()
     template = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">{0}</p>'.format(message)
     setTranstemplate(session.bottype,session.botgroup,session.uuid,template)
     session.send('已设置模版为->'+message)
