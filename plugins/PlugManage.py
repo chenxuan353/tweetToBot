@@ -96,7 +96,7 @@ argfilter.addArg(
     prefunc=(lambda arg:(arg if arg in plugGetNameList() else None)),
     canSkip=False
     )
-@on_message(msgfilter='全局禁用插件',argfilter=argfilter,bindsendperm='manage',des='全局禁用插件 插件名 - 启用插件')
+@on_message(msgfilter='全局禁用插件',argfilter=argfilter,bindsendperm='manage',des='全局禁用插件 插件名 - 全局禁用插件')
 async def _(session:Session):
     plugnick = session.filterargs['plugnick']
     plug:PluginsManage = plugGetNamePlug(plugnick)
@@ -109,7 +109,7 @@ async def _(session:Session):
     else:
         session.send('未查找到名为 {0} 的插件'.format(plugnick))
 
-@on_message(msgfilter='全局启用插件',argfilter=argfilter,bindsendperm='manage',des='全局启用插件 插件名 - 启用插件')
+@on_message(msgfilter='全局启用插件',argfilter=argfilter,bindsendperm='manage',des='全局启用插件 插件名 - 全局启用插件')
 async def _(session:Session):
     plugnick = session.filterargs['plugnick']
     plug:PluginsManage = plugGetNamePlug(plugnick)

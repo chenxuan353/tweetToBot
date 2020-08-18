@@ -135,7 +135,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit=allow_st['Target']#设置默认值
     )
-@on_message(msgfilter='([！!]启用流式翻译)',argfilter=argfilter,des='启用流式翻译 目标 引擎(可选) 源语言(可选) 目标语言(可选) - 获取推送名单，别名pusllist、DD列表、单推列表',bindsendperm='streamtrans',at_to_me=False)
+@on_message(msgfilter='([！!]启用流式翻译)',argfilter=argfilter,des='启用流式翻译 目标 引擎(可选) 源语言(可选) 目标语言(可选) - 启用流式翻译',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
     transtarget = session.filterargs['transtarget'].strip()
     engine = session.filterargs['engine']
@@ -167,7 +167,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':''}
     )
-@on_message(msgfilter='([！!]关闭流式翻译)',argfilter=argfilter,des='启用流式翻译 目标 引擎(可选) 源语言(可选) 目标语言(可选) - 开启流式翻译',bindsendperm='streamtrans',at_to_me=False)
+@on_message(msgfilter='([！!]关闭流式翻译)',argfilter=argfilter,des='关闭流式翻译 目标 - 关闭流式翻译',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
     transtarget = session.filterargs['transtarget'].strip()
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
