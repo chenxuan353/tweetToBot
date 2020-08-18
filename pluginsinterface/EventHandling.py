@@ -149,6 +149,8 @@ class StandEven:
         msg = "{bottype}-{botuuid}-{botgroup}-{uuid}:".format(**self.__dict__)
         msg += self.message.toSimpleStr()
         return msg
+    def setReply(self,value:bool):
+        self.hasReply = value
     def Reply(self,message:SendMessage):
         if type(message) == str:
             message = SendMessage(message)

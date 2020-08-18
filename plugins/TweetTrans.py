@@ -185,7 +185,7 @@ def getTransImg(even:StandEven,senduuid,sendname,tweetid,trans):
             logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['userinfo']['name'] + ')')
             #logger.info(tweet)
             tweet_cache = tweet
-            tweet_name = tweet_cache['userinfo']['name']
+            tweet_name = tweet_cache['userinfo']['screen_name']
         tt = TweetTrans()
         res = tt.getTransFromTweetID(
             str(tweetid),
@@ -194,7 +194,7 @@ def getTransImg(even:StandEven,senduuid,sendname,tweetid,trans):
             str(tasktype)
             )
         if res[0]:
-            imgurl = trans_img_path + encode_b64(group_id,offset=0)+'-'+str(tasktype) + '.png'
+            imgurl = trans_img_path + str(tasktype) + '.png'
             trans_tmemory.join({
                 'bottype':even.bottype,
                 'botuuid':even.botuuid,

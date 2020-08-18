@@ -384,6 +384,8 @@ class Session:
             是否原路径回复过消息
         """
         return self.even.hasReply
+    def setReplay(self,value):
+        self.even.setReply(value)
 
 class SessionManagement:
     """

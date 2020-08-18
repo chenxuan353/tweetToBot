@@ -635,7 +635,7 @@ def getMsgStreamInfo(bottype:str,botuuid:str):
         'group':{},
         'private':{}
     """
-    status = round(stream.queue.size()*100/64,2)
+    status = round(stream.queue.qsize()*100/64,2)
     if status < 15:
         status = '畅通'
     elif status < 40:

@@ -533,11 +533,7 @@ def getPushToSetting(config:dict,kind:str='basic') -> str:
         },
         'template':{
             #推特推送模版
-            'retweet_template':'转推模版',
-            'quoted_template':'转推并评论模版',
-            'reply_to_status_template':'回复模版',
-            'reply_to_user_template':'提及模版', 
-            'none_template':'发推模版',
+            'template':'转推模版',
         },
         'ai':{
             #智能
@@ -560,6 +556,9 @@ def getPushToSetting(config:dict,kind:str='basic') -> str:
     if kind == 'basic':
         value = config['upimg']
         res += '\n图片:{0}'.format((value if value not in (0,1,'') else {0:'关闭',1:'开启','':'未定义'}[value]))
+    if kind == 'template':
+        value = config['template']
+        res += '\n模版:\n{0}'.format(value if value else '未定义')
     for key,value in config['push'].items():
         if key in attrlist[kind]:
             res += '\n{0}:{1}'.format(

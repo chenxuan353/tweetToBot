@@ -41,8 +41,11 @@ allow_st = {
         'ko':['韩语','韩'],
     })
 }
+allow_st['Source'][''] = 'auto'
+allow_st['Target'][''] = 'zh'
 #引擎参数解析对照表
 engine_nick = {
+    '':'tencent',
     'tencent':'tencent','腾讯':'tencent',
     'google':'google','谷歌翻译':'google','谷歌':'google',
 }

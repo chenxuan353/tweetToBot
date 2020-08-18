@@ -67,7 +67,7 @@ def decode_b64(str,offset:int = 0) -> int:
 推送列表
 """
 class TweePushList(PushList):
-    defaulttemplate = "$ifrelate $nick $typestr了 $relate_user_name 的推文$else $nick的推特更新了$end：\n$text $imgs $relatestart---------------\n$relate_text $relate_imgs$relateend\n跟推延时：$senddur\n链接：$link\n临时推文ID：#$tempID"
+    defaulttemplate = "$ifrelate $nick $typestr了 $relate_user_name 的推文$else $nick的推特更新了$end：\n$text $imgs $relatestart\n---------------\n$relate_text $relate_imgs$relateend\n跟推延时：$senddur\n链接：$link\n临时推文ID：#$tempID"
     pushunit_base_config = {
         #是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
         'upimg':0,
@@ -287,7 +287,7 @@ class TweePushList(PushList):
                 return None
             return mergeConf['push'][key]
     def getUnitConfKey(self,pushunit,key):
-        return self.getMergeConfKey(self.getUnitPushToConfig(pushunit),pushunit['pushconfig'],key)
+        return self.getMergeConfKey(self.getUnitPushToConfig(pushunit)['config'],pushunit['pushconfig'],key)
 
     #触发器
     def pushcheck_trigger(self,unit,**pushunit) -> bool:
@@ -297,7 +297,7 @@ class TweePushList(PushList):
             if setkey not in self.Pushunit_allowEdit:
                 return (False,'属性值不合法')
         
-        if setkey == 'upmig':
+        if setkey == 'upimg':
             if setvalue not in (0,1):
                 return (False,'设置值不合法')
             sourval = self.getMergeConfKey(pushtoconfig,key = setkey)
@@ -1163,7 +1163,7 @@ class TweetEventDeal:
                     if value == 1:
                         self.eventTrigger(event,pushunit)
                     elif event['data']['relate_notable']:
-                        aivalue = int(pushlist.getUnitConfKey(pushunit,"al_"+event['unittype']))
+                        aivalue = int(pushlist.getUnitConfKey(pushunit,"ai_"+event['unittype']))
                         if aivalue == 1:
                             self.eventTrigger(event,pushunit)
         elif event['grouptype'] == 'reverse':#被动推送
