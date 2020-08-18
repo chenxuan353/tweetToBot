@@ -169,7 +169,7 @@ argfilter.addArg(
     )
 @on_message(msgfilter='([！!]关闭流式翻译)',argfilter=argfilter,des='关闭流式翻译 目标 - 关闭流式翻译',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
-    transtarget = session.filterargs['transtarget'].strip()
+    transtarget = str(session.filterargs['transtarget'])
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
     if transtarget == '':
         transtarget = session.senduuid
