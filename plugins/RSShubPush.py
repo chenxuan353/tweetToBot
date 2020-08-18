@@ -3,7 +3,7 @@ from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTy
 from pluginsinterface.PluginLoader import PlugArgFilter
 
 import time
-from module.pollingRSShub import Priority_getlist,Priority_set
+from module.pollingRSShub import Priority_getlist,Priority_set,setStreamOpen
 
 from module.RSS import pushlist
 from module.pollingRSShub import rssapps
@@ -37,6 +37,16 @@ async def _(session:Session) -> PlugMsgReturn:
         session.sourcefiltermsg = msg[1:]
         return PlugMsgReturn.Allow
     return PlugMsgReturn.Refuse
+
+
+@on_message(msgfilter='启动RSS监听',bindsendperm='manage',des='启动RSS监听 - 启动RSS推送的主要监听')
+async def _(session:Session):
+    setStreamOpen(True)
+    session.send('已响应')
+@on_message(msgfilter='关闭RSS监听',bindsendperm='manage',des='关闭RSS监听 - 启动RSS推送的主要监听')
+async def _(session:Session):
+    setStreamOpen(False)
+    session.send('已响应')
 
 @on_message(msgfilter='RSS订阅授权',bindsendperm='manage',des='RSS订阅授权 - RSS订阅授权')
 async def _(session:Session):
@@ -180,7 +190,7 @@ async def _(session:Session):
         return
     session.send('路径：{0}\n订阅删除成功！'.format(path))
 
-@on_message(msgfilter='订阅源解码',argfilter=argfilter,des='订阅源解码 路径 - 获取解码后的路径',sourceAdmin=True,bindperm='use',bindsendperm='manageself')
+@on_message(msgfilter='订阅源解码',argfilter=argfilter,des='订阅源解码 路径 - 获取解码后的路径',sourceAdmin=True,bindperm='use',bindsendperm='manageself',at_to_me=False)
 async def _(session:Session):
     path = session.filterargs['path']
     session.send('路径：'+path)
@@ -214,7 +224,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='订阅列表',argfilter=argfilter,des='订阅列表 页码 - 获取订阅列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself')
+@on_message(msgfilter='订阅列表',argfilter=argfilter,des='订阅列表 页码 - 获取订阅列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself',at_to_me=False)
 async def _(session:Session):
     page = session.filterargs['page']
     l = pushlist.getLitsFromPushTo(session.bottype,session.botuuid,session.botgroup,session.uuid)

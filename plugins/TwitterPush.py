@@ -251,7 +251,7 @@ argfilter.addArg(
     prefunc=getRealTweetID,
     verif='uint'
     )
-@on_message(msgfilter='(获取推文)|(看推)',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='获取推文 推文ID或推文链接 - 获取指定推文')
+@on_message(msgfilter='(获取推文)|(看推)',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='获取推文 推文ID或推文链接 - 获取指定推文',at_to_me=False)
 async def _(session:Session):
     tweetid = session.filterargs['tweetid']
     tweet = tweetcache.getTweetFromCache(tweetid)
@@ -319,7 +319,7 @@ argfilter.addArg(
         prefunc=getRealTweetUserID,
         verif='other'
     )
-@on_message(msgfilter='查询推特用户',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='查询推特用户 用户ID或用户名 - 查询指定推特用户的信息')
+@on_message(msgfilter='查询推特用户',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='查询推特用户 用户ID或用户名 - 查询指定推特用户的信息',at_to_me=False)
 async def _(session:Session):
     userinfo = session.filterargs['userinfo']
     msg = "UID：{0}\n用户名：{1}\n用户昵称：{2}\n头像：{3}\n描述：{4}\n".format(
@@ -377,7 +377,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='推文列表',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='推文列表 用户ID或用户名 页码 - 查询指定推特用户的推文列表')
+@on_message(msgfilter='推文列表',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='推文列表 用户ID或用户名 页码 - 查询指定推特用户的推文列表',at_to_me=False)
 async def _(session:Session):
     userinfo = session.filterargs['userinfo']
     page = session.filterargs['page']
@@ -502,7 +502,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='(转推列表)|(pusllist)|(DD列表)|(单推列表)',argfilter=argfilter,des='转推列表 用户名 - 获取推送名单，别名pusllist、DD列表、单推列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself')
+@on_message(msgfilter='(转推列表)|(pusllist)|(DD列表)|(单推列表)',argfilter=argfilter,des='转推列表 用户名 - 获取推送名单，别名pusllist、DD列表、单推列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself',at_to_me=False)
 async def _(session:Session):
     page = session.filterargs['page']
     l = pushlist.getLitsFromPushTo(session.bottype,session.botuuid,session.botgroup,session.uuid)
