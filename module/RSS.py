@@ -102,7 +102,7 @@ class RSShubEvenDeal:
                     return False
             else:
                 #仅日语
-                if pushunit['pushconfig']['options']['onlyjp'] and not re.match(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',data['description']):
+                if pushunit['pushconfig']['options']['onlyjp'] and not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',data['description']):
                     return False
                 #不看投稿
                 if data['description'].find('/bfs/archive/') != -1 and not pushunit['pushconfig']['options']['notupload']:

@@ -43,7 +43,7 @@ async def _(session:Session) -> PlugMsgReturn:
             if not text:
                 return PlugMsgReturn.Allow
             if source == 'auto' and target == 'zh':
-                if not re.match(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',text):
+                if not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',text):
                     target = 'jp'
                 else:
                     source = 'jp'
