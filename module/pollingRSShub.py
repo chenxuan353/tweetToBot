@@ -90,6 +90,7 @@ run_info = {
     }
 def setStreamOpen(b:bool):
     run_info['keepRun'] = b
+    run_info['errorCount'] = 0
 
 def get_updata(trigger : bool = True):
     global rssapps
