@@ -1376,7 +1376,7 @@ class TweetEventDeal:
                 template = "推文ID：$id\n推文标识：$typestr\n发布用户：$nick(@$user_sname)\n推文内容：\n$text $imgs\n发布时间：$fulltime"
                 template += "$relatestart\n---------------\n"
                 template += "依赖推文ID：$relate_id\n依赖用户：$relate_user_name(@$relate_user_sname)\n依赖内容：\n$relate_text $relate_imgs\n发布时间：$relate_fulltime"
-                template += "$relateend\n临时推文ID：#$tempID"
+                template += "$relateend\n链接：$link\n临时推文ID：#$tempID"
             else:
                 template = "$typestr,#$tempID,$minid,$mintext"
         #特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
