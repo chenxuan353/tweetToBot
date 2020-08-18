@@ -226,7 +226,7 @@ class PluginsManage:
             :param simple: 为True时返回简化消息(默认True)
             :return: 字符串
         """
-        msg = "插件名：{name}\n版本：{version}\n作者：{auther}\n描述：{des}".format(
+        msg = "{name} V{version} --{auther}\n描述：{des}\n".format(
                     name = self.name,
                     version = self.version,
                     auther = self.auther,
@@ -253,15 +253,23 @@ class PluginsManage:
         if simple:
             return funcinfo[4]
         return "{1}|{2}|{4}|{5}|{6}|{7}".format(*funcinfo)
-    def getPlugFuncsDes(self,simple = True):
+    def getPlugFuncsDes(self,page:int = 1,simple = True):
         """
             获取插件函数描述
             :param simple: 为True时返回简化消息(默认True)
             :return: 字符串
         """
         msg = '' if simple else '函数名|消息过滤器|描述|限制标识|允许匿名|AtBot'
+        page = page - 1
+        i = 0
+        lll = len(self.funcs)
+        if page > int(lll/5):
+            page = 0
         for fununit in self.funcs:
-            msg += "\n" + self.__getFuncDes(fununit[1],simple=simple)
+            if i >= page*5 and i < (page+1)*5:
+                msg += "\n" + self.__getFuncDes(fununit[1],simple=simple)
+            i += 1
+        msg += '\n当前页{0}/{1} (共{2}个命令)'.format(page+1,int(lll/5)+1,lll)
         return msg
     def switchPlug(self,switch:bool = None):
         """
@@ -595,7 +603,7 @@ def plugGetNameList():
         for plug in PluginsManageList.values():
             NameListCache.append(plug.name)
     return NameListCache
-def plugGetNamePlug(name:str):
+def plugGetNamePlug(name:str) -> PluginsManage:
     global PluginsManageList
     for plug in PluginsManageList.values():
         if name == plug.name:

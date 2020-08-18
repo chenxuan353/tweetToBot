@@ -67,7 +67,15 @@ async def _(session:Session):
     page = session.filterargs['page']
     plugnick = session.filterargs['plugnick']
     if plugnick != '':
-        session.send(plugGetNamePlugDes(plugnick))
+        plug = plugGetNamePlug(plugnick)
+        if not plug:
+            session.send('插件不存在')
+            return
+        msg = ''
+        if page == 1:
+            msg += plug.getPlugDes().strip() + '\n------\n'
+        msg += plug.getPlugFuncsDes(page).strip()
+        session.send(msg)
         return
     if page == 1:
         msg = '----帮助----\n维护者：{mastername}\n项目描述：{project_des}\n项目地址：{project_addr}\n'.format(
