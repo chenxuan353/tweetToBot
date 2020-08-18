@@ -137,7 +137,7 @@ argfilter.addArg(
     )
 @on_message(msgfilter='([！!]启用流式翻译)',argfilter=argfilter,des='启用流式翻译 目标 引擎(可选) 源语言(可选) 目标语言(可选) - 启用流式翻译',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
-    transtarget = session.filterargs['transtarget'].strip()
+    transtarget = str(session.filterargs['transtarget'])
     engine = session.filterargs['engine']
     source = session.filterargs['source']
     target = session.filterargs['target']

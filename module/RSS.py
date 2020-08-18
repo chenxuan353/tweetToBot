@@ -97,7 +97,7 @@ class RSShubEvenDeal:
                 'onlyjp':False,
                 'notupload':False,
             """
-            if data['title'] == '转发动态':
+            if data['title'] == '转发动态' or data['title'] == '分享动态':
                 if not pushunit['pushconfig']['options']['re']:
                     return False
             else:
