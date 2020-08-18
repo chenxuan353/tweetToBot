@@ -32,7 +32,8 @@ if __name__ == "__main__":
     #加载nonebot
     if config.nonebot:
         import botinterface.nonebotstart as nonebotstart
-        nonebotstart.RunInThread()
+        #nonebotstart.RunInThread()
+        nonebotstart.Run()
     loop.run_forever()
 
 
