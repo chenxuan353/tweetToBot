@@ -1,4 +1,4 @@
-# 可提供一对多转烤推服务的bot后端v3
+# 全平台BOT插件兼容框架
 [![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 ## 简介
@@ -15,7 +15,7 @@
 
 BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发送、多接口插件兼容层-消息获取及响应
 
-已实现主要功能：机器翻译、多功能转推、烤推、RSS更新订阅
+已实现插件功能：机器翻译、多功能转推、烤推、RSS更新订阅等
 
 **项目目前支持 Python 3.7 +**
 
