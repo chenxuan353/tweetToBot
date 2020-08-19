@@ -57,8 +57,6 @@ async def _(session:Session) -> PlugMsgReturn:
         return PlugMsgReturn.Allow
     return PlugMsgReturn.Refuse
 
-
-
 #命令注册例
 @on_message(msgfilter='233',bindperm='say233',des='233 - 回复一句233',at_to_me=False)
 async def _(session:Session) -> PlugMsgReturn:

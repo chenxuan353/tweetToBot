@@ -225,7 +225,7 @@ async def _(session:Session):
 def getRealTweetID(arg:str):
     arg = arg.strip()
     if arg.startswith('https://twitter.com/') or arg.startswith('http://twitter.com/'):
-        arg = arg.strip('/')[-1]
+        arg = arg.split('/')[-1]
         arg = arg.split('?')[0]
         if not arg.isdigit():
             return None
