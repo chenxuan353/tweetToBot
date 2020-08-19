@@ -55,9 +55,9 @@ pip install -r requirements.txt
 cp config_example.py config.py
 ```
 
-按照配置文件里的说明进行配置
+打开项目根目录下的**config.py**文件，然后按照文件里的说明进行配置
 
-记得将各功能按需求开启或关闭
+*记得将各功能按需求开启或关闭
 
 ##### 启动项目
 
