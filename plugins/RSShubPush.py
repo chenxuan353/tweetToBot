@@ -91,6 +91,15 @@ async def _(session:Session):
 def getPath(arg:str):
     arg = arg.strip()
     arg = arg.replace('·','/')
+    if arg.startswith('https://live.bilibili.com/'):
+        arg = arg.split('/')[-1]
+        arg = arg.split('?')[0]
+        arg = '/bilibili/live/room/' + arg
+    if arg.startswith('https://space.bilibili.com/'):
+        arg = arg.replace('/dynamic','')
+        arg = arg.split('/')[-1]
+        arg = arg.split('?')[0]
+        arg = '/bilibili/user/dynamic/' + arg
     if arg.startswith('https://rsshub.app') or arg.startswith('http://rsshub.app'):
         arg = arg.replace('https://rsshub.app','')
         arg = arg.replace('http://rsshub.app','')
