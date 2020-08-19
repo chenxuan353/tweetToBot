@@ -27,6 +27,7 @@ def _(plug:PluginsManage):
         #注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
+        plug.registerPerm('manageopen',des = '管理授权开关的权限',defaultperm=PlugMsgTypeEnum.allowall)
         plug.registerPerm('manageself',des = '管理自己的权限',defaultperm=PlugMsgTypeEnum.allowall)
         #plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
 
@@ -48,7 +49,7 @@ async def _(session:Session):
     setStreamOpen(False)
     session.send('已响应')
 
-@on_message(msgfilter='RSS订阅授权',bindsendperm='manage',des='RSS订阅授权 - RSS订阅授权')
+@on_message(msgfilter='RSS订阅授权',bindsendperm='manageopen',des='RSS订阅授权 - RSS订阅授权')
 async def _(session:Session):
     if session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'RSShubPush','use'):
         session.send('已经拥有授权！')
@@ -58,7 +59,7 @@ async def _(session:Session):
         session.send(res[1])
     session.send('授权成功')
 
-@on_message(msgfilter='取消RSS订阅授权',bindsendperm='manage',des='取消RSS订阅授权 - 取消RSS订阅授权')
+@on_message(msgfilter='取消RSS订阅授权',bindsendperm='manageopen',des='取消RSS订阅授权 - 取消RSS订阅授权')
 async def _(session:Session):
     if not session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'RSShubPush','use'):
         session.send('尚无授权！')

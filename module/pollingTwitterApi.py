@@ -133,6 +133,7 @@ run_info = {
     }
 def setStreamOpen(b:bool):
     run_info['keepRun'] = b
+    run_info['errorCount'] = 0
 
 def on_status(status):
     twitter.submitStatus(status,source='轮询流')

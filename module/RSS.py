@@ -164,9 +164,10 @@ class RSShubEvenDeal:
                     rdes[0]
                 )
         elif path.startswith('/bilibili/live/room/'):
-            msg = "{0} 更新了\n{1}\n{2}".format(
+            msg = "{0} 更新了\n{2}{1}\n{3}".format(
                     unitdes,
                     ('   --' + nick if nick != '(未命名)' else ''),
+                    rssdata['title'],
                     rdes[0][:15].strip() + ('...' if len(rdes[0])>15 else '')
                 )
         else:

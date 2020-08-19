@@ -1476,15 +1476,16 @@ class TweetEventDeal:
         userupdata['nick'] = (nick if nick else userupdata['user_screen_name'])
         if not template:
             template = "{nick}({user_name})的{des}更新了：{oldkey}->{newkey}"
-        msg = SendMessage()
         stl = template.format(**userupdata)
-        msg.append(msg.baleImgObj(userupdata['oldimg']))
-        oldimgstr = msg.toStandStr()
-        msg.clear()
-        msg.append(msg.baleImgObj(userupdata['newimg']))
-        newimgstr = msg.toStandStr()
-        stl.replace('[旧头像]',oldimgstr)
-        stl.replace('[新头像]',newimgstr)
+        if userupdata['unittype'] == 'headimg':
+            msg = SendMessage()
+            msg.append(msg.baleImgObj(userupdata['oldimg']))
+            oldimgstr = msg.toStandStr()
+            msg.clear()
+            msg.append(msg.baleImgObj(userupdata['newimg']))
+            newimgstr = msg.toStandStr()
+            stl.replace('[旧头像]',oldimgstr)
+            stl.replace('[新头像]',newimgstr)
         msg = SendMessage(stl)
         return msg
 
