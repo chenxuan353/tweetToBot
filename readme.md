@@ -17,21 +17,93 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 
 已实现主要功能：机器翻译、多功能转推、烤推、RSS更新订阅
 
-**项目目前支持 Python 3.7 **
+**项目目前支持 Python 3.7 +**
 
 
 
-## 文档
+## 使用文档
 
 ### 文档首页(使用者请使用)
 
 [用户文档](https://chenxuan353.github.io/tweetTobot/)
 
-# Docs分支
 
-项目文档所在分支 通过Hexo部署。
 
-### 文档维护(开发者请参见)
+## 部署文档
+
+### 项目使用及配置
+
+直接克隆本项目或到release内克隆稳定版本
+
+需要安装python3用以启动项目，请确保python3在3.7及以上版本以免遭遇兼容性bug
+
+##### 查看python版本
+
+```shell
+python -V
+```
+
+##### 依赖安装
+
+```shell
+pip install -r requirements.txt
+```
+
+##### 配置项目
+
+```
+cp config_example.py config.py
+```
+
+按照配置文件里的说明进行配置
+
+记得将各功能按需求开启或关闭
+
+##### 启动项目
+
+```shell
+python3 ./start.py
+```
+
+
+
+### bot连接到后端
+
+部署到QQ需要使用支持CQHTTP协议的BOT端
+
+CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-mirai)、[mirai](https://github.com/mamoe/mirai)
+
+连接配置：
+
+在**ws_reverse_servers(反向ws配置)**的配置项内**输入服务器的IP与端口号**即可连上此后端
+
+示例：
+
+```json
+    "ws_reverse_servers": [
+        {
+            "enabled": true, 
+            "reverse_url": "", 
+            "reverse_api_url": "ws://127.0.0.1:8100/ws/api/", 
+            "reverse_event_url": "ws://127.0.0.1:8100/ws/event/", 
+            "reverse_reconnect_interval": 3000
+        }
+    ], 
+```
+
+
+
+
+
+
+
+
+
+## 关于Docs分支
+
+**此分支为项目文档所在分支 此文档通过Hexo部署。**
+
+### 文档维护(文档维护者请参见，仅部署后端可忽略)
 
 #### 依赖
 

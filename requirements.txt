@@ -1,0 +1,7 @@
+requests==2.23.0
+nonebot==1.5.0
+selenium==3.141.0
+tweepy==3.8.0
+xmltodict==0.12.0
+tencentcloud_sdk_python==3.0.187
+psyco==1.6

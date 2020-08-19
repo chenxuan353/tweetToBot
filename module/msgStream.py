@@ -68,20 +68,26 @@ def IOC_CQ_unknown(msgtype,data):
     if data['bottype'] == 'cqhttp':
         return data['alt']
 def UVS_conversionToStr(msgtype,data:dict):
-    if msgtype == 'text':
-        msg = data['text']
-        msg = msg.replace("&",'&amp;')
-        msg = msg.replace("[",'&#91;')
-        msg = msg.replace("]",'&#93;')
-    else:
-        msg = "[CX:"+msgtype
-        for key,value in data.items():
-            value = value.replace("&",'&amp;')
-            value = value.replace("[",'&#91;')
-            value = value.replace("]",'&#93;')
-            value = value.replace(",",'&#44;')
-            msg += "," + key + '=' + value
-        msg += "]"
+    try:
+        if msgtype == 'text':
+            msg = data['text']
+            msg = msg.replace("&",'&amp;')
+            msg = msg.replace("[",'&#91;')
+            msg = msg.replace("]",'&#93;')
+        else:
+            msg = "[CX:"+msgtype
+            for key,value in data.items():
+                value = str(value)
+                value = value.replace("&",'&amp;')
+                value = value.replace("[",'&#91;')
+                value = value.replace("]",'&#93;')
+                value = value.replace(",",'&#44;')
+                msg += "," + key + '=' + value
+            msg += "]"
+    except:
+        s = traceback.format_exc(limit=5)
+        logger.error(s)
+        msg = '[CX:unknown,bottype=unknown,flag=unknown,text=&#91异常&#93,alt=&#91异常&#93]'
     return msg
 conversionFunc = {
     'default':IOC_text,
@@ -312,8 +318,12 @@ class QueueStream:
             if not self.open:
                 time.sleep(1)
                 continue
-            unit = self.queue.get()
-            self.deal_func(**unit)
+            try:
+                unit = self.queue.get()
+                self.deal_func(**unit)
+            except:
+                s = traceback.format_exc(limit=5)
+                logger.error(s)
             time.sleep(self.senddur)
     def streamSwitch(self,value:bool = None):
         """

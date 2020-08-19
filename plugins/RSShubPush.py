@@ -5,6 +5,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 import time
 from module.pollingRSShub import Priority_getlist,Priority_set,setStreamOpen
 
+import config
 from module.RSS import pushlist
 from module.pollingRSShub import rssapps
 from helper import getlogger
@@ -24,10 +25,12 @@ def _():
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
+        #if not config.RSS_open:
+        #    plug.switchPlug(False) #关闭插件
         #注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
+        plug.registerPerm('manageuse',des = '管理授权开关的权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
-        plug.registerPerm('manageopen',des = '管理授权开关的权限',defaultperm=PlugMsgTypeEnum.allowall)
         plug.registerPerm('manageself',des = '管理自己的权限',defaultperm=PlugMsgTypeEnum.allowall)
         #plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
 
@@ -49,7 +52,7 @@ async def _(session:Session):
     setStreamOpen(False)
     session.send('已响应')
 
-@on_message(msgfilter='RSS订阅授权',bindsendperm='manageopen',des='RSS订阅授权 - RSS订阅授权')
+@on_message(msgfilter='RSS订阅授权',bindsendperm='manageuse',des='RSS订阅授权 - RSS订阅授权')
 async def _(session:Session):
     if session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'RSShubPush','use'):
         session.send('已经拥有授权！')
@@ -59,7 +62,7 @@ async def _(session:Session):
         session.send(res[1])
     session.send('授权成功')
 
-@on_message(msgfilter='取消RSS订阅授权',bindsendperm='manageopen',des='取消RSS订阅授权 - 取消RSS订阅授权')
+@on_message(msgfilter='取消RSS订阅授权',bindsendperm='manageuse',des='取消RSS订阅授权 - 取消RSS订阅授权')
 async def _(session:Session):
     if not session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'RSShubPush','use'):
         session.send('尚无授权！')

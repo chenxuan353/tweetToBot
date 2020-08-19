@@ -7,6 +7,8 @@ DEBUG = False
 #当前支持bot，cqhttp、dingding(待支持)
 #是否启用(nonebot使用ws连接，可多对一)
 nonebot = True
+NONEBOT_HOST = '0.0.0.0'
+NONEBOT_PORT = 8091
 
 #插件Session过期时间(单位s)
 Session_timeout = 300

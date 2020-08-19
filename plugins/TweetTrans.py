@@ -56,6 +56,7 @@ def _(plug:PluginsManage):
     if plug:
         #注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
+        plug.registerPerm('manageuse',des = '管理授权的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('trans',des = '烤推权限',defaultperm=PlugMsgTypeEnum.allowall)
 

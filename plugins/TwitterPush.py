@@ -9,6 +9,7 @@ from module.pollingTwitterApi import ptwitterapps,setStreamOpen as pollingsetStr
 
 from module.pollingTwitterApi import Priority_getlist,Priority_set
 import time
+import config
 import functools
 from helper import getlogger
 logger = getlogger(__name__)
@@ -27,8 +28,11 @@ def _():
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
+        #if not config.twitterpush:
+        #    plug.switchPlug(False) #关闭插件
         #注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
+        plug.registerPerm('manageuse',des = '使用的管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('manageself',des = '管理自己的权限',defaultperm=PlugMsgTypeEnum.allowall)
         plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
@@ -42,7 +46,7 @@ async def _(session:Session) -> PlugMsgReturn:
         return PlugMsgReturn.Allow
     return PlugMsgReturn.Refuse
 
-@on_message(msgfilter='转推授权',bindsendperm='manage',des='转推授权 - 转推授权')
+@on_message(msgfilter='转推授权',bindsendperm='manageuse',des='转推授权 - 转推授权')
 async def _(session:Session):
     if session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'twitterPush','use'):
         session.send('已经拥有授权！')
@@ -52,7 +56,7 @@ async def _(session:Session):
         session.send(res[1])
     session.send('授权成功')
 
-@on_message(msgfilter='取消转推授权',bindsendperm='manage',des='取消转推授权 - 取消转推授权')
+@on_message(msgfilter='取消转推授权',bindsendperm='manageuse',des='取消转推授权 - 取消转推授权')
 async def _(session:Session):
     if not session.authCheck(PlugMsgTypeEnum.getMsgtype(session.msgtype),'twitterPush','use'):
         session.send('尚无授权！')

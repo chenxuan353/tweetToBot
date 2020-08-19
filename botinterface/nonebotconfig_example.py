@@ -11,9 +11,6 @@ SUPERUSERS = {
 COMMAND_START = {'!','！'}
 #nonebot的debug开关
 DEBUG = False
-#nonebot的监听地址与启动端口
-NONEBOT_HOST = '0.0.0.0'
-NONEBOT_PORT = 8190
 
 #有命令在运行时的显示
 SESSION_RUNNING_EXPRESSION = '您有命令正在运行！'
