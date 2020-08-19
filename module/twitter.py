@@ -1475,7 +1475,7 @@ class TweetEventDeal:
             nick = None
         userupdata['nick'] = (nick if nick else userupdata['user_screen_name'])
         if not template:
-            template = "{nick}({user_name})的{des}更新了：\n{newkey}\n原：{oldkey}"
+            template = "{nick}({user_name})的{des}更新了：\n由 {oldkey} 更新为 {newkey}"
         stl = template.format(**userupdata)
         if userupdata['unittype'] == 'headimg':
             msg = SendMessage()
