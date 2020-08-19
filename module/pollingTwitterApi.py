@@ -181,6 +181,15 @@ def get_updata(trigger : bool = True,start = False):
             if cache:
                 if trigger:
                     on_status(statuss[i])
+            elif trigger:
+                try:
+                    userinfo = twitter.tweetstatusdeal.get_userinfo(statuss[i].user)
+                    userevens = twitter.tweetevendeal.checkUserInfoUpdata(userinfo)
+                    for usereven in userevens:
+                        twitter.on_even(usereven,source='轮询-用户更新事件')
+                except:
+                    s = traceback.format_exc(limit=5)
+                    logger.error(s)
 
 def Run():
     global ptwitterapps,polling_interval
