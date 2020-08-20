@@ -521,7 +521,7 @@ def on_message(
             if f(allow_anonymous,not session.anonymous) or \
                 f(not at_to_me,session.atbot) or \
                 not (session.msgtype & limitMsgType) or \
-                f(not sourceAdmin,session.senduuidinfo['sourceAdmin']) and not session.msgtype & PlugMsgTypeEnum.plugadmin:
+                f(not sourceAdmin,session.senduuidinfo['sourceAdmin']):
                 return PlugMsgReturn.Ignore
             #检查插件是否启用
             if not session.authCheck(
