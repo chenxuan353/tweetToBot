@@ -131,20 +131,24 @@ def Run():
     logger.info("PollingRSShub 已启动")
     star_interval = time.time()
     count = 0
-    while True:
-        if run_info['keepRun']:
-            run_info['isRun'] = True
-            run_info['lastRunTime'] = time.time()
-            count += 1
-            if count % 10 == 0:
-                nowtime = time.time()
-                logger.info("RSShub 完整检测，{0}s".format(round(nowtime - star_interval,2)))
-                star_interval = nowtime
-                count = 0
-            get_updata()
-        else:
-            run_info['isRun'] = False
-        time.sleep(max(polling_interval,rssapps.getWaitTime()))
+    try:
+        while True:
+            if run_info['keepRun']:
+                run_info['isRun'] = True
+                run_info['lastRunTime'] = time.time()
+                count += 1
+                if count % 10 == 0:
+                    nowtime = time.time()
+                    logger.info("RSShub 完整检测，{0}s".format(round(nowtime - star_interval,2)))
+                    star_interval = nowtime
+                    count = 0
+                get_updata()
+            else:
+                run_info['isRun'] = False
+            time.sleep(max(polling_interval,rssapps.getWaitTime()))
+    except:
+        s = traceback.format_exc(limit=10)
+        logger.error(s)
 
 #运行推送线程
 def runPollingRSShubThread():
