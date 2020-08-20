@@ -309,9 +309,9 @@ argfilter.addArg(
     )
 @on_message(msgfilter='设置推送优先级',argfilter=argfilter,bindsendperm='manage',des='设置推送优先级 用户ID 优先级 - 设置轮询优先级')
 async def _(session:Session):
-    path = session.filterargs['path']
+    value = session.filterargs['value']
     userinfo = session.filterargs['userinfo']
-    res = Priority_set(userinfo['id_str'],path)
+    res = Priority_set(userinfo['id_str'],value)
     session.send(res[1])
 
 
@@ -450,6 +450,7 @@ async def _(session:Session):
         userinfo['description'],
     )
     session.send('{0}\n推送添加成功！'.format(msg))
+
 
 argfilter = PlugArgFilter()
 argfilter.addArg(
