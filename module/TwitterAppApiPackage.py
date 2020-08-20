@@ -13,7 +13,7 @@ class TwitterAppApiPackage:
     def __init__(self,consumer_key:str,consumer_secret:str):
         #应用程序限制窗口
         self.apibucket = {
-            'users_timeline':TokenBucket(1.5,1500,0.5),#用户时间线
+            'users_timeline':TokenBucket(1.3,1500,0.5),#用户时间线
             'users_show':TokenBucket(0.9,900,0.5),#用户检索
             'users_lookup':TokenBucket(0.3,300,0.5),#多用户检索
             #'statuses_show':TokenBucket(0.45,450,0.5),#单推文检索
@@ -82,7 +82,7 @@ class TwitterAppApiPackage:
 
 class PollingTwitterApps:
     allowFunname = {
-        'users_timeline':1.5,#用户时间线
+        'users_timeline':1.3,#用户时间线
         'users_show':0.9,#用户检索
         'users_lookup':0.3,#多用户检索
         #'statuses_show':0.45,#单推文检索
