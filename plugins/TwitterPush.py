@@ -3,7 +3,7 @@ from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTy
 from pluginsinterface.PluginLoader import PlugArgFilter
 
 from pluginsinterface.PluginLoader import SendMessage
-from module.twitter import tweetcache,pushlist,tweetstatusdeal,tweetevendeal
+from module.twitter import tweetcache,pushlist,tweetstatusdeal,tweetevendeal,encode_b64,decode_b64
 from module.twitterApi import setStreamOpen as apisetStreamOpen,addListen,delListen,getListenList
 from module.pollingTwitterApi import ptwitterapps,setStreamOpen as pollingsetStreamOpen
 
@@ -805,3 +805,28 @@ async def _(session:Session):
     msg = '-设置列表-' + msg
     session.send(msg)
 
+argfilter = PlugArgFilter()
+argfilter.addArg(
+        'tweetid',
+        '正整数',
+        '推文ID或任意正整数',
+        verif='uint'
+    )
+@on_message(msgfilter='(64进制编码)|(2t64编码)|(压缩推文ID)',des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
+async def _(session:Session):
+    tweetid = session.filterargs['tweetid']
+    msg = encode_b64(tweetid,offset=0)
+    session.send(msg)
+
+argfilter = PlugArgFilter()
+argfilter.addArg(
+        'text',
+        '编码文本',
+        '64进制编码的文本',
+        verif='str'
+    )
+@on_message(msgfilter='(64进制编码)|(2t64编码)|(压缩推文ID)',des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
+async def _(session:Session):
+    text = session.filterargs['text']
+    msg = str(decode_b64(text,offset=0))
+    session.send(msg)
