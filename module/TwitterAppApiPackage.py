@@ -89,7 +89,7 @@ class PollingTwitterApps:
         'statuses_lookup':0.3,#多推文检索
     }
     waitTime = {
-        'users_timeline':0.9,#用户时间线
+        'users_timeline':0,#用户时间线
         'users_show':0,#用户检索
         'users_lookup':0,#多用户检索
         #'statuses_show':0.45,#单推文检索
@@ -105,7 +105,7 @@ class PollingTwitterApps:
             )
         appl = len(self.apps)
         for key in self.waitTime:
-            self.waitTime[key] = int((1/(self.allowFunname[key]*appl))*100)/100
+            self.waitTime[key] = int((1/(self.allowFunname[key]*appl))*100)/100 + 0.5
     #获取可用的应用密钥，没有可用的密钥时返回None
     def getAllow(self,funname:str) -> TwitterAppApiPackage:
         if funname not in self.allowFunname:
