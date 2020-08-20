@@ -844,7 +844,7 @@ class TweetStatusDeal:
         tweetinfo = self.bale_tweetinfo(
             'none',
             userinfo['notable'],
-            int(tweet.created_at.now(timezone(timedelta(hours=0))).timestamp()),
+            tweet.created_at.replace(tzinfo=timezone(timedelta(hours=0))).timestamp(),
             tweet.id,
             tweettext,
             userinfo['id'],

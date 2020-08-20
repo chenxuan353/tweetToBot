@@ -110,7 +110,7 @@ class RSSDealPackage:
             'link':checkfunc(item,'link'),
             'description':checkfunc(item,'description'),
             'pubDate':checkfunc(item,'pubDate'),
-            'pubTimestamp':(int(datetime.strptime(item['pubDate'], '%a, %d %b %Y %H:%M:%S GMT').now(timezone(timedelta(hours=0))).timestamp()) if 'pubDate' in item else 0),
+            'pubTimestamp':(datetime.strptime(item['pubDate'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=timezone(timedelta(hours=0))).timestamp() if 'pubDate' in item else 0),
             'category':checkfunc(item,'category'),
             'author':checkfunc(item,'author')
         }
