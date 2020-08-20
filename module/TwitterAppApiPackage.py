@@ -89,7 +89,7 @@ class PollingTwitterApps:
         'statuses_lookup':0.3,#多推文检索
     }
     waitTime = {
-        'users_timeline':0,#用户时间线
+        'users_timeline':0.9,#用户时间线
         'users_show':0,#用户检索
         'users_lookup':0,#多用户检索
         #'statuses_show':0.45,#单推文检索
