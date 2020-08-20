@@ -72,7 +72,7 @@ async def _(session: NLPSession):
                 card = session.event['sender']['card']
             if 'role' in session.event['sender']:
                 role = session.event['sender']['role']
-                if role in ('owner','admin'):
+                if role.strip() in ('owner','admin'):
                     sourceAdmin = True
             
         groupinfo = StandEven.baleToStandGroupInfo(groupuuid,'',5,card)
