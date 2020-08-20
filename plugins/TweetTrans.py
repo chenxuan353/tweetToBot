@@ -288,7 +288,7 @@ def getlist(bottype,botuuid,botgroup,uuid,page:int=1):
             ttm[i]['botuuid'] == botuuid and \
             ttm[i]['botgroup'] == botgroup and \
             ttm[i]['uuid'] == uuid:
-            if i >= page*5 and i < (page+1)*5:
+            if cout >= page*5 and cout < (page+1)*5:
                 s += '\n{0},{1},{2},{3}'.format(
                     ttm[i]['sendnick'],
                     ttm[i]['tasktype'],
