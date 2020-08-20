@@ -361,7 +361,7 @@ def getTweetsList(tweets,page:int = 1):
     for i in range(lll,-1,-1):
         j = lll - i
         if j >= page*5 and j < (page+1)*5:
-            msg += '\n' + tweetevendeal.tweetToMsg(tweets[j],simple=True).toStandStr()
+            msg += '\n' + tweetevendeal.tweetToMsg(tweets[i],simple=True).toStandStr()
     msg += '\n当前页{0}/{1} (共{2}个推文)'.format(page+1,int(lll/5)+1,lll)
     return msg
 argfilter = PlugArgFilter()
