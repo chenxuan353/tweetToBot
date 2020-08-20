@@ -21,7 +21,7 @@ from helper import getlogger,data_read_auto,data_save,TempMemory
 logger = getlogger(__name__)
 #线程池
 from concurrent.futures import ThreadPoolExecutor
-pool = ThreadPoolExecutor(max_workers=16,thread_name_prefix="trans_Threads")
+pool = ThreadPoolExecutor(max_workers=4,thread_name_prefix="trans_Threads")
 
 trans_img_path = config.trans_img_path
 transtemplate_filename = 'transtemplate.json'
