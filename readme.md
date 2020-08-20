@@ -106,7 +106,7 @@ apt-mark hold chromium-browser
 
 第二行命令用于标记不更新，防止apt-get upgrade等命令后把chrome更新了导致烤推驱动无法使用。
 
-#### 查询chrome版本**(记录一下，之后要用)
+#### 查询chrome版本(记录一下，之后要用)
 
 ```
 chromium-browser --version
