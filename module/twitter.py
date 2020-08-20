@@ -765,6 +765,10 @@ class TweetStatusDeal:
         userinfo['statuses_count'] = user.statuses_count
         userinfo['created_at'] = int(user.created_at.timestamp())
         userinfo['notable'] = self.isNotableUser(userinfo,checkspy)
+        if userinfo['profile_image_url'].endswith('_normal.jpg'):
+            userinfo['profile_image_url'] = userinfo['profile_image_url'].replace('_normal.jpg','.jpg')
+        if userinfo['profile_image_url_https'].endswith('_normal.jpg'):
+            userinfo['profile_image_url_https'] = userinfo['profile_image_url_https'].replace('_normal.jpg','.jpg')
         return userinfo
     def get_tweet_info(self,tweet,checkspy:bool = True):
         """
