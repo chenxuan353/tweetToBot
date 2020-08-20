@@ -342,7 +342,7 @@ class SendMessage:
             'text':'[{0}-{1}]'.format(bottype,atuuid),
             'alt':'@' + atuuid
         }
-        for key,value in data.items():
+        for key,value in other.items():
             if type(value) not in (str,bool,int,float):
                 raise Exception("数据包字段异常")
             res['data_'+key] = str(value)
