@@ -6,6 +6,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 from pluginsinterface.PluginLoader import StandEven
 import re
 import time
+import traceback
 from module.twitter import tweetcache
 from module.machine_translation import allow_st,engine_nick,engine_list
 from helper import dictSet,dictGet
@@ -36,15 +37,18 @@ def _(plug:PluginsManage):
         plug.registerPerm('streamtrans',des = '设置流式翻译的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('trans',des = '翻译权限',defaultperm=PlugMsgTypeEnum.allowall)
 
-def streamTrans(even:StandEven,text,source,target,timestamp):
+def streamTrans(even:StandEven,text,source,target,res,timestamp):
         if time.time() - timestamp > 15:
             logger.warning('翻译执行超时...')
             return
-        engine_func = engine_list[res[even.senduuid]['engine']]['func']
-        res = engine_func(text,source,target)
-        even.send()
-        even.send("机翻:{0}".format(res[1]))
-        even.setReplay(False)
+        try:
+            engine_func = engine_list[res[even.senduuid]['engine']]['func']
+            res = engine_func(text,source,target)
+            even.send("机翻:{0}".format(res[1]))
+            even.setReply(False)
+        except:
+            s = traceback.format_exc(limit=10)
+            logger.error(s)
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
@@ -60,7 +64,8 @@ async def _(session:Session) -> PlugMsgReturn:
                     target = 'jp'
                 else:
                     source = 'jp'
-            pool.submit(streamTrans,session.even,text,source,target,time.time())
+            streamTrans(session.even,text,source,target,res,time.time())
+            #pool.submit(streamTrans,session.even,text,source,target,time.time())
     return PlugMsgReturn.Allow
 
 
