@@ -73,7 +73,7 @@ python3 ./start.py
 
 部署到QQ需要使用支持CQHTTP协议的BOT端
 
-CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-mirai)、[mirai](https://github.com/mamoe/mirai)
+CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-mirai)、[mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 
 连接配置：
 
