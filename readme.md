@@ -1,4 +1,4 @@
-# 全平台BOT插件兼容框架·开发中
+# 跨平台BOT插件兼容框架·开发中
 [![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 ## 简介

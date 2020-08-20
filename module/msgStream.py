@@ -9,6 +9,7 @@ import os
 import re
 import json
 import config
+import random
 #日志输出
 from helper import getlogger,TempMemory,data_read,data_save,data_read_auto,check_path
 logger = getlogger(__name__)
@@ -63,7 +64,31 @@ def id_getRes(msgid:int):
 def IOC_text(msgtype,data):
     return data['text']
 def IOC_CQ_img(msgtype,data):
-    return "[CQ:image,timeout={timeout},file={src}]".format(**data)
+    if data['name']:
+        msg = "[CQ:image,timeout={timeout},file={name},url={src}]".format(**data)
+    else:
+        msg = "[CQ:image,timeout={timeout},file={src}]".format(**data)
+    return msg
+def IOC_CQ_At(msgtype,data):
+    return "[CQ:at,qq={atuuid}]".format(**data)
+def IOC_CQ_Video(msgtype,data):
+    if data['name']:
+        msg = "[CQ:video,file={name},src={src},timeout={timeout}]".format(**data)
+    else:
+        msg = "[CQ:video,file={src},timeout={timeout}]".format(**data)
+    return msg
+def IOC_CQ_Share(msgtype,data):
+    if not data['image']:
+        msg = "[CQ:share,title={title},url={url},content={content}]".format(**data)
+    else:
+        msg = "[CQ:share,title={title},url={url},content={content},image={image}]".format(**data)
+    return msg
+def IOC_CQ_Record(msgtype,data):
+    if data['name']:
+        msg = "[CQ:record,file={name},src={src},timeout={timeout}]".format(**data)
+    else:
+        msg = "[CQ:record,file={src},timeout={timeout}]".format(**data)
+    return msg
 def IOC_CQ_unknown(msgtype,data):
     if data['bottype'] == 'cqhttp':
         return data['alt']
@@ -93,7 +118,11 @@ conversionFunc = {
     'default':IOC_text,
     'cqhttp':{
         'img':IOC_CQ_img,
-        'unknown':IOC_CQ_unknown
+        'unknown':IOC_CQ_unknown,
+        'at':IOC_CQ_At,
+        'video':IOC_CQ_Video,
+        'share':IOC_CQ_Share
+        
     }
 }
 
@@ -112,34 +141,14 @@ class SendMessage:
                 if 'text' not in obj:
                     obj['text'] = '[{0}]'.format(obj['msgtype'])
                 obj['msgtype'] = 'text'
-    def __checkMsg(self,msgtype,data):
-        if type(data) != dict:
-            raise Exception('{msgtype},数据类型异常'.format(msgtype))
-        if msgtype == 'text':
-            if 'text' not in data:
-                raise Exception('{msgtype},text类型缺少文本内容'.format(msgtype))
-        elif msgtype == 'img':
-            if 'src' not in data:
-                raise Exception('{msgtype},img类型缺少源标签'.format(msgtype))
-            if 'timeout' not in data:
-                data['timeout'] = 15
-            data['timeout'] = str(data['timeout'])
-            data['text'] = '[图片]'
-        elif msgtype == 'unknown':
-            if 'text' not in data:
-                raise Exception('{msgtype},未知类型缺少转换标签'.format(msgtype))
-        else:
-            raise Exception('{msgtype},不支持的数据类型'.format(msgtype))
     def insert(self,infoObj,index:int = 0):
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
-        self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.insert(index,infoObj)
         return self
     def append(self,infoObj):
         if type(infoObj) == str:
             infoObj = self.baleTextObj(infoObj)
-        self.__checkMsg(infoObj['msgtype'],infoObj)
         self.infoObjs.append(infoObj)
         return self
     def gerUrls(self) -> list:
@@ -224,24 +233,71 @@ class SendMessage:
                         value = kv[1]
                         value = SendMessage.textDecoding(value)
                         data[kv[0]] = value
-                    if msgtype and msgtype in ('text','img','unknown'):
+                    if msgtype and msgtype in ('text','img','at','video','share','unknown'):
                         data['msgtype'] = msgtype
-                        if msgtype != 'img' or msgtype == 'img' and 'src' in data:
-                            if msgtype == 'img':
+                        if msgtype == 'img':
+                            if 'src' not in data:
+                                msgtype = 'unknown'
+                            else:
                                 if 'timeout' not in data:
                                     data['timeout'] = 15
                                 if 'text' not in data:
                                     data['text'] = "[图片]"
-                            if msgtype == 'unknown':
-                                if 'bottype' not in data:
-                                    data['bottype'] = 'unknown'
+                                if 'name' not in data:
+                                    data['name'] = ""
+                        elif msgtype == 'at':
+                            if 'atuuid' not in data:
+                                msgtype = 'unknown'
+                            elif 'bottype' not in data:
+                                msgtype = 'unknown'
+                            else:
+                                if 'text' not in data:
+                                    data['text'] = '[{0}-{1}]'.format(data['bottype'],data['atuuid'])
                                 if 'alt' not in data:
-                                    data['alt'] = '[unknown]'
-                            if 'text' not in data:
-                                data['text'] = "[未知]"
-                            objlist.append(data)
-                            continue
-                res[i] = '[CX:'+res[i]+']'
+                                    data['alt'] = '@' + data['atuuid']
+                        elif msgtype == 'video':
+                            if 'src' not in data:
+                                msgtype = 'unknown'
+                            else:
+                                if 'timeout' not in data:
+                                    data['timeout'] = 15
+                                if 'text' not in data:
+                                    data['text'] = "[图片]"
+                                if 'name' not in data:
+                                    data['name'] = ""
+                        elif msgtype == 'record':
+                            if 'src' not in data:
+                                msgtype = 'unknown'
+                            else:
+                                if 'timeout' not in data:
+                                    data['timeout'] = 15
+                                if 'text' not in data:
+                                    data['text'] = "[语音]"
+                                if 'name' not in data:
+                                    data['name'] = ""
+                        elif msgtype == 'share':
+                            if 'src' not in data:
+                                msgtype = 'unknown'
+                            else:
+                                if 'text' not in data:
+                                    data['text'] = '[分享 {0}]'.format(data['text'])
+                                if 'timeout' not in data:
+                                    data['timeout'] = 15
+                                if 'content' not in data:
+                                    data['content'] = "无描述"
+                                if 'image' not in data:
+                                    data['image'] = ""
+                        #处理被标记为未知的数据段
+                        if msgtype == 'unknown':
+                            if 'bottype' not in data:
+                                data['bottype'] = 'unknown'
+                            if 'alt' not in data:
+                                data['alt'] = '[unknown]'
+                        if 'text' not in data:
+                            data['text'] = "[未知]"
+                        objlist.append(data)
+                        continue
+                res[i] = '[CX:'+res[i]+']' #还原无法解析的文本
             msg = res[i]
             if msg:
                 msg = msg.replace('&amp;',"&")
@@ -262,14 +318,72 @@ class SendMessage:
             'text':msg
         }
     @staticmethod
-    def baleImgObj(src,timeout = 15,text = '[图片]'):
+    def baleImgObj(src,name = '',timeout = 15,text = '[图片]'):
         """
-            打包图片数据段(图片地址，超时时间，替代文本)
+            打包图片数据段(图片地址，文件名，超时时间，替代文本)
         """
         return {
             'msgtype':'img',
+            'name':name,
             'src':src,
             'timeout':str(timeout),
+            'text':str(text),
+        }
+    @staticmethod
+    def baleAtObj(bottype:str,atuuid:str,other:dict = {}):
+        """
+            打包At数据段(艾特来源bot，艾特对象ID，附加数据)
+            other只能是单层数据包
+        """
+        atuuid = str(atuuid)
+        res = {
+            'msgtype':'at',
+            'bottype':bottype,
+            'text':'[{0}-{1}]'.format(bottype,atuuid),
+            'alt':'@' + atuuid
+        }
+        for key,value in data.items():
+            if type(value) not in (str,bool,int,float):
+                raise Exception("数据包字段异常")
+            res['data_'+key] = str(value)
+        return res
+    @staticmethod
+    def baleRecordObj(src,name = '',timeout = 15,text = '[语音]'):
+        """
+            打包语音数据段(语音链接，文件名，超时时间，替代文本)
+            #生成随机字符串 ''.join(random.sample(string.ascii_letters + string.digits, 长度))
+        """
+        return {
+            'msgtype':'record',
+            'name':name,
+            'src':src,
+            'timeout':str(timeout),
+            'text':str(text),
+        }
+    @staticmethod
+    def baleVideoObj(src,name = '',timeout = 15,text = '[视频]'):
+        """
+            打包视频数据段(视频链接，文件名，超时时间，替代文本)
+            #生成随机字符串 ''.join(random.sample(string.ascii_letters + string.digits, 长度))
+        """
+        return {
+            'msgtype':'video',
+            'name':name,
+            'src':src,
+            'timeout':str(timeout),
+            'text':str(text),
+        }
+    @staticmethod
+    def baleShareObj(title,src,image = '',content = '无描述',text = '[分享链接]'):
+        """
+            打包链接分享数据段(视频链接，文件名，超时时间，替代文本)
+        """
+        return {
+            'msgtype':'share',
+            'title':title,
+            'src':src,
+            'content':content,
+            'image':image,
             'text':str(text),
         }
     @staticmethod
@@ -290,6 +404,7 @@ class SendMessage:
                 raise Exception("数据包字段异常")
             res['data_'+key] = str(value)
         return res
+
 
 """
 消息流

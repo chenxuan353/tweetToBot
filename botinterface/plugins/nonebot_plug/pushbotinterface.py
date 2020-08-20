@@ -97,7 +97,15 @@ async def _(session: NLPSession):
         if data.type == 'text':
             message.append(data.data['text'])
         elif data.type == 'image':
-            message.append(message.baleImgObj(data.data['url']))
+            message.append(message.baleImgObj(data.data['url'] if 'url' in data.data else data.data['file']))
+        elif data.type == 'at':
+            message.append(message.baleAtObj('cqhttp',data.data['qq']))
+        elif data.type == 'record':
+            message.append(message.baleRecordObj((data.data['url'] if 'url' in data.data else data.data['file']),data.data['file']))
+        elif data.type == 'video':
+            message.append(message.baleVideoObj((data.data['url'] if 'url' in data.data else data.data['file']),data.data['file']))
+        elif data.type == 'share':
+            message.append(message.baleShareObj(data.data['url'],data.data['image'],data.data['content'],data.data['title']))
         else:
             #直接组装CQ码
             CQm = '[CQ:' + data.type
