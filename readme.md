@@ -114,7 +114,7 @@ chromium-browser --version
 
 #### 安装**chromedriver**(需要先查询chrome版本)
 
-查找指定版本的**[chromedrive](https://chromedriver.storage.googleapis.com/index.html)**下载 大版本需要相同，不然无法使用
+查找指定版本的[chromedrive](https://chromedriver.storage.googleapis.com/index.html)下载 大版本需要相同，不然无法使用
 
 > chrome版本 Chromium 84.0.4147.105 则ChromeDriver对应版本可以是 ChromeDriver 84.0.4147.30
 
