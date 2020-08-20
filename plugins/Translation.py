@@ -39,7 +39,7 @@ async def _(session:Session) -> PlugMsgReturn:
         if session.senduuid in res:
             source = res[session.senduuid]['source']
             target = res[session.senduuid]['target']
-            text = session.sourcefiltermsg.strip()
+            text = session.message.toSimpleStr()
             if not text:
                 return PlugMsgReturn.Allow
             if source == 'auto' and target == 'zh':
