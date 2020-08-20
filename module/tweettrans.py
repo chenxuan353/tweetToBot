@@ -7,6 +7,7 @@ import datetime
 import random
 from enum import Enum
 
+import config
 from helper import check_path,TokenBucket
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import Options
@@ -33,9 +34,10 @@ def randUserAgent():
     ]
     return UAs[random.randint(0,len(UAs)-1)]
 
+drive_executable_path = config.ChromedriverPath
 class TweetTrans:
     driver : webdriver.Chrome = None
-    def __init__(self):
+    def __init__(self,executable_path = drive_executable_path):
         #时区与语言需要在系统环境设置内更改,建议自行添加字体支持
         #默认使用字体为思源体
         chrome_options = Options()
@@ -47,7 +49,10 @@ class TweetTrans:
         chrome_options.add_argument('lang=zh_CN.UTF-8')
         #chrome_options.add_argument('--disk-cache-dir='+os.path.join('.','cache','chromecache'))
         chrome_options.add_argument("user-agent="+randUserAgent())
-        self.driver = webdriver.Chrome(options=chrome_options)
+        if drive_executable_path:
+            self.driver = webdriver.Chrome(executable_path=executable_path,options=chrome_options)
+        else:
+            self.driver = webdriver.Chrome(options=chrome_options)
     def __del__(self):
         self.driver.close()
         self.driver.quit()
