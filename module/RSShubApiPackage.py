@@ -136,7 +136,7 @@ class RSSDealPackage:
             'language':checkfunc(channel,'language'),
             'pubDate':checkfunc(channel,'pubDate'),
             'lastBuildDate':checkfunc(channel,'lastBuildDate'),
-            'lastBuildTimestamp':(int(datetime.strptime(channel['lastBuildDate'], '%a, %d %b %Y %H:%M:%S GMT').timestamp()) if 'lastBuildDate' in channel else 0),
+            'lastBuildTimestamp':(datetime.strptime(channel['lastBuildDate'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=timezone(timedelta(hours=0))).timestamp() if 'lastBuildDate' in channel else 0),
             'generator':checkfunc(channel,'generator'),
             'item':[]
         }
