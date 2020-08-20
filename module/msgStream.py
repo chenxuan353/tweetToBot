@@ -165,9 +165,12 @@ class SendMessage:
         for infoObj in self.infoObjs:
             text += self.__infoObjToStr(infoObj['msgtype'],infoObj,Conversion_flag)
         return text
-    def toSimpleStr(self):
+    def toSimpleStr(self,onlytext=False):
         text = ""
         for infoObj in self.infoObjs:
+            if onlytext:
+                if infoObj['msgtype'] != 'text':
+                    continue
             text += infoObj['text']
         return text
     def toStandStr(self):
