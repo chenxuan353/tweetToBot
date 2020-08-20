@@ -42,9 +42,9 @@ def streamTrans(even:StandEven,text,source,target,timestamp):
             return
         engine_func = engine_list[res[even.senduuid]['engine']]['func']
         res = engine_func(text,source,target)
+        even.send()
         even.send("机翻:{0}".format(res[1]))
         even.setReplay(False)
-
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
@@ -52,7 +52,7 @@ async def _(session:Session) -> PlugMsgReturn:
         if session.senduuid in res:
             source = res[session.senduuid]['source']
             target = res[session.senduuid]['target']
-            text = session.message.toSimpleStr(onlytext = True)
+            text = session.message.filterToStr(('text'))
             if not text:
                 return PlugMsgReturn.Allow
             if source == 'auto' and target == 'zh':
@@ -103,6 +103,11 @@ async def _(session:Session):
                 tweets = tweetcache.getTweetFromCache(tweetid = tweetid)
                 if tweets is not None:
                     text = tweets['text']
+    elif source == 'auto' and target == 'zh':
+        if not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',text):
+            target = 'jp'
+        else:
+            source = 'jp'
     engine_func = engine_list[engine]['func']
     res = engine_func(text,source,target)
     if not res[0]:
@@ -153,6 +158,9 @@ async def _(session:Session):
     target = session.filterargs['target']
     if transtarget == '':
         transtarget = session.senduuid
+    if dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid,transtarget):
+        session.send("{0} 的流式翻译已经为启动状态".format(transtarget))
+        return
     streamobj = {
         'bottype':session.bottype,
         'botgroup':session.botgroup,
@@ -215,7 +223,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='([！!]流式翻译列表)',des='流式翻译列表 - 流式翻译列表',bindsendperm='streamtrans',at_to_me=False)
+@on_message(msgfilter='([！!]流式翻译列表)',argfilter=argfilter,des='流式翻译列表 - 流式翻译列表',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
     page = session.filterargs['page']
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
