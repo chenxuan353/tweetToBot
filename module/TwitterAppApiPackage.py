@@ -13,11 +13,11 @@ class TwitterAppApiPackage:
     def __init__(self,consumer_key:str,consumer_secret:str):
         #应用程序限制窗口
         self.apibucket = {
-            'users_timeline':TokenBucket(1.5,1500,0.5),#用户时间线
-            'users_show':TokenBucket(0.9,900,0.5),#用户检索
-            'users_lookup':TokenBucket(0.3,300,0.5),#多用户检索
+            'users_timeline':TokenBucket(1.3,1,0.0),#用户时间线
+            'users_show':TokenBucket(0.9,2,0.1),#用户检索
+            'users_lookup':TokenBucket(0.3,2,0.1),#多用户检索
             #'statuses_show':TokenBucket(0.45,450,0.5),#单推文检索
-            'statuses_lookup':TokenBucket(0.3,300,0.5),#多推文检索
+            'statuses_lookup':TokenBucket(0.3,2,0.1),#多推文检索
         }
         self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         self.api = tweepy.API(self.auth, proxy=config.api_proxy)
@@ -82,7 +82,7 @@ class TwitterAppApiPackage:
 
 class PollingTwitterApps:
     allowFunname = {
-        'users_timeline':1.5,#用户时间线
+        'users_timeline':1.3,#用户时间线
         'users_show':0.9,#用户检索
         'users_lookup':0.3,#多用户检索
         #'statuses_show':0.45,#单推文检索
@@ -105,7 +105,7 @@ class PollingTwitterApps:
             )
         appl = len(self.apps)
         for key in self.waitTime:
-            self.waitTime[key] = int((1/(self.allowFunname[key]*appl))*100)/100
+            self.waitTime[key] = int((1/(self.allowFunname[key]*appl))*100)/100 + 0.5
     #获取可用的应用密钥，没有可用的密钥时返回None
     def getAllow(self,funname:str) -> TwitterAppApiPackage:
         if funname not in self.allowFunname:

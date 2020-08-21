@@ -3,7 +3,7 @@ from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTy
 from pluginsinterface.PluginLoader import PlugArgFilter
 
 from pluginsinterface.PluginLoader import SendMessage
-from module.twitter import tweetcache,pushlist,tweetstatusdeal,tweetevendeal
+from module.twitter import tweetcache,pushlist,tweetstatusdeal,tweetevendeal,encode_b64,decode_b64
 from module.twitterApi import setStreamOpen as apisetStreamOpen,addListen,delListen,getListenList
 from module.pollingTwitterApi import ptwitterapps,setStreamOpen as pollingsetStreamOpen
 
@@ -309,9 +309,9 @@ argfilter.addArg(
     )
 @on_message(msgfilter='设置推送优先级',argfilter=argfilter,bindsendperm='manage',des='设置推送优先级 用户ID 优先级 - 设置轮询优先级')
 async def _(session:Session):
-    path = session.filterargs['path']
+    value = session.filterargs['value']
     userinfo = session.filterargs['userinfo']
-    res = Priority_set(userinfo['id_str'],path)
+    res = Priority_set(userinfo['id_str'],value)
     session.send(res[1])
 
 
@@ -361,7 +361,7 @@ def getTweetsList(tweets,page:int = 1):
     for i in range(lll,-1,-1):
         j = lll - i
         if j >= page*5 and j < (page+1)*5:
-            msg += '\n' + tweetevendeal.tweetToMsg(tweets[j],simple=True).toStandStr()
+            msg += '\n' + tweetevendeal.tweetToMsg(tweets[i],simple=True).toStandStr()
     msg += '\n当前页{0}/{1} (共{2}个推文)'.format(page+1,int(lll/5)+1,lll)
     return msg
 argfilter = PlugArgFilter()
@@ -450,6 +450,7 @@ async def _(session:Session):
         userinfo['description'],
     )
     session.send('{0}\n推送添加成功！'.format(msg))
+
 
 argfilter = PlugArgFilter()
 argfilter.addArg(
@@ -805,3 +806,28 @@ async def _(session:Session):
     msg = '-设置列表-' + msg
     session.send(msg)
 
+argfilter = PlugArgFilter()
+argfilter.addArg(
+        'tweetid',
+        '正整数',
+        '推文ID或任意正整数',
+        verif='uint'
+    )
+@on_message(msgfilter='(64进制编码)|(2t64编码)|(压缩推文ID)',des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
+async def _(session:Session):
+    tweetid = session.filterargs['tweetid']
+    msg = encode_b64(tweetid,offset=0)
+    session.send(msg)
+
+argfilter = PlugArgFilter()
+argfilter.addArg(
+        'text',
+        '编码文本',
+        '64进制编码的文本',
+        verif='str'
+    )
+@on_message(msgfilter='(64进制编码)|(2t64编码)|(压缩推文ID)',des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
+async def _(session:Session):
+    text = session.filterargs['text']
+    msg = str(decode_b64(text,offset=0))
+    session.send(msg)

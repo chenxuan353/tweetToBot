@@ -3,7 +3,7 @@ import time
 import requests
 import xmltodict
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import config
 from helper import getlogger,TokenBucket
@@ -103,13 +103,14 @@ class RSSDealPackage:
         """
         #将item数据打包到标准RSS数据包
         checkfunc = (lambda item,key:item[key] if key in item else '')
+        
         return {
             'channel_title':checkfunc(channel,'title'),
             'title':checkfunc(item,'title'),
             'link':checkfunc(item,'link'),
             'description':checkfunc(item,'description'),
             'pubDate':checkfunc(item,'pubDate'),
-            'pubTimestamp':(int(datetime.strptime(item['pubDate'], '%a, %d %b %Y %H:%M:%S GMT').timestamp()) if 'pubDate' in item else 0),
+            'pubTimestamp':(datetime.strptime(item['pubDate'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=timezone(timedelta(hours=0))).timestamp() if 'pubDate' in item else 0),
             'category':checkfunc(item,'category'),
             'author':checkfunc(item,'author')
         }
@@ -135,7 +136,7 @@ class RSSDealPackage:
             'language':checkfunc(channel,'language'),
             'pubDate':checkfunc(channel,'pubDate'),
             'lastBuildDate':checkfunc(channel,'lastBuildDate'),
-            'lastBuildTimestamp':(int(datetime.strptime(channel['lastBuildDate'], '%a, %d %b %Y %H:%M:%S GMT').timestamp()) if 'lastBuildDate' in channel else 0),
+            'lastBuildTimestamp':(datetime.strptime(channel['lastBuildDate'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=timezone(timedelta(hours=0))).timestamp() if 'lastBuildDate' in channel else 0),
             'generator':checkfunc(channel,'generator'),
             'item':[]
         }

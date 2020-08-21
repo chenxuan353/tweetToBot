@@ -765,6 +765,10 @@ class TweetStatusDeal:
         userinfo['statuses_count'] = user.statuses_count
         userinfo['created_at'] = int(user.created_at.timestamp())
         userinfo['notable'] = self.isNotableUser(userinfo,checkspy)
+        if userinfo['profile_image_url'].endswith('_normal.jpg'):
+            userinfo['profile_image_url'] = userinfo['profile_image_url'].replace('_normal.jpg','.jpg')
+        if userinfo['profile_image_url_https'].endswith('_normal.jpg'):
+            userinfo['profile_image_url_https'] = userinfo['profile_image_url_https'].replace('_normal.jpg','.jpg')
         return userinfo
     def get_tweet_info(self,tweet,checkspy:bool = True):
         """
@@ -844,7 +848,7 @@ class TweetStatusDeal:
         tweetinfo = self.bale_tweetinfo(
             'none',
             userinfo['notable'],
-            int(tweet.created_at.now(timezone(timedelta(hours=0))).timestamp()),
+            tweet.created_at.replace(tzinfo=timezone(timedelta(hours=0))).timestamp(),
             tweet.id,
             tweettext,
             userinfo['id'],
@@ -1370,7 +1374,7 @@ class TweetEventDeal:
             argmap['tempID'] = '未生成'
         return argmap
     #将推特数据应用到模版
-    def tweetToMsg(self,tweetinfo:dict,nick = None,template:str = None,simple = False) -> SendMessage:
+    def tweetToMsg(self,tweetinfo:dict,nick = None,template:str = None,simple = False,even = False) -> SendMessage:
         if not template:
             if not simple:
                 template = "推文ID：$id\n推文标识：$typestr\n发布用户：$nick(@$user_sname)\n推文内容：\n$text $imgs\n发布时间：$fulltime"
@@ -1378,7 +1382,10 @@ class TweetEventDeal:
                 template += "依赖推文ID：$relate_id\n依赖用户：$relate_user_name(@$relate_user_sname)\n依赖内容：\n$relate_text $relate_imgs\n发布时间：$relate_fulltime"
                 template += "$relateend\n链接：$link\n临时推文ID：#$tempID"
             else:
-                template = "$typestr,#$tempID,$minid,$mintext"
+                if even:
+                    template = "$nick,$typestr,$mintext"
+                else:
+                    template = "$typestr,#$tempID,$minid,$mintext"
         #特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
         #特殊变量(仅识别一次) $ifrelate 依赖存在时 $else 不存在时 $end
         #生成模版参数地图

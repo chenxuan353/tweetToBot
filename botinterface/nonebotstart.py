@@ -27,7 +27,7 @@ def Run():
             path.join(path.dirname(__file__), 'plugins','nonebot_plug'),
             'botinterface.plugins.nonebot_plug'
         )
-        nonebot.run(host=nonebotconfig.NONEBOT_HOST, port = nonebotconfig.NONEBOT_PORT)
+        nonebot.run(host=config.NONEBOT_HOST, port = config.NONEBOT_PORT)
     except:
         s = traceback.format_exc(limit=5)
         logger.error('nonebot异常！\n'+s)

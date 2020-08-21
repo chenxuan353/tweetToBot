@@ -3,7 +3,10 @@ from pluginsinterface.PluginLoader import on_message,Session,on_preprocessor,on_
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTypeEnum,PluginsManage
 from pluginsinterface.PluginLoader import PlugArgFilter
 
+from pluginsinterface.PluginLoader import StandEven
 import re
+import time
+import traceback
 from module.twitter import tweetcache
 from module.machine_translation import allow_st,engine_nick,engine_list
 from helper import dictSet,dictGet
@@ -12,6 +15,9 @@ logger = getlogger(__name__)
 
 transstreamconfig = 'translationstream.json'
 streamlist = data_read_auto(transstreamconfig,default={})
+#线程池
+from concurrent.futures import ThreadPoolExecutor
+pool = ThreadPoolExecutor(max_workers=2,thread_name_prefix="tls_Threads")
 
 
 @plugRegistered('翻译翻译','translation')
@@ -31,7 +37,18 @@ def _(plug:PluginsManage):
         plug.registerPerm('streamtrans',des = '设置流式翻译的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('trans',des = '翻译权限',defaultperm=PlugMsgTypeEnum.allowall)
 
-
+def streamTrans(even:StandEven,text,source,target,res,timestamp):
+        if time.time() - timestamp > 15:
+            logger.warning('翻译执行超时...')
+            return
+        try:
+            engine_func = engine_list[res[even.senduuid]['engine']]['func']
+            res = engine_func(text,source,target)
+            even.send("机翻:{0}".format(res[1]))
+            even.setReply(False)
+        except:
+            s = traceback.format_exc(limit=10)
+            logger.error(s)
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)
@@ -39,7 +56,7 @@ async def _(session:Session) -> PlugMsgReturn:
         if session.senduuid in res:
             source = res[session.senduuid]['source']
             target = res[session.senduuid]['target']
-            text = session.sourcefiltermsg.strip()
+            text = session.message.filterToStr(('text'))
             if not text:
                 return PlugMsgReturn.Allow
             if source == 'auto' and target == 'zh':
@@ -47,10 +64,8 @@ async def _(session:Session) -> PlugMsgReturn:
                     target = 'jp'
                 else:
                     source = 'jp'
-            engine_func = engine_list[res[session.senduuid]['engine']]['func']
-            res = engine_func(text,source,target)
-            session.send("机翻:{0}".format(res[1]))
-            session.setReplay(False)
+            streamTrans(session.even,text,source,target,res,time.time())
+            #pool.submit(streamTrans,session.even,text,source,target,time.time())
     return PlugMsgReturn.Allow
 
 
@@ -93,6 +108,11 @@ async def _(session:Session):
                 tweets = tweetcache.getTweetFromCache(tweetid = tweetid)
                 if tweets is not None:
                     text = tweets['text']
+    elif source == 'auto' and target == 'zh':
+        if not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',text):
+            target = 'jp'
+        else:
+            source = 'jp'
     engine_func = engine_list[engine]['func']
     res = engine_func(text,source,target)
     if not res[0]:
@@ -143,6 +163,9 @@ async def _(session:Session):
     target = session.filterargs['target']
     if transtarget == '':
         transtarget = session.senduuid
+    if dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid,transtarget):
+        session.send("{0} 的流式翻译已经为启动状态".format(transtarget))
+        return
     streamobj = {
         'bottype':session.bottype,
         'botgroup':session.botgroup,
@@ -205,7 +228,7 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'':1}#设置默认值
     )
-@on_message(msgfilter='([！!]流式翻译列表)',des='流式翻译列表 - 流式翻译列表',bindsendperm='streamtrans',at_to_me=False)
+@on_message(msgfilter='([！!]流式翻译列表)',argfilter=argfilter,des='流式翻译列表 - 流式翻译列表',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
     page = session.filterargs['page']
     res = dictGet(streamlist,session.bottype,session.botgroup,session.botuuid,session.uuid)

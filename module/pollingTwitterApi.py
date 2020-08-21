@@ -208,21 +208,24 @@ def Run():
     time.sleep(polling_interval)
     star_interval = time.time()
     count = 0
-    while True:
-        if run_info['keepRun']:
-            run_info['isRun'] = True
-            run_info['lastRunTime'] = time.time()
-            count += 1
-            if count % 10 == 0:
-                nowtime = time.time()
-                logger.info("PollingTweetApi 完整检测，{0}s".format(round(nowtime - star_interval,2)))
-                star_interval = nowtime
-                count = 0
-            get_updata()
-        else:
-            run_info['isRun'] = False
-        time.sleep(max(polling_interval,ptwitterapps.getWaitTime('users_timeline')))
-
+    try:
+        while True:
+            if run_info['keepRun']:
+                run_info['isRun'] = True
+                run_info['lastRunTime'] = time.time()
+                count += 1
+                if count % 10 == 0:
+                    nowtime = time.time()
+                    logger.info("PollingTweetApi 完整检测，{0}s".format(round(nowtime - star_interval,2)))
+                    star_interval = nowtime
+                    count = 0
+                get_updata()
+            else:
+                run_info['isRun'] = False
+            time.sleep(max(polling_interval,ptwitterapps.getWaitTime('users_timeline')))
+    except:
+        s = traceback.format_exc(limit=10)
+        logger.error(s)
 #运行推送线程
 def runPollingTwitterApiThread():
     run_info['ListenThread'] = threading.Thread(

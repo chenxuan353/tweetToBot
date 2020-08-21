@@ -21,7 +21,7 @@ from helper import getlogger,data_read_auto,data_save,TempMemory
 logger = getlogger(__name__)
 #线程池
 from concurrent.futures import ThreadPoolExecutor
-pool = ThreadPoolExecutor(max_workers=16,thread_name_prefix="trans_Threads")
+pool = ThreadPoolExecutor(max_workers=4,thread_name_prefix="trans_Threads")
 
 trans_img_path = config.trans_img_path
 transtemplate_filename = 'transtemplate.json'
@@ -120,7 +120,7 @@ def getImage(url,maxsize = 50,timeout = 15):
         return (False,'文件下载异常')
     else:
         return (True,'文件下载成功',base64code)
-@on_message(msgfilter='[!！]设置烤推模版',bindsendperm='manage',des='设置烤推模版 参数 - 设置烤推模版')
+@on_message(msgfilter='[!！]设置烤推模版',sourceAdmin=True,des='设置烤推模版 参数 - 设置烤推模版')
 async def _(session:Session):
     urls = session.message.gerUrls()
     if urls:
@@ -131,7 +131,7 @@ async def _(session:Session):
         if not res[0]:
             session.send('模版设置失败->'+res[1])
             return
-        b64 = res[2]
+        b64 = res[2].replace('','')
         template = "<div style=\"padding:5px;margin:0px\"><img height=\"38\" src=\"data:image/jpg;base64,{0}\"></div>".format(b64)
         setTranstemplate(session.bottype,session.botgroup,session.uuid,template)
         msg = SendMessage('已设置模版为图片->')
@@ -139,6 +139,16 @@ async def _(session:Session):
         session.send(msg)
         return
     message = SendMessage(session.argstr).toSimpleStr()
+    code = [
+        ('&','&amp;'),
+        ('<','&lt;'),
+        ('>','&gt;'),
+        ('"','&quot;'),
+        ('\'','&#x27;'),
+        ('/','&#x2F;')
+    ]
+    for cu in code:
+        message.replace(cu[0],cu[1])
     template = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">{0}</p>'.format(message)
     setTranstemplate(session.bottype,session.botgroup,session.uuid,template)
     session.send('已设置模版为->'+message)
@@ -278,7 +288,7 @@ def getlist(bottype,botuuid,botgroup,uuid,page:int=1):
             ttm[i]['botuuid'] == botuuid and \
             ttm[i]['botgroup'] == botgroup and \
             ttm[i]['uuid'] == uuid:
-            if i >= page*5 and i < (page+1)*5:
+            if cout >= page*5 and cout < (page+1)*5:
                 s += '\n{0},{1},{2},{3}'.format(
                     ttm[i]['sendnick'],
                     ttm[i]['tasktype'],
