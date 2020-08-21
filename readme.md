@@ -19,23 +19,27 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 
 **项目目前支持 Python 3.7 +**
 
-
-
 ## 使用文档
 
-### 文档首页(使用者请使用)
-
 [用户文档](https://chenxuan353.github.io/tweetTobot/)
-
-
 
 ## 部署文档
 
 ### 项目使用及配置
 
-直接克隆本项目或到release内克隆稳定版本
+直接克隆本项目以获取最新版本：
 
-需要安装python3用以启动项目，请确保python3在3.7及以上版本以免遭遇兼容性bug
+```shell
+git clone https://github.com/chenxuan353/tweetToBot.git
+```
+
+或到Release内下载稳定版本：
+
+```
+wget https://github.com/chenxuan353/tweetToBot/archive/Version3.5.zip
+```
+
+本项目使用Python3进行编写，请确保使用Python3.7及以上版本启动本服务，以免遭遇兼容性错误。
 
 ##### 查看python版本
 
@@ -43,10 +47,32 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 python -V
 ```
 
+或使用多个版本的Python3
+- Linux/Unix/OS X
+
+```shell
+python3 -V
+```
+
+- Windows
+
+```shell
+py -3 -V
+```
+
 ##### 依赖安装
 
 ```shell
 pip install -r requirements.txt
+```
+或
+(Linux/Unix/OS X)
+```shell
+pip3 install -r requirements.txt
+```
+(Windows)
+```shell
+py -3 -m pip install -r requirements.txt
 ```
 
 ##### 配置项目
@@ -64,8 +90,6 @@ cp config_example.py config.py
 ```shell
 python3 ./start.py
 ```
-
-
 
 ### bot连接到后端
 
@@ -91,4 +115,29 @@ CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-
             "reverse_reconnect_interval": 3000
         }
     ], 
+```
+
+## 开发者文档
+
+关于各层级目录各代码目录，请参考文件夹内Readme及代码内部文档，暂无开发者文档维护计划。
+
+*如出现VSCode等工具报模块未找到等错误时，请手动指定根目录以消除不必要的报错*
+修改`.vscode/launch.json`(如不存在请手动新建文件)如下：
+```JSON
+{
+    "name": "Python",
+    "type": "python",
+    "request": "launch",
+    "stopOnEntry": false,
+    "pythonPath": "${config:python.pythonPath}",
+    "program": "${file}",
+    "cwd": "${workspaceRoot}",
+    "env": {"PYTHONPATH":"${workspaceRoot}"},
+    "envFile": "${workspaceRoot}/.env",
+    "debugOptions": [
+        "WaitOnAbnormalExit",
+        "WaitOnNormalExit",
+        "RedirectOutput"
+    ]
+}
 ```
