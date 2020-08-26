@@ -120,7 +120,7 @@ def getImage(url,maxsize = 50,timeout = 15):
         return (False,'文件下载异常')
     else:
         return (True,'文件下载成功',base64code)
-@on_message(msgfilter='[!！]设置烤推模版',sourceAdmin=True,des='设置烤推模版 参数 - 设置烤推模版')
+@on_message(msgfilter='([!！]设置烤推模[版板])',sourceAdmin=True,des='设置烤推模版 参数 - 设置烤推模版')
 async def _(session:Session):
     urls = session.message.gerUrls()
     if urls:
@@ -236,7 +236,7 @@ def getTransImg(even:StandEven,senduuid,sendname,tweetid,trans):
 def getRealTweetID(arg:str):
     arg = arg.strip()
     if arg.startswith('https://twitter.com/') or arg.startswith('http://twitter.com/'):
-        arg = arg.strip('/')[-1]
+        arg = arg.split('/')[-1]
         arg = arg.split('?')[0]
         if not arg.isdigit():
             return None

@@ -75,11 +75,41 @@ class TweetTrans:
         driver = self.driver
         main_type = "section[aria-labelledby].css-1dbjc4n>div>div"
         load_type = "div[role='progressbar']"
+        openHide = r"""
+                function getArticles(){
+                    try{
+                        return document.querySelector('section[aria-labelledby].css-1dbjc4n').querySelectorAll('article')
+                    }catch (e) {
+                        return null
+                    }
+                }
+                function getAllHide(){
+                    //https://twitter.com/hana_healthy/status/1298590054533627905
+                    //显示所有隐私内容
+                    try{
+                        let articles =getArticles()
+                        let elems = null
+                        for(let i=0;i<articles.length;i++){
+                            elems = articles[i].querySelectorAll("div[role=button].r-1vsu8ta.r-1vsu8ta")
+                            for(let j=0;j<elems.length;j++){
+                                elems[j].click()
+                            }
+                        }
+                        return true
+                    }catch(e){
+                        return false
+                    }
+                }
+                getAllHide()
+        """
         JS_get_errormsg = r"""
             elem = document.querySelector('[data-testid="error-detail"]')
             if(elem)return elem.innerText
             return "未查找到错误信息，可能是网络波动造成的"
         """
+        rmsg = driver.execute_script(JS_get_errormsg)
+        if rmsg != "未查找到错误信息，可能是网络波动造成的":
+            return (False,"",rmsg)
         #等待主元素出现
         try:
             WebDriverWait(driver, 60, 0.5).until(
@@ -100,6 +130,12 @@ class TweetTrans:
             error_save_filename = self.__errorsave(tasktype,s)
             rmsg = driver.execute_script(JS_get_errormsg)
             return (False,error_save_filename,rmsg)
+        #显示所有隐私内容
+        try:
+            driver.execute_script(openHide)
+        except:
+            s = traceback.format_exc(limit=10)
+            logger.error(s)
         return (True,'success!')
     #加载更多推文(4000像素内)
     def waitForMoreTweet(self,tasktype:str,limit_scroll_height:int = 4000):
@@ -128,20 +164,42 @@ class TweetTrans:
     def waitForImg(self,tasktype:str):
         driver = self.driver
         JS_imgIsLoad = r"""
-                var mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
-                
-                try{
-                    let elems = mainelem.querySelectorAll('img')
-                    for (var i = 0;i<elems.length;i++) {
-                        if(!elems[i].complete){
-                            return false
+                let mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
+                function waitImgAppend(mainelem){
+                    let photos = mainelem.querySelectorAll('a[href*="/photo/"]')
+                    //console.log(photos)
+                    for (let i = 0;i < photos.length;i++) {
+                        try{
+                            if(!photos[i].querySelector('img')){
+                                console.log(photos[i].querySelector('img'))
+                                return false
+                            }
+                        }catch(e){
+                            console.log(e.message)
+                            return true
                         }
                     }
-                    let tweetPhotos = mainelem.querySelectorAll('[data-testid="tweetPhoto"]')
-                    for (var i = 0;i<tweetPhotos.length;i++) {
-                        if(tweetPhotos[i].querySelectorAll('img').length == 0){
-                            return false
+                    return true
+                }
+                function imgLoadComplete(mainelem){
+                    try{
+                        let elems = mainelem.querySelectorAll('img')
+                        for (var i = 0;i<elems.length;i++) {
+                            if(!elems[i].complete){
+                                return false
+                            }
                         }
+                        return true
+                    }catch(e){
+                        return true
+                    }
+                }
+                try{
+                    if(!waitImgAppend(mainelem)){
+                        return false
+                    }
+                    if(!imgLoadComplete(mainelem)){
+                        return false
                     }
                     return true
                 }catch(e){

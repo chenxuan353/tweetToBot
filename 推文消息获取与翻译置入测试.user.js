@@ -14,235 +14,334 @@ var twemoji=function(){"use strict";var twemoji={base:"https://twemoji.maxcdn.co
 
 (function() {
     'use strict';
-    function getTweets(){
+    //辅助函数
+    var mainelem = function(){
+        let mainelem = null
+        return function(){
+            return document.querySelector('section[aria-labelledby].css-1dbjc4n')
+        }
+    }()
+    function getArticles(){
         try{
-            let limitHeight = 10000
-            let tweets = []
-            //推文主元素
-            var mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
-            if(!mainelem){
-                return [false,"推文不存在"]
-            }
-            let elems = mainelem.querySelectorAll('article')
-            function getoffsetTop(elem,relem){
-                let resH = 0
-                let nowelem = elem
-                while(nowelem != relem && nowelem != null){
-                    resH = resH + nowelem.offsetTop
-                    nowelem = nowelem.parentNode
+            return mainelem().querySelectorAll('article')
+        }catch (e) {
+            return null
+        }
+    }
+    function getAllHide(){
+        //https://twitter.com/hana_healthy/status/1298590054533627905
+        //显示所有隐私内容
+        try{
+            let articles =getArticles()
+            let elems = null
+            for(let i=0;i<articles.length;i++){
+                elems = articles[i].querySelectorAll("div[role=button].r-1vsu8ta.r-1vsu8ta")
+                for(let j=0;j<elems.length;j++){
+                    elems[j].click()
                 }
-                if(nowelem == null)return 0;//不存在匹配的上级元素时返回0
-                return resH
             }
+            return true
+        }catch(e){
+            return false
+        }
+    }
+
+    function attributesCallback(icon, variant) {
+        //emoji置换回调
+        return {
+            title: 'Emoji: ' + icon + variant,
+            style: 'height: 1em;width: 1em;margin: 0.05em 0.1em;vertical-align: -0.1em;'
+        };
+    }
+    function textparse(text){
+        //文本处理
+        text = text.replace(/(\\#)/gi,'\\&jh; ')
+        text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
+        text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/g,'<a style="color:#1DA1F2;">$1</a>')
+        text = text.replace(/(\\&jh; )/gi,'#')
+        return twemoji.parse(text,{
+            attributes:attributesCallback,
+            base:'https://abs-0.twimg.com/emoji/v2/',
+            folder: 'svg',
+            ext: '.svg'
+        });
+    }
+
+    //推文列表搜索
+    function getoffsetTop(elem,relem){
+        //获取两个元素的相对距离(元素，相对于什么元素)
+        let resH = 0
+        let nowelem = elem
+        while(nowelem != relem && nowelem != null){
+            resH = resH + nowelem.offsetTop
+            nowelem = nowelem.parentNode
+        }
+        if(nowelem == null)return 0;//不存在匹配的上级元素时返回0
+        return resH
+    }
+    function getUserInfo(elart){
+        //头像
+        let infosearch = elart.querySelector('div.r-18kxxzh>div.r-18kxxzh')
+        let headimg = infosearch.querySelector('img').getAttribute('src')
+        //用户名
+        let username = infosearch.querySelector('a').getAttribute('href').slice(1)
+        //昵称
+        let nick = elart.querySelector('div.r-vw2c0b').innerText
+        //投票
+        //投票中
+        let elemvotes = elart.querySelectorAll('div.r-p1n3y5.r-aj3cln')
+        //投票完成
+        let elemvoteends = elart.querySelectorAll('div.r-1g7fiml')
+        let tweetvotes = []
+        for(let j = 0;j<elemvotes.length;j++){
+            tweetvotes.push({
+                elem:elemvotes[j],
+                elemy:getoffsetTop(elemvotes[j],elart),//文字内容相对于推文的高度
+                elemh:elemvotes[j].offsetHeight,//文字内容相对于推文的高度
+                text:elemvotes[j].innerText,
+            })
+        }
+        for(let j = 0;j<elemvoteends.length;j++){
+            tweetvotes.push({
+                elem:elemvoteends[j],
+                elemy:getoffsetTop(elemvoteends[j],elart),//文字内容相对于推文的高度
+                elemh:elemvoteends[j].offsetHeight,//文字内容相对于推文的高度
+                text:elemvoteends[j].innerText,
+            })
+        }
+
+        //外链及图片
+        let elemitems = elart.querySelectorAll('div.r-9x6qib')
+        let tweetitems = []
+        for(let j = 0;j<elemitems.length;j++){
+            let elemsrcs = elemitems[j].querySelectorAll('[src]')
+            let srcs = []
+            for(let j = 0;j<elemsrcs.length;j++){
+                let tag = elemsrcs[j].tagName
+                let isrc = ''
+                if(tag == 'VIDEO'){
+                    isrc = elemsrcs[j].poster
+                }
+                if(tag == 'IMG'){
+                    isrc = elemsrcs[j].src
+                }
+                srcs.push({
+                    elem:elemsrcs[j],
+                    type:elemsrcs[j].tagName,
+                    src:elemsrcs[j].src,
+                    imgsrc:isrc
+                })
+            }
+            tweetitems.push({
+                elem:elemitems[j],
+                elemy:getoffsetTop(elemitems[j],elart),//文字内容相对于推文的高度
+                elemh:elemitems[j].offsetHeight,//文字内容相对于推文的高度
+                text:elemitems[j].innerText,
+                srcs:srcs
+            })
+        }
+
+        //推文内容表
+        let elemtexts = elart.querySelectorAll('div.r-bnwqim')
+        let tweettexts = []
+        let tweettext = ""
+        for(let j = 0;j<elemtexts.length;j++){
+            tweettext += elemtexts[j].innerText + "\u000A"
+            tweettexts.push({
+                elem:elemtexts[j],
+                elemy:getoffsetTop(elemtexts[j],elart),//文字内容相对于推文的高度
+                elemh:elemtexts[j].offsetHeight,//文字内容相对于推文的高度
+                text:elemtexts[j].innerText
+            })
+        }
+        let time = ''
+        let t = elart.querySelector('div.r-vpgt9t')
+        if(t){
+            time = t.innerText
+        }
+
+        //推文相对高度
+        let elemy = getoffsetTop(elart,mainelem())
+        //推文宽度
+        let elemh = elart.offsetHeight
+        //隐藏翻译蓝链
+        //let elemet = elart.querySelector('[class="css-18t94o4 css-901oao r-1n1174f r-6koalj r-1w6e6rj r-1qd0xha r-n6v787 r-16dba41 r-1sf4r6n r-1g94qm0 r-bcqeeo r-qvutc0"]')
+        //if(elemet)elemet.style.visibility="hidden"
+        return {
+            code:0,
+            elem:elart,//主体元素
+            elemy:elemy,
+            elemh:elemh,
+            headimg:headimg,
+            time:time,
+            nick:nick,
+            username:username,
+            tweetvotes:tweetvotes,
+            tweetitems:tweetitems,
+            tweettexts:tweettexts,
+            tweettext:tweettext
+        }
+    }
+    //加载等待
+    function waitImgLoad(mainelem,func){
+        function waitImgAppend(mainelem){
+            let photos = mainelem.querySelectorAll('a[href*="/photo/"]')
+            //console.log(photos)
+            for (let i = 0;i < photos.length;i++) {
+                try{
+                    if(!photos[i].querySelector('img')){
+                        console.log(photos[i].querySelector('img'))
+                        return false
+                    }
+                }catch(e){
+                    console.log(e.message)
+                    return true
+                }
+            }
+            return true
+        }
+        function imgLoadComplete(mainelem){
+            try{
+                let elems = mainelem.querySelectorAll('img')
+                for (var i = 0;i<elems.length;i++) {
+                    if(!elems[i].complete){
+                        return false
+                    }
+                }
+                return true
+            }catch(e){
+                return true
+            }
+        }
+        function checkLoad(){
+            if(!waitImgAppend(mainelem)){
+                setTimeout(function(){
+                    checkLoad(mainelem);
+                }, 100);
+                return
+            }
+            if(!imgLoadComplete(mainelem)){
+                setTimeout(function(){
+                    checkLoad(mainelem);
+                }, 100);
+                return
+            }
+            let node = document.createElement('wait_img')
+            document.body.appendChild(node)
+            func()
+        }
+        setTimeout(function(){
+            checkLoad(mainelem);
+        }, 100);
+    }
+
+    //获取推文列表
+    function getTweets(limit){
+        try{
+            let limitHeight = 4000
+            if(limit){
+                limitHeight = limit
+            }
+            getAllHide()
+            let tweets = []
+            let elems = getArticles()
             for (var i = 0;i<elems.length;i++) {
                 let elart = elems[i]
                 if(elart){
                     try {
-                        //let uie = elart.querySelector('div[data-testid="tweet"]>div')
-                        let uid = elart.querySelector('div.r-18kxxzh>div.r-18kxxzh')
-                        //头像
-                        let headimg = uid.querySelector('img').getAttribute('src')
-
-                        //用户ID
-                        //let userid = uie.nextSibling.innerText
-                        let userid = uid.querySelector('a').getAttribute('href').slice(1)
-                        //昵称
-                        //uie = uie.nextSibling.querySelector('a>div>div')
-                        //let nick = uie.innerText
-                        let nick = elart.querySelector('div.r-vw2c0b').innerText
-                        //投票
-                        //投票中 定位 .r-p1n3y5.r-aj3cln
-                        //投票完成 定位 .r-1g7fiml
-                        let elemvotes = elart.querySelectorAll('div.r-p1n3y5.r-aj3cln')
-                        let elemvoteends = elart.querySelectorAll('div.r-1g7fiml')
-                        let tweetvotes = []
-                        for(let j = 0;j<elemvotes.length;j++){
-                            tweetvotes.push({
-                                elem:elemvotes[j],
-                                elemy:getoffsetTop(elemvotes[j],elart),//文字内容相对于推文的高度
-                                elemh:elemvotes[j].offsetHeight,//文字内容相对于推文的高度
-                                text:elemvotes[j].innerText,
-                            })
-                        }
-                        for(let j = 0;j<elemvoteends.length;j++){
-                            tweetvotes.push({
-                                elem:elemvoteends[j],
-                                elemy:getoffsetTop(elemvoteends[j],elart),//文字内容相对于推文的高度
-                                elemh:elemvoteends[j].offsetHeight,//文字内容相对于推文的高度
-                                text:elemvoteends[j].innerText,
-                            })
-                        }
-                        //外链及图片
-                        let elemitems = elart.querySelectorAll('div.r-9x6qib')
-                        let tweetitems = []
-                        for(let j = 0;j<elemitems.length;j++){
-                            let elemsrcs = elemitems[j].querySelectorAll('[src]')
-                            let srcs = []
-                            for(let j = 0;j<elemsrcs.length;j++){
-                                let tag = elemsrcs[j].tagName
-                                let isrc = ''
-                                if(tag == 'VIDEO'){
-                                    isrc = elemsrcs[j].poster
-                                }
-                                if(tag == 'IMG'){
-                                    isrc = elemsrcs[j].src
-                                }
-                                srcs.push({
-                                    elem:elemsrcs[j],
-                                    type:elemsrcs[j].tagName,
-                                    src:elemsrcs[j].src,
-                                    imgsrc:isrc
-                                })
-                            }
-                            tweetitems.push({
-                                elem:elemitems[j],
-                                elemy:getoffsetTop(elemitems[j],elart),//文字内容相对于推文的高度
-                                elemh:elemitems[j].offsetHeight,//文字内容相对于推文的高度
-                                text:elemitems[j].innerText,
-                                srcs:srcs
-                            })
-                        }
-                        //推文内容表
-                        let elemtexts = elart.querySelectorAll('div.r-bnwqim')
-                        let tweettexts = []
-                        let tweettext = ""
-                        for(let j = 0;j<elemtexts.length;j++){
-                            tweettext += elemtexts[j].innerText + "\u000A"
-                            tweettexts.push({
-                                elem:elemtexts[j],
-                                elemy:getoffsetTop(elemtexts[j],elart),//文字内容相对于推文的高度
-                                elemh:elemtexts[j].offsetHeight,//文字内容相对于推文的高度
-                                text:elemtexts[j].innerText
-                            })
-                        }
-                        let time = ''
-                        let t = elart.querySelector('div.r-vpgt9t')
-                        if(t){
-                            time = t.innerText
-                        }
-                        //推文相对高度
-                        let elemy = getoffsetTop(elems[i],mainelem)
-                        //推文宽度
-                        let elemh = elems[i].offsetHeight
-                        //隐藏翻译蓝链
-                        //let elemet = elart.querySelector('[class="css-18t94o4 css-901oao r-1n1174f r-6koalj r-1w6e6rj r-1qd0xha r-n6v787 r-16dba41 r-1sf4r6n r-1g94qm0 r-bcqeeo r-qvutc0"]')
-                        //if(elemet)elemet.style.visibility="hidden"
-                        tweets.push({
-                            code:0,
-                            elem:elems[i],//主体元素
-                            elemy:elemy,
-                            elemh:elemh,
-                            headimg:headimg,
-                            time:time,
-                            nick:nick,
-                            userid:userid,
-                            tweetvotes:tweetvotes,
-                            tweetitems:tweetitems,
-                            tweettexts:tweettexts,
-                            tweettext:tweettext
-                        })
+                        let info = getUserInfo(elart)
+                        tweets.push(info)
                         //只处理 limitHeight 像素以内的数据
-                        if( elemy > limitHeight)break;
+                        if( info.elemy > limitHeight)break;
                     } catch (e) {
                         //记录错误
                         tweets.push({
                             code:1,
-                            elem:elems[i],
+                            elem:elart,
                             exp:e.message
                         })
                     }
                 }
             }
-            function mediaLoadComplete(mainelem){
-                try{
-                    let elems = mainelem.querySelectorAll('img')
-                    for (var i = 0;i<elems.length;i++) {
-                        if(!elems[i].complete){
-                            return false
-                        }
-                    }
-                    return true
-                }catch(e){
-                    return true
-                }
-            }
-            function waitLoad(mainelem){
-                if(mediaLoadComplete(mainelem)){
-                    let node = document.createElement('wait_img')
-                    document.body.appendChild(node)
-                }else{
-                    setTimeout(function(){
-                        mediaLoadComplete(mainelem);
-                    }, 100);
-                }
-            }
-            setTimeout(function(){
-                waitLoad(mainelem);
-            }, 100);
+            waitImgLoad(mainelem())
             return tweets
         }catch (e) {
             return e.message
         }
     }
-    function tweetTrans(){
-        let translist={
-            type_html:'<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>',
-            text:{
-                '1':["复杂才关😳😳😳\n今天！！！！！咱要来玩这个游戏了！！！！！！！！！\n19点！！！19点开始！！！！（开心地手舞足蹈）" + JSON.parse('"\\u2728Say!Fanfare!\\u2728\\r\\n\\u2728\\u3297100\\u4e07\\u64ad\\u653e\\u3297\\u2728\\r\\n\\u771f\\u7684\\u5f88\\u611f\\u8c22\\u5927\\u5bb6!!!\\r\\nHamu\\u6851\\uff08\\u4f5c\\u8bcd\\u4f5c\\u66f2\\uff09\\uff01iimo\\u6851\\uff08\\u52a8\\u753b\\uff09\\uff01\\u8fd8\\u6709\\u5927\\u5bb6\\u2757\\u2757\\r\\n\\u662f100\\u4e07\\u5440\\u2014\\u2014\\u592a\\u68d2\\u5566\\u2014\\u2014\\u2757\\u2757\\r\\n\\r\\nSay!Fanfare!/\\u767d\\u4e0a\\u30d5\\u30d6\\u30ad\\u3010\\u539f\\u521b\\u66f2\\u3011\\r\\nhttps://youtu.be/pFgUluV_00s\\r\\n#\\u30d5\\u30d6\\u30ad"'),"次节点翻译"],//推文只处理前两个值(主节点，次节点-转发的推文)
-                '2':["二层翻译","二层次节点"],
-                'main':["主翻译","主翻译节点"],//末端的主推文，置入参数前处理(先搜索对应下标再搜索main-main用于无下标置入)
-            }
+
+
+    //推文翻译置入内容获取
+    function getTrans(){
+        let template = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>'
+        let trantext = {
+            '1':["复杂才关😳😳😳\n今天！！！！！咱要来玩这个游戏了！！！！！！！！！\n19点！！！19点开始！！！！（开心地手舞足蹈）" + JSON.parse('"\\u2728Say!Fanfare!\\u2728\\r\\n\\u2728\\u3297100\\u4e07\\u64ad\\u653e\\u3297\\u2728\\r\\n\\u771f\\u7684\\u5f88\\u611f\\u8c22\\u5927\\u5bb6!!!\\r\\nHamu\\u6851\\uff08\\u4f5c\\u8bcd\\u4f5c\\u66f2\\uff09\\uff01iimo\\u6851\\uff08\\u52a8\\u753b\\uff09\\uff01\\u8fd8\\u6709\\u5927\\u5bb6\\u2757\\u2757\\r\\n\\u662f100\\u4e07\\u5440\\u2014\\u2014\\u592a\\u68d2\\u5566\\u2014\\u2014\\u2757\\u2757\\r\\n\\r\\nSay!Fanfare!/\\u767d\\u4e0a\\u30d5\\u30d6\\u30ad\\u3010\\u539f\\u521b\\u66f2\\u3011\\r\\nhttps://youtu.be/pFgUluV_00s\\r\\n#\\u30d5\\u30d6\\u30ad"'),
+                 "次节点翻译"],//推文只处理前两个值(主节点，次节点-转发的推文)
+            '2':["二层翻译","二层次节点"],
+            'main':["主翻译","主翻译节点"],//末端的主推文，置入参数前处理(先搜索对应下标再搜索main-main用于无下标置入)
         }
-        translist.text['1'] = ["翻译-えへへ(*´꒳`*)ﾟ*.・♡\n\
-みんなのおかげで疲れがとれた(๑╹ᆺ╹)闪片\n\
-\n\
-【\\#233】\
-午後もがんばる୧(๑•̀ㅁ•́๑)૭✧"]
-        var name=prompt("请输入模版值","翻译自日文"); // 弹出input框
+        let name = prompt("请输入模版值","翻译自日文"); // 弹出input框
         if(name != ''){
-            if(name.slice(0,10) == 'data:image')
-                translist.type_html = "<div style=\"padding:5px;margin:0px\"><img height=\"38\" src=\""+name+"\"></div>"
-            else if(name.slice(0,1) == '<'){
-                translist.type_html = name
-            }
-            else{
-                translist.type_html = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">' + name +'</p>'
+            if(name.slice(0,10) == 'data:image'){
+                template = "<div style=\"padding:5px;margin:0px\"><img height=\"38\" src=\""+name+"\"></div>"
+            }else if(name.slice(0,1) == '<'){
+                template = name
+            }else{
+                template = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">' + name +'</p>'
             }
         }
-        //多重回复终止定位
-        try {
-            function attributesCallback(icon, variant) {
-                return {
-                    title: 'Emoji: ' + icon + variant,
-                    style: 'height: 1em;width: 1em;margin: 0.05em 0.1em;vertical-align: -0.1em;'
-                };
+        let arg = prompt("请输入翻译值",""); // 弹出input框
+        if(arg.replace(/^\s+|\s+$/g,"")){
+            trantext = {}
+            let args = arg.split('##')
+            if(args.length === 1){
+                let inarg = arg.split('#!',2)
+                if(inarg.length === 1){
+                    trantext.main = [arg.replace(/^\s+|\s+$/g,"")]
+                }else{
+                    trantext.main = [inarg[0].replace(/^\s+|\s+$/g,""),inarg[1].replace(/^\s+|\s+$/g,"")]
+                }
+            }else{
+                for(var i = 1;i<args.length;i++){
+                    arg = args[i]
+                    let key = i
+                    let kv = arg.split(/[\s]/,2)
+                    if(kv.length === 2){
+                        key = kv[0]
+                        arg = kv[1]
+                    }
+                    let inarg = arg.split('#!',2)
+                    if(inarg.length === 1){
+                        trantext[key] = [arg.replace(/^\s+|\s+$/g,"")]
+                    }else{
+                        trantext[key] = [inarg[0].replace(/^\s+|\s+$/g,""),inarg[1].replace(/^\s+|\s+$/g,"")]
+                    }
+                }
             }
-            function textparse(text){
-                text = text.replace(/(\\#)/gi,'\\&jh; ')
-                text = text.replace(/(\S*)(#\S+)/gi,'$1<a style="color:#1DA1F2;">$2</a>')
-                text = text.replace(/((https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/g,'<a style="color:#1DA1F2;">$1</a>')
-                text = text.replace(/(\\&jh; )/gi,'#')
-                return twemoji.parse(text,{
-                    attributes:attributesCallback,
-                    base:'https://abs-0.twimg.com/emoji/v2/',
-                    folder: 'svg',
-                    ext: '.svg'
-                });
-            }
-            var shotelem = document.createElement('div')
-            shotelem.id = 'shot_elem'
+        }
+
+        return {
+            type_html:template,
+            text:trantext
+        }
+    }
+    //定向推文置入
+    function getCanTransList(){
+        try{
             //可翻译推文的列表
-            var tweets = []
+            let tweets = []
             //推文主元素
-            var mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
+            let mainelem = document.querySelector('section[aria-labelledby].css-1dbjc4n')
             if(!mainelem){
                 return [false,"推文不存在"]
             }
             let elems = mainelem.querySelectorAll('article')
-            var lastelem = null
             if(elems.length == 0){
                 return [false,"未发现推文，请重试"]
             }
+            //创建代理元素
+            var shotelem = document.createElement('div')
+            shotelem.id = 'shot_elem'
             //搜索可翻译元素
             for (var i = 0;1==1;i++) {
                 //发现元素不存在时
@@ -255,7 +354,7 @@ var twemoji=function(){"use strict";var twemoji={base:"https://twemoji.maxcdn.co
                     elart = elart.cloneNode(true)
                     shotelem.append(elart);
                     let trans = []
-                    let elemtexts = elart.querySelectorAll('div.r-bnwqim')
+                    let elemtexts = elart.querySelectorAll('div[lang].r-bnwqim')
                     for(var j = 0;j<elemtexts.length;j++){
                         trans.push({
                             elem:elemtexts[j],
@@ -279,6 +378,21 @@ var twemoji=function(){"use strict";var twemoji={base:"https://twemoji.maxcdn.co
                     }
                 }
             }
+            return [true,shotelem,tweets]
+        }
+        catch(e){
+            return [false,"搜索可翻译推文时异常",e.message]
+        }
+
+    }
+    function tweetTrans(translist){
+        let res = getCanTransList()
+        if(res[0] === false){
+            return res
+        }
+        let shotelem = res[1]
+        let tweets = res[2]
+        try {
             //翻译用的class transclass = elems[0].querySelector('div[lang][dir="auto"]>span').className
             let transclass = 'tweetadd css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0'
             let frontf = "font-family:\"Source Han Sans CN\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Ubuntu, \"Helvetica Neue\", sans-serif;"
@@ -298,7 +412,7 @@ var twemoji=function(){"use strict";var twemoji={base:"https://twemoji.maxcdn.co
                 if(i == (tweets.length-1)){
                     if(tweets[i][0]){
                         if(!tran_text){
-                            tran_text = translist.text['main'] //翻译节点不存在时切换翻译为主翻译
+                            tran_text = translist.text.main //翻译节点不存在时切换翻译为主翻译
                         }
                         if(tran_text != ''){
                             tweets[i][0].elem.append(node_type)//添加推文标识
@@ -336,63 +450,47 @@ var twemoji=function(){"use strict";var twemoji={base:"https://twemoji.maxcdn.co
                     }
                 }
             }
-            //锁定推文高度以便截取元素
-            //overflow:hidden;min-height:xxpx;
-            mainelem.innerHTML = ""
-            mainelem.append(shotelem)
+            //推文代理替换
+            mainelem().innerHTML = ""
+            mainelem().append(shotelem)
         } catch (e) {
             //返回错误
-            console.log(tweets)
-            console.log(e)
-            return [false,"推文分析出现异常，请联系作者"]
+            return [false,"推文翻译注入异常，请联系维护者",e.message]
         }
-        function mediaLoadComplete(mainelem){
-            try{
-                let elems = mainelem.querySelectorAll('img')
-                for (var i = 0;i<elems.length;i++) {
-                    if(!elems[i].complete){
-                        return false
-                    }
-                }
-                return true
-            }catch(e){
-                return true
-            }
-        }
-        function waitLoad(mainelem){
-            if(mediaLoadComplete(mainelem)){
-                let node = document.createElement('wait_img')
-                document.body.appendChild(node)
-            }else{
-                setTimeout(function(){
-                    mediaLoadComplete(mainelem);
-                }, 100);
-            }
-        }
-        setTimeout(function(){
-            waitLoad(mainelem);
-        }, 100);
-        return [true,tweets,lastelem]
+        return [true,tweets]
     }
-    var res
-    function ket(){
+
+    //测试按钮触发函数及按钮置入
+    function button1(){
         //console.log(getTweets())
-        res = tweetTrans()
-        console.log("输出:")
-        console.log(res)
+        let translist = getTrans()
+        console.log(translist)
+        let ss = function (){
+            let res = tweetTrans(translist)
+            console.log("输出:")
+            console.log(res)
+        };
+        //ss()
+        //return
+        getAllHide()
+        waitImgLoad(mainelem(),function(){
+            let res = tweetTrans(translist)
+            console.log("输出:")
+            console.log(res)
+        })
     }
-    function ket1(){
+    function button2(){
         console.log(getTweets())
     }
     setTimeout(function(){
-        let html =  '<div id="script-button-test" class="right-action-ctnr live-skin-normal-a-text pointer dp-i-block btn"><i class="icon-font icon-report v-middle"></i><span class="action-text v-middle dp-i-block">置入推特翻译</span></div>'
-        let html1 =  '<div id="script-button-test1" class="right-action-ctnr live-skin-normal-a-text pointer dp-i-block btn"><i class="icon-font icon-report v-middle"></i><span class="action-text v-middle dp-i-block">获取推文列表</span></div>'
+        let html = '<div id="script-button-test" class="right-action-ctnr live-skin-normal-a-text pointer dp-i-block btn"><i class="icon-font icon-report v-middle"></i><span class="action-text v-middle dp-i-block">置入推特翻译</span></div>'
+        let html1 = '<div id="script-button-test1" class="right-action-ctnr live-skin-normal-a-text pointer dp-i-block btn"><i class="icon-font icon-report v-middle"></i><span class="action-text v-middle dp-i-block">获取推文列表</span></div>'
         $('a[href="/login"]').parent().append(html)
         $('a[href="/login"]').parent().append(html1)
         $('a[href="/compose/tweet"]').parent().append(html)
         $('a[href="/compose/tweet"]').parent().append(html1)
-        $('#script-button-test').click(ket)
-        $('#script-button-test1').click(ket1)
+        $('#script-button-test').click(button1)
+        $('#script-button-test1').click(button2)
     }, 4000);
-    // Your code here...
+
 })();

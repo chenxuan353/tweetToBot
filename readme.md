@@ -133,7 +133,21 @@ mv chromedriver /usr/local/bin
 
 ##### **※chromedriver需要拥有执行权限**
 
+##### 安装字体
 
+烤推使用字体 Source Han Sans CN
+
+##### 设置时区
+
+```
+timedatectl set-timezone Asia/Shanghai
+```
+
+##### 设置语言
+
+```
+export LANG="zh_CN.UTF-8"
+```
 
 
 

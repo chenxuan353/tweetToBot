@@ -37,6 +37,8 @@ def encode_b64(n:int,offset:int = 0) -> str:
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
     result = []
     temp = n - offset
+    if temp < 0:
+        return ''
     if 0 == temp:
         result.append('0')
     else:
@@ -284,7 +286,7 @@ class TweePushList(PushList):
             if config:
                 mergeConf['push'].update(config['push'] if 'push' in config else {})
             if key not in mergeConf['push']:
-                return None
+                return 0
             return mergeConf['push'][key]
     def getUnitConfKey(self,pushunit,key):
         return self.getMergeConfKey(self.getUnitPushToConfig(pushunit)['config'],pushunit['pushconfig'],key)
@@ -927,11 +929,11 @@ class TweetStatusDeal:
         else:
             tweetinfo['hasrelate'] = False
             tweetinfo['relate'] = None
-            tweetinfo['relate_id'] = None
-            tweetinfo['relate_id_str'] = None
-            tweetinfo['relate_user_id'] = None
-            tweetinfo['relate_user_id_str'] = None
-            tweetinfo['relate_user_sname'] = None
+            tweetinfo['relate_id'] = -1
+            tweetinfo['relate_id_str'] = '-1'
+            tweetinfo['relate_user_id'] = -1
+            tweetinfo['relate_user_id_str'] = '-1'
+            tweetinfo['relate_user_sname'] = ''
             tweetinfo['relate_userinfo'] = None
             tweetinfo['relate_notable'] = False
         
@@ -1206,7 +1208,7 @@ class TweetEventDeal:
         msg = '触发事件{0}-{1}来自{2}：\n'.format(event['grouptype'],event['unittype'],event['spyid'])
         if event['grouptype'] in ('listen','reverse'):
             tweetinfo = event['data']
-            msg = msg + self.tweetToMsg(tweetinfo,simple=True).toSimpleStr()
+            msg = msg + self.tweetToMsg(tweetinfo,simple=True,even = True).toSimpleStr()
         elif event['grouptype'] == 'userupdata':
             msg = msg + self.userUpdataToMsg(event['data']).toSimpleStr()
         else:
@@ -1482,7 +1484,12 @@ class TweetEventDeal:
             nick = None
         userupdata['nick'] = (nick if nick else userupdata['user_screen_name'])
         if not template:
-            template = "{nick}({user_name})的{des}更新了：\n由 {oldkey} 更新为 {newkey}"
+            if userupdata['unittype'] == 'description':
+                template = "{nick}({user_name})的推特信息 {des} 更新为：\n{newkey}"
+            elif userupdata['unittype'] == 'followers':
+                template = "{nick}({user_name})的推特信息 {des} 更新为：{newkey}"
+            else:
+                template = "{nick}({user_name})的推特信息 {des} 更新了：\n由 {oldkey} 更新为 {newkey}"
         stl = template.format(**userupdata)
         if userupdata['unittype'] == 'headimg':
             msg = SendMessage()
@@ -1491,8 +1498,8 @@ class TweetEventDeal:
             msg.clear()
             msg.append(msg.baleImgObj(userupdata['newimg']))
             newimgstr = msg.toStandStr()
-            stl.replace('[旧头像]',oldimgstr)
-            stl.replace('[新头像]',newimgstr)
+            stl = stl.replace('[旧头像]',oldimgstr)
+            stl = stl.replace('[新头像]',newimgstr)
         msg = SendMessage(stl)
         return msg
 
@@ -1614,7 +1621,7 @@ def on_resFromDealSourceData(notable,tweetinfo,userevens):
             on_even(usereven,'用户事件推送')
         if test != None:
             try:
-                test.on_status(tweetinfo,status)
+                test.on_status(tweetinfo)
             except:
                 pass
     except:

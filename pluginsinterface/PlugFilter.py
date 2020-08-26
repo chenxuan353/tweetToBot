@@ -36,7 +36,12 @@ class PlugMsgFilter:
     def reDealStr(pat:str,msg:str) -> list:
         #使用正则表达式捕获组处理字符串
         res = []
-        resm = re.match(pat,msg, re.M | re.S)
+        try:
+            resm = re.match(pat,msg, re.M | re.S)
+        except:
+            logger.info(pat)
+            logger.info(msg)
+            return []
         if resm is None:
             return []
         for reg in resm.groups():
