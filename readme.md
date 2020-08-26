@@ -13,23 +13,27 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 
 **项目目前支持 Python 3.7 +**
 
-
-
 ## 使用文档
 
-### 文档首页(使用者请使用)
-
 [用户文档](https://chenxuan353.github.io/tweetTobot/)
-
-
 
 ## 部署文档
 
 ### 项目使用及配置
 
-直接克隆本项目或到release内克隆稳定版本
+直接克隆本项目以获取最新版本：
 
-需要安装python3用以启动项目，请确保python3在3.7及以上版本以免遭遇兼容性bug
+```shell
+git clone https://github.com/chenxuan353/tweetToBot.git
+```
+
+或到Release内下载稳定版本：
+
+```
+wget https://github.com/chenxuan353/tweetToBot/archive/Version3.5.zip
+```
+
+本项目使用Python3进行编写，请确保使用Python3.7及以上版本启动本服务，以免遭遇兼容性错误。
 
 ##### 查看python版本
 
@@ -37,10 +41,32 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 python -V
 ```
 
+或使用多个版本的Python3
+- Linux/Unix/OS X
+
+```shell
+python3 -V
+```
+
+- Windows
+
+```shell
+py -3 -V
+```
+
 ##### 依赖安装
 
 ```shell
 pip install -r requirements.txt
+```
+或
+(Linux/Unix/OS X)
+```shell
+pip3 install -r requirements.txt
+```
+(Windows)
+```shell
+py -3 -m pip install -r requirements.txt
 ```
 
 ##### 配置项目
@@ -58,8 +84,6 @@ cp config_example.py config.py
 ```shell
 python3 ./start.py
 ```
-
-
 
 ### bot连接到后端
 
@@ -90,8 +114,6 @@ CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-
         }
     ], 
 ```
-
-
 
 ### 使用烤推功能
 
@@ -148,98 +170,3 @@ timedatectl set-timezone Asia/Shanghai
 ```
 export LANG="zh_CN.UTF-8"
 ```
-
-
-
-## 关于Docs分支
-
-**此分支为项目文档所在分支 此文档通过Hexo部署。**
-
-### 文档维护(文档维护者请参见，仅部署后端可忽略)
-
-#### 依赖
-
-本文档网站搭建使用[HEXO](https://hexo.io/)，当前页面搭建基于[NodeJS LTS](https://nodejs.org/en/download/)请安装Node.js 12以搭建开发环境。
-
-#### 环境配置
-
-##### 全局HEXO
-
-推荐在全局安装HEXO以搭建其他页面
-
-```
-node i -g hexo
-```
-
-##### Plugins
-
-进入`/docs`文件夹，在Shell内运行
-
-```shell
-npm i
-```
-
-安装依赖，并安装Git插件
-
-```shell
-npm i hexo-deployer-git --save
-```
-
-#### 使用
-
-##### 添加新文档
-
-```Shell
-hexo new "<标题(建议英文)>"
-```
-
-或直接在`source/_post/`内添加Markdown文档(须仿照其他文档设置抬头)
-
-##### 修改文档
-
-略
-
-##### 编译
-
-hexo文档项目使用
-
-```mermaid
-graph LR;
-
-A[本地编辑] --> B[本地编译]
-B --> C[本地预览]
-E[清理当前项目] --> B
-B --> D[部署到GitHub页面]
-C --> D
-A --> E
-
-```
-
-的模式，故编译时建议先**清理本地静态页面**
-
-```shell
-npm run clean
-```
-
-或
-
-```shell
-hexo clean
-```
-
-然后进行**编译生成**
-
-```shell
-npm run generate
-```
-
-##### 部署
-
-最后部署到GitHub
-
-```shell
-npm run deploy
-```
-
-之后网页便会自动Push到仓库的`gh-pages`分支，并自动部署到服务器。
-
