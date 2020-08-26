@@ -34,6 +34,8 @@ baseconfigpath = 'tweitter'
 DEBUG = config.DEBUG
 #10进制与64进制互相转换(由于增速过快，缩写ID不设偏移)
 def encode_b64(n:int,offset:int = 0) -> str:
+    if n is None:
+        return ''
     table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
     result = []
     temp = n - offset
