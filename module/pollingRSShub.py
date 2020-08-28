@@ -108,7 +108,7 @@ def get_updata(trigger : bool = True):
                 run_info['lastErrTime'] = int(time.time())
                 run_info['errorCount'] = 0
             run_info['errorCount'] += 1
-            if run_info['errorCount'] > 150:
+            if run_info['errorCount'] > 1500:
                 #短时间错误次数过高
                 exp_send("错误，监测服务异常，请检测后手动启动")
                 run_info['keepRun'] = False
