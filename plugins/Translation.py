@@ -100,6 +100,8 @@ async def _(session:Session):
     source = session.filterargs['source']
     target = session.filterargs['target']
     text:str = session.filterargs['tail'].strip()
+    if text == '':
+        return
     if text.startswith('#'):
         if text[1:].isdigit():
             n = int(text[1:])
