@@ -82,6 +82,7 @@ class RSSDealPackage:
         except:
             s = traceback.format_exc(limit=10)
             logger.warning(s)
+            logger.warning("url:{0},path:{1}".format(self.url,self.path))
             return (False,'读取页面时出错,url = {url}'.format(url = self.url))
         if updatacache and self.useUpdataCache:
             self.data = data
