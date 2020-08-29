@@ -184,6 +184,7 @@ class RSShubEvenDeal:
                     rdes[0][:15].strip() + ('...' if len(rdes[0])>15 else '')
                 )
         elif path.startswith('/mail/imap/'):
+            medias = []
             msg = "{0} 更新了\n{1}".format(
                     unitdes,
                     rssdata['title'],
@@ -197,9 +198,9 @@ class RSShubEvenDeal:
                     rdes[0]
                 )
         msg = SendMessage(msg)
-        if rdes[1]:
+        if medias:
             msg.append('\n媒体：\n')
-        for src in rdes[1]:
+        for src in medias:
             msg.append(msg.baleImgObj(src))
         msg.append("{0}{1}".format(
                     (('\n'+rssdata['link']) if rssdata['link'] else ''),
