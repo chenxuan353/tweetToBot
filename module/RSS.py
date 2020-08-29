@@ -5,6 +5,7 @@ from module.msgStream import SendMessage
 from html.parser import HTMLParser
 import time
 import re
+import traceback
 #日志输出
 from helper import getlogger
 logger = getlogger(__name__)
@@ -123,8 +124,13 @@ class RSShubEvenDeal:
                     self.eventTrigger(event,pushunit)
     #事件到达(触发)
     def eventTrigger(self,event,pushunit):
-        msg = self.evenToStr(event['path'],event['data'],pushunit)
-        self.send_msg_pushunit(pushunit,msg)
+        try:
+            msg = self.evenToStr(event['path'],event['data'],pushunit)
+            self.send_msg_pushunit(pushunit,msg)
+        except:
+            s = traceback.format_exc(limit=10)
+            logger.error(s)
+            logger.error('事件转换错误！')
     #标准RSS事件转文本
     def dealText(self,text):
         """
