@@ -21,7 +21,12 @@ class MyHTMLParser(HTMLParser):
         self.links = [].copy()
     def handle_starttag(self, tag, attrs):
         if tag == 'img':
-            self.media.append(dict(attrs)['src'])
+            #base64://
+            #data:image/gif;base64,
+            src:str = dict(attrs)['src']
+            if src.startswith('data:image/'):
+                src = 'base64://' + src[src.index('base64,')+len('base64,'):]
+            self.media.append(src)
         elif tag == 'a':
             self.links.append(dict(attrs)['href'])
 
@@ -129,8 +134,9 @@ class RSShubEvenDeal:
         parser = MyHTMLParser()
         parser.feed("<body>"+text+"</body>")
         resText = parser.text
-        extended_entities = parser.media
-        return (resText,extended_entities)
+        medias = parser.media
+        links = parser.links
+        return (resText,medias,links)
     def evenToStr(self,path:str,rssdata,pushunit) -> str:
         """
             <item>
@@ -156,7 +162,8 @@ class RSShubEvenDeal:
         if nick == '':
             nick = '(未命名)'
         rdes = self.dealText(rssdata['description'])
-        
+        medias = rdes[1]
+        links = rdes[2]
         if path.startswith('/bilibili/user/dynamic/'):
             msg = "来自 {0} 的更新\n{1}\n{2}".format(
                     unitdes,
@@ -169,6 +176,12 @@ class RSShubEvenDeal:
                     ('   --' + nick if nick != '(未命名)' else ''),
                     rssdata['title'],
                     rdes[0][:15].strip() + ('...' if len(rdes[0])>15 else '')
+                )
+        elif path.startswith('/mail/imap/'):
+            msg = "{0} 更新了\n{1}".format(
+                    unitdes,
+                    rssdata['title'],
+                    #rssdata['auther']
                 )
         else:
             msg = "来自 {0} 的更新\n{1}{2}\n{3}".format(
