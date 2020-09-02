@@ -1,6 +1,6 @@
 # 通用BOT插件
 
-- example_plugins
+- ExamplePlugins
   插件编写例/示例插件/测试用插件
 - FeedBack
   反馈收集插件

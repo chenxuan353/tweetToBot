@@ -1,4 +1,4 @@
-from .langconv import Converter
+from .lang_conv import Converter
 """
     来自https://raw.githubusercontent.com/skydark/nstools/master/zhtools
     的繁简转换代码

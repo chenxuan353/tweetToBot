@@ -17,22 +17,22 @@ logger = getlogger(__name__)
 @plugRegistered('RSShub推送管理','RSShubPush')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于管理RSShub推送的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于管理RSShub推送的插件'# 插件描述  
         }
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #if not config.RSS_open:
-        #    plug.switchPlug(False) #关闭插件
-        #注册权限
+        # if not config.RSS_open:
+        #     plug.switchPlug(False) # 关闭插件
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('manageuse',des = '管理授权开关的权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('manageself',des = '管理自己的权限',defaultperm=PlugMsgTypeEnum.allowall)
-        #plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
+        # plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
 
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
@@ -80,7 +80,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='RSS优先级设置列表',argfilter=argfilter,bindsendperm='manage',des='RSS优先级设置列表 - RSS优先级设置列表')
 async def _(session:Session):
@@ -235,7 +235,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='订阅列表',argfilter=argfilter,des='订阅列表 页码 - 获取订阅列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself',at_to_me=False)
 async def _(session:Session):

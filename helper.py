@@ -10,11 +10,11 @@ import re
 """
 帮助函数
 """
-cache_base_path = "cache" #基础目录
+cache_base_path = "cache" # 基础目录
 config_path = 'config' 
 log_path = 'log'
 
-#判断目录存在性，不存在则生成
+# 判断目录存在性，不存在则生成
 def check_path(filepath:str):
     cpath = os.path.join(cache_base_path,filepath)
     if not os.path.exists(cpath):
@@ -25,7 +25,7 @@ def file_exists(filepath:str):
     return os.path.isfile(cpath)
 
 
-#设置nonebot的日志对象
+# 设置nonebot的日志对象
 def initNonebotLogger(printCMD:bool = True):
     logformat = logging.Formatter("[%(asctime)s %(name)s]%(levelname)s: %(message)s")
     trf = logging.handlers.TimedRotatingFileHandler(
@@ -38,13 +38,13 @@ def initNonebotLogger(printCMD:bool = True):
     trf.setFormatter(logformat)
     nonebot.logger.addHandler(trf)
 
-#初始化目录
+# 初始化目录
 check_path("")
 check_path(os.path.join(config_path))
 check_path(os.path.join(log_path))
 initNonebotLogger()
 
-#获取日志对象(记录名，是否输出到控制台)
+# 获取日志对象(记录名，是否输出到控制台)
 def getlogger(name,printCMD:bool = True,loglevel = logging.INFO) -> logging.Logger:
     reslogger = logging.getLogger(name)
     reslogger.setLevel(loglevel)
@@ -87,11 +87,11 @@ def arglimitdeal(ls:dict):
             res[res[k]]=k
     return res
 
-#dict扩展操作
+# dict扩展操作
 def dictInit(d:dict,*args,endobj:dict = None) -> bool:
-    #参数：待初始化字典,键名...
-    #初始化层次字典,初始化结构为层层字典嵌套
-    #不重复初始化(不覆盖已有内容),endobj为字典时会被copy
+    # 参数：待初始化字典,键名...
+    # 初始化层次字典,初始化结构为层层字典嵌套
+    # 不重复初始化(不覆盖已有内容),endobj为字典时会被copy
     nowunit = None
     nowd = None
     for unit in args:   
@@ -110,8 +110,8 @@ def dictInit(d:dict,*args,endobj:dict = None) -> bool:
             return False
     return True
 def dictHas(d:dict,*args) -> bool:
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
+    # 参数：待判断字典,键名...
+    # 判断多层键是否存在
     nowunit = None
     nowd = None
     for unit in args:
@@ -124,8 +124,8 @@ def dictHas(d:dict,*args) -> bool:
             return False
     return True
 def dictGet(d:dict,*args,default = None) -> dict:
-    #参数：待判断字典,键名...
-    #判断多层键是否存在
+    # 参数：待判断字典,键名...
+    # 判断多层键是否存在
     nowunit = None
     nowd = None
     for unit in args:
@@ -138,9 +138,9 @@ def dictGet(d:dict,*args,default = None) -> dict:
             return default
     return nowd[nowunit]
 def dictSet(d:dict,*args,obj:dict = None) -> None:
-    #参数：待初始化字典,键名...
-    #初始化层次字典,初始化结构为层层字典嵌套
-    #obj不为None时将覆盖末端节点
+    # 参数：待初始化字典,键名...
+    # 初始化层次字典,初始化结构为层层字典嵌套
+    # obj不为None时将覆盖末端节点
     nowunit = None
     nowd = None
     for unit in args:
@@ -157,9 +157,9 @@ def dictSet(d:dict,*args,obj:dict = None) -> None:
 """
 文件操作相关函数
 """
-#文件操作日志
+# 文件操作日志
 fileop_logger = getlogger('filesystem',False)
-#数据文件操作,返回(逻辑值T/F,dict数据/错误信息)
+# 数据文件操作,返回(逻辑值T/F,dict数据/错误信息)
 def data_read(filename:str,path:str = config_path) -> tuple:
     try:
         f = open(os.path.join(cache_base_path,path,filename),mode = 'r',encoding='utf-8')
@@ -202,9 +202,9 @@ def data_read_auto(filename:str,default = None,path:str = config_path):
         return res[2]
     return default
 
-#临时列表
+# 临时列表
 class TempMemory:
-    #记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
+    # 记录名称、记录长度(默认记录30条),默认数据,是否自动保存(默认否),是否自动读取(默认否)
     def __init__(self,
             name:str,
             limit:int = 30,
@@ -255,12 +255,12 @@ class TempMemory:
 
 #速率限制
 class TokenBucket(object):
-    #作者：simpleapples
-    #链接：https://juejin.im/post/5ab10045518825557005db65
-    #来源：掘金
-    #著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+    # :author: simpleapples
+    # :link: https://juejin.im/post/5ab10045518825557005db65
+    # :source: 掘金
+    # :note: 著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
     def __init__(self, rate, capacity, initval:int = 1):
-        #rate是令牌发放速度(每秒发放数量)，capacity是桶的大小，initval是初始大小(桶的百分比)
+        # rate是令牌发放速度(每秒发放数量)，capacity是桶的大小，initval是初始大小(桶的百分比)
         self._rate = rate
         self._capacity = capacity
         self._current_amount = 0

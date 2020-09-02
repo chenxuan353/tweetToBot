@@ -23,7 +23,7 @@ def randUserAgent():
     ]
     return UAs[random.randint(0,len(UAs)-1)]
 
-#通用翻译语言(参数解析表)
+# 通用翻译语言(参数解析表)
 allow_st = {
     'Source':arglimitdeal({
         'auto':['自动识别','自动'],
@@ -43,13 +43,13 @@ allow_st = {
 }
 allow_st['Source'][''] = 'auto'
 allow_st['Target'][''] = 'zh'
-#引擎参数解析对照表
+# 引擎参数解析对照表
 engine_nick = {
     '':'tencent',
     'tencent':'tencent','腾讯':'tencent',
     'google':'google','谷歌翻译':'google','谷歌':'google',
 }
-#引擎设置
+# 引擎设置
 """
     name = {
         'nick':'引擎昵称',#用于展示(帮助列表)
@@ -59,19 +59,19 @@ engine_nick = {
     }
 """
 
-#使用腾讯云SDK，SDK未安装时无法使用
-#pip install tencentcloud-sdk-python
+# 使用腾讯云SDK，SDK未安装时无法使用
+# pip install tencentcloud-sdk-python
 tencent = {
     'nick':"腾讯",
     "switch":MachineTransApi['tencent']['switch'],
     'bucket':TokenBucket(5,5),
-    #地区 ap-guangzhou->广州 ap-hongkong->香港
-    #更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
+    # 地区 ap-guangzhou->广州 ap-hongkong->香港
+    # 更多详见 https://cloud.tencent.com/document/api/551/15615#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8
     'Region':MachineTransApi['tencent']['Region'],
     'key':MachineTransApi['tencent']['key'],
     'secret':MachineTransApi['tencent']['secret'],
 }
-#源文本，源文本语言，翻译到 返回值(是否成功，结果文本/错误说明，返回的源数据)
+# 源文本，源文本语言，翻译到 返回值(是否成功，结果文本/错误说明，返回的源数据)
 def tencent_MachineTrans(SourceText:str,Source = 'auto',Target = 'zh'):
     if not tencent['switch']:
         return (False,'错误，当前引擎未启用！')

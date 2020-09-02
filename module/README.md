@@ -1,6 +1,6 @@
 # 推送模块
 
-- machine_translation
+- machineTranslation
   机器翻译：自动翻译模块
 - msgStream
   消息流处理模块

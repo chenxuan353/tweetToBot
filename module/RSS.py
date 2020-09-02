@@ -6,7 +6,7 @@ from html.parser import HTMLParser
 import time
 import re
 import traceback
-#日志输出
+# 日志输出
 from helper import getlogger
 logger = getlogger(__name__)
 
@@ -22,8 +22,8 @@ class MyHTMLParser(HTMLParser):
         self.links = [].copy()
     def handle_starttag(self, tag, attrs):
         if tag == 'img':
-            #base64://
-            #data:image/gif;base64,
+            # base64://
+            # data:image/gif;base64,
             src:str = dict(attrs)['src']
             if src.startswith('data:image/'):
                 src = 'base64://' + src[src.index('base64,')+len('base64,'):]
@@ -32,12 +32,12 @@ class MyHTMLParser(HTMLParser):
             self.links.append(dict(attrs)['href'])
 
     def handle_endtag(self, tag):
-        #logger.info("Encountered an end tag :" + tag)
+        # logger.info("Encountered an end tag :" + tag)
         pass
 
     def handle_data(self, data):
-        #logger.info("Encountered some data  :")
-        #logger.info(data)
+        # logger.info("Encountered some data  :")
+        # logger.info(data)
         self.text = self.text + data
 class RssPushList(PushList):
     def __init__(self,configfilename = 'RSShubPushlist.json'):
@@ -107,14 +107,14 @@ class RSShubEvenDeal:
                 if not pushunit['pushconfig']['options']['re']:
                     return False
             else:
-                #仅日语
+                # 仅日语
                 if pushunit['pushconfig']['options']['onlyjp'] and not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',data['description']):
                     return False
-                #不看投稿
+                # 不看投稿
                 if data['description'].find('/bfs/archive/') != -1 and not pushunit['pushconfig']['options']['notupload']:
                     return False
         return True
-    #事件分发
+    # 事件分发
     def deal_event(self,event):
         pushlist = self.pushlist
         units = pushlist.getLitsFromSpyID(event['path'])
@@ -122,7 +122,7 @@ class RSShubEvenDeal:
             for pushunit in units:
                 if self.eventSourceAllow(event,pushunit):
                     self.eventTrigger(event,pushunit)
-    #事件到达(触发)
+    # 事件到达(触发)
     def eventTrigger(self,event,pushunit):
         try:
             msg = self.evenToStr(event['path'],event['data'],pushunit)
@@ -131,7 +131,7 @@ class RSShubEvenDeal:
             s = traceback.format_exc(limit=10)
             logger.error(s)
             logger.error('事件转换错误！')
-    #标准RSS事件转文本
+    # 标准RSS事件转文本
     def dealText(self,text):
         """
             处理HTML标签
@@ -160,7 +160,7 @@ class RSShubEvenDeal:
         else:
             source = sourceWeb
         nick = rssdata['author']
-        unitdes = source #订阅描述
+        unitdes = source # 订阅描述
         if 'nick' in pushunit['pushconfig']:
             nick = pushunit['pushconfig']['nick']
         if 'unitdes' in pushunit['pushconfig'] and pushunit['pushconfig']['unitdes']:
@@ -188,7 +188,7 @@ class RSShubEvenDeal:
             msg = "{0} 更新了\n{1}".format(
                     unitdes,
                     rssdata['title'],
-                    #rssdata['auther']
+                    # rssdata['auther']
                 )
         else:
             msg = "来自 {0} 的更新\n{1}{2}\n{3}".format(

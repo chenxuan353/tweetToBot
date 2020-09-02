@@ -4,10 +4,10 @@ import threading
 import os
 import time
 import string
-#图片缓存
+# 图片缓存
 import urllib
 import traceback
-#引入配置
+# 引入配置
 import config
 
 from datetime import datetime, timedelta, timezone
@@ -17,11 +17,11 @@ from helper import dictInit,dictHas,dictGet,dictSet
 from helper import data_read,data_save,TempMemory,data_read_auto,file_exists,check_path
 from module.PushList import PushList
 
-#日志输出
+# 日志输出
 from helper import getlogger,check_path,data_read_auto,data_save
 logger = getlogger(__name__)
 logger_Event = getlogger(__name__+'_event',printCMD=False)
-#引入测试方法
+# 引入测试方法
 try:
     #event_push
     import v3_test as test
@@ -32,7 +32,7 @@ except:
 '''
 baseconfigpath = 'tweitter'
 DEBUG = config.DEBUG
-#10进制与64进制互相转换(由于增速过快，缩写ID不设偏移)
+# 10进制与64进制互相转换(由于增速过快，缩写ID不设偏移)
 def encode_b64(n:int,offset:int = 0) -> str:
     if n is None:
         return ''
@@ -73,57 +73,57 @@ def decode_b64(str,offset:int = 0) -> int:
 class TweePushList(PushList):
     defaulttemplate = "$ifrelate $nick $typestr了 $relate_user_name 的推文$else $nick的推特更新了$end：\n$text $imgs $relatestart\n---------------\n$relate_text $relate_imgs$relateend\n跟推延时：$senddur\n链接：$link\n临时推文ID：#$tempID"
     pushunit_base_config = {
-        #是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+        # 是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
         'upimg':0,
-        #对象自定义选项
+        # 对象自定义选项
         #'unit':{
         #    #'nick':'',
         #    #'des':'',
         #},
-        'template':'',#推特推送模版(为空使用默认模版)
-        #推送选项(注释则不推送)
+        'template':'',# 推特推送模版(为空使用默认模版)
+        # 推送选项(注释则不推送)
         'push':{
-            #推特推送开关
-            'retweet':0,#转推(默认不开启)
-            'quoted':1,#带评论转推(默认开启)
-            'reply_to_status':1,#回复(默认开启)
-            'reply_to_user':1,#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
-            'none':1,#发推(默认开启)
+            # 推特推送开关
+            'retweet':0,# 转推(默认不开启)
+            'quoted':1,# 带评论转推(默认开启)
+            'reply_to_status':1,# 回复(默认开启)
+            'reply_to_user':1,# 提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+            'none':1,# 发推(默认开启)
 
-            #智能推送(仅限推送单元设置，无法全局设置)
-            'ai_retweet':0,#智能推送本人转推(默认不开启)-转发值得关注的人的推特时推送
-            'ai_reply_to_status':0,#智能推送本人回复(默认不开启)-回复值得关注的人时推送
-            'ai_passive_reply_to_status':0,#智能推送 被 回复(默认不开启)-被值得关注的人回复时推送
-            'ai_passive_quoted':0,#智能推送 被 带评论转推(默认不开启)-被值得关注的人带评论转推时推送
-            'ai_passive_reply_to_user':0,#智能推送 被 提及(默认不开启)-被值得关注的人提及时推送
+            # 智能推送(仅限推送单元设置，无法全局设置)
+            'ai_retweet':0,# 智能推送本人转推(默认不开启)-转发值得关注的人的推特时推送
+            'ai_reply_to_status':0,# 智能推送本人回复(默认不开启)-回复值得关注的人时推送
+            'ai_passive_reply_to_status':0,# 智能推送 被 回复(默认不开启)-被值得关注的人回复时推送
+            'ai_passive_quoted':0,# 智能推送 被 带评论转推(默认不开启)-被值得关注的人带评论转推时推送
+            'ai_passive_reply_to_user':0,# 智能推送 被 提及(默认不开启)-被值得关注的人提及时推送
 
-            #个人信息变化推送(非实时)
-            'change_ID':0, #ID修改(默认关闭)
-            'change_name':1, #昵称修改(默认开启)
-            'change_description':0, #描述修改(默认关闭)
-            'change_headimg':1, #头像更改(默认开启)
-            'change_followers':1, #每N千粉推送一次关注数据(默认开启)
+            # 个人信息变化推送(非实时)
+            'change_ID':0, # ID修改(默认关闭)
+            'change_name':1, # 昵称修改(默认开启)
+            'change_description':0, # 描述修改(默认关闭)
+            'change_headimg':1, # 头像更改(默认开启)
+            'change_followers':1, # 每N千粉推送一次关注数据(默认开启)
         }
     }
-    #推送单元允许编辑的配置_布尔类型
+    # 推送单元允许编辑的配置_布尔类型
     Pushunit_allowEdit = (
-        #携带图片发送
+        # 携带图片发送
         'upimg',
-        #消息模版
+        # 消息模版
         'retweet_template','quoted_template','reply_to_status_template',
         'reply_to_user_template','none_template',
-        #推特转发各类型开关
+        # 推特转发各类型开关
         'retweet','quoted','reply_to_status',
         'reply_to_user','none',
 
-        #智能推送(仅限推送单元设置，无法全局设置)
+        # 智能推送(仅限推送单元设置，无法全局设置)
         'ai_retweet',
         'ai_reply_to_status',
         'ai_passive_reply_to_status',
         'ai_passive_quoted',
         'ai_passive_reply_to_user',
 
-        #推特个人信息变动推送开关
+        # 推特个人信息变动推送开关
         'change_ID','change_name','change_description',
         'change_headimg','change_followers'
         )
@@ -138,7 +138,7 @@ class TweePushList(PushList):
         if self.pushunit_default_config['template'].strip() == '':
             self.pushunit_default_config['template'] = self.defaulttemplate
         self.pushTemplateFile = fileprefix + '_' + pushtype + '_PTL.json'
-        self.init()#初始化推送列表(包含自动读取)
+        self.init()# 初始化推送列表(包含自动读取)
     def init(self):
         super().init()
         self.pushTemplateLoad()
@@ -155,7 +155,7 @@ class TweePushList(PushList):
             return (True,data[1])
         return data
 
-    #打包成推送单元中()
+    # 打包成推送单元中()
     def baleToPushUnit(self,
                         bottype:str,
                         botuuid:str,
@@ -191,7 +191,7 @@ class TweePushList(PushList):
     def addPushunit(self,pushunit:dict):
         return super().addPushunit(pushunit,self.pushunit_default_config)
 
-    #添加与删除模版及模版管理
+    # 添加与删除模版及模版管理
     def pushTemplateAddCover(self,name,config:dict):
         config = config.copy()
         self.PushTemplate[name] = config
@@ -199,7 +199,7 @@ class TweePushList(PushList):
         return (True,'模版已保存')
     def pushTemplateAdd(self,name,config):
         config = config.copy()
-        #保存推送设置模版
+        # 保存推送设置模版
         if name in self.PushTemplate:
             return (False,'模版重名！')
         self.PushTemplate[name] = config
@@ -212,7 +212,7 @@ class TweePushList(PushList):
         self.pushTemplateSave()
         return (True,'模版成功删除')
 
-    #模版设置
+    # 模版设置
     def pushTemplateApplyAll(self,name,target:dict):
         if name not in self.PushTemplate:
             return (False,'模版不存在！')
@@ -229,7 +229,7 @@ class TweePushList(PushList):
         target.update({'push':self.PushTemplate[name]['push'].copy()})
         return (True,'设置成功')
     
-    #信息打包
+    # 信息打包
     def baleForConfig(self,nick = '',des = '',upimg = None,template = None,push:dict = {}):
         res = {
             #'upimg':upimg,
@@ -245,7 +245,7 @@ class TweePushList(PushList):
         if template is not None:
             res['template'] = template
         return res
-    #信息获取
+    # 信息获取
     def getMergeConfKey(self,pushtoconfig:dict,config:dict = None,key = None):
         mergeConf = {
             'upimg':0,
@@ -293,7 +293,7 @@ class TweePushList(PushList):
     def getUnitConfKey(self,pushunit,key):
         return self.getMergeConfKey(self.getUnitPushToConfig(pushunit)['config'],pushunit['pushconfig'],key)
 
-    #触发器
+    # 触发器
     def pushcheck_trigger(self,unit,**pushunit) -> bool:
         return True
     def setPushToAttr_trigger(self,pushtoconfig:dict,setkey:str,setvalue) -> tuple:
@@ -381,18 +381,18 @@ class TweePushList(PushList):
 class TweetCache:
     def __init__(self,baseconfigpath = baseconfigpath):
         self.baseconfigpath = baseconfigpath
-        #缩写推特ID(缓存条)
-        #单元：[缩写ID,推特ID]
+        # 缩写推特ID(缓存条)
+        # 单元：[缩写ID,推特ID]
         self.newTemptweetid = data_read_auto('newTemptweetid.json',default=0,path = baseconfigpath)
         self.mintweetID = TempMemory('mintweetID',path = baseconfigpath,limit = 10000,autosave = True,autoload = True)
-        #推特用户缓存(1000条)
+        # 推特用户缓存(1000条)
         self.userinfolist = TempMemory('userinfolist',path = baseconfigpath,limit = 1000,autosave = False,autoload = False)
         self.tweetspath = os.path.join(baseconfigpath,'tweetscache')
         check_path(self.tweetspath)
-        #推文缓存(150条/监测对象)
-        #监测ID->缓存内容
+        # 推文缓存(150条/监测对象)
+        # 监测ID->缓存内容
         self.tweetscache = {}
-    #推文相关
+    # 推文相关
     def __getNewID(self):
         self.newTemptweetid += 1
         if self.newTemptweetid > 9999:
@@ -429,7 +429,7 @@ class TweetCache:
     def addTweetToCache(self,tweetinfo):
         tweetscache = self.tweetscache
         userid = tweetinfo['user_id_str']
-        #判断缓存中是否已经存在此推文
+        # 判断缓存中是否已经存在此推文
         if self.getTweetFromCache(tweetinfo['id'],tweetinfo['user_id_str']) is not None:
             return
         if userid not in tweetscache:
@@ -437,7 +437,7 @@ class TweetCache:
         if 'TempID' not in tweetinfo:
             tweetinfo['TempID'] = self.getTweetTempID(tweetinfo['id'])
         tweetscache[userid].join(tweetinfo)
-    #从缓存中获取指定用户推文列表
+    # 从缓存中获取指定用户推文列表
     def getTweetsFromCache(self,userid:str) -> TempMemory:
         tweetscache = self.tweetscache
         userid = str(userid)
@@ -464,7 +464,7 @@ class TweetCache:
             if res:
                 return res
         return None
-    #用户相关
+    # 用户相关
     def getUserInfo(self, userid:int = None,screen_name:str = None) -> dict:
         """
             尝试从缓存中获取用户信息,返回用户信息表
@@ -490,7 +490,7 @@ class TweetStatusDeal:
     def __init__(self,pushlist:TweePushList,tweetcache:TweetCache):
         self.pushlist = pushlist
         self.tweetcache = tweetcache
-    #推文包定义
+    # 推文包定义
     def bale_userinfo(self,
             notable,
             id,
@@ -564,7 +564,7 @@ class TweetStatusDeal:
         relate_user_id = None,
         relate_user_sname = None,
         relate_userinfo = None,
-        relate_notable:bool = False,#不存在的推文肯定不值得关注
+        relate_notable:bool = False,# 不存在的推文肯定不值得关注
         relate:dict = None
         ):
         """
@@ -633,7 +633,7 @@ class TweetStatusDeal:
                 'user_sname':user_sname,
                 'userinfo':userinfo,
                 'link':"https://twitter.com/{0}/status/{1}".format(user_sname,id),
-                #依赖对象(可以为空)
+                # 依赖对象(可以为空)
                 'hasrelate':(relate is not None),
                 'relate_notable':relate_notable,
                 'relate_id':(int(relate_id) if relate_id is not None else None),
@@ -692,7 +692,7 @@ class TweetStatusDeal:
         relate_id = None,
         relate_user_id = None,
         relate_user_sname = None,
-        relate_notable:bool = False,#不存在的推文肯定不值得关注
+        relate_notable:bool = False,# 不存在的推文肯定不值得关注
         relate:dict = None,
         **kw):
         relate_id:int = (kw['relate_id'] if 'relate_id' in kw else None)
@@ -713,11 +713,11 @@ class TweetStatusDeal:
                         relate_id,
                         relate_user_id,
                         relate_user_sname,
-                        relate_notable,#不存在的推文肯定不值得关注
+                        relate_notable,# 不存在的推文肯定不值得关注
                         relate
                     )
 
-    #用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或粉丝大于10000)
+    # 用户是否是值得关注的(粉丝/关注 大于 5k 且修改了默认图，或粉丝大于10000)
     def isNotableUser(self,user,checkspy:bool = True):
         pushlist = self.pushlist
         if checkspy and pushlist.hasSpy(user['id_str']):
@@ -727,7 +727,7 @@ class TweetStatusDeal:
             (int(user['followers_count'] / ((user['friends_count']+1))) > 5000 or user['followers_count'] > 10000):
             return True
         return False
-    #重新包装推特用户信息(用户数据，是否检查更新)
+    # 重新包装推特用户信息(用户数据，是否检查更新)
     def get_userinfo(self,user,checkspy:bool = True):
         """
             userinfo标准字典
@@ -816,7 +816,7 @@ class TweetStatusDeal:
         userinfo = self.get_userinfo(tweet.user,checkspy)
 
         tweettext = ''
-        #尝试获取全文
+        # 尝试获取全文
         if hasattr(tweet,'extended_tweet') or hasattr(tweet,'full_text'):
             if hasattr(tweet,'full_text'):
                 tweettext = tweet.full_text
@@ -828,7 +828,7 @@ class TweetStatusDeal:
 
         media = []
         if hasattr(tweet,'extended_entities'):
-            #图片来自本地媒体时将处于这个位置
+            # 图片来自本地媒体时将处于这个位置
             if 'media' in tweet.extended_entities:
                 for media_unit in tweet.extended_entities['media']:
                     media_obj = {}
@@ -839,7 +839,7 @@ class TweetStatusDeal:
                     media_obj['media_url_https'] = media_unit['media_url_https']
                     media.append(media_obj)
         elif hasattr(tweet,'entities'):
-            #图片来自推特时将处于这个位置
+            # 图片来自推特时将处于这个位置
             if 'media' in tweet.entities:
                 for media_unit in tweet.entities['media']:
                     media_obj = {}
@@ -864,27 +864,27 @@ class TweetStatusDeal:
    
     def deal_tweet_type(self, status):
         if hasattr(status, 'retweeted_status'):
-            return 'retweet' #纯转推
+            return 'retweet' # 纯转推
         elif hasattr(status, 'quoted_status'):
-            return 'quoted' #推特内含引用推文
+            return 'quoted' # 推特内含引用推文
         elif status.in_reply_to_status_id != None:
-            return 'reply_to_status' #回复
+            return 'reply_to_status' # 回复
         elif status.in_reply_to_screen_name != None:
-            return 'reply_to_user' #提及
+            return 'reply_to_user' # 提及
         else:
-            return 'none' #未分类(主动发推)
+            return 'none' # 未分类(主动发推)
     def deal_tweet(self, status) -> dict:
         """
         推文
         type:推文标识
         """
-        #监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
+        # 监听流：本人转推、本人发推、本人转推并评论、本人回复、被转推、被回复、被提及
         tweetinfo = self.get_tweet_info(status,True)
         tweetinfo['type'] = self.deal_tweet_type(status)
         #tweetinfo['status'] = status #原始数据
 
         if tweetinfo['type'] == 'retweet':#大多数情况是被转推
-            #转推时被转推对象与转推对象同时值得关注时视为值得关注
+            # 转推时被转推对象与转推对象同时值得关注时视为值得关注
             tweetinfo['relate'] = self.get_tweet_info(status.retweeted_status,True)
             tweetinfo['relate']['type'] = 'relate'
             tweetinfo['relate_id'] = tweetinfo['relate']['id']
@@ -939,7 +939,7 @@ class TweetStatusDeal:
             tweetinfo['relate_userinfo'] = None
             tweetinfo['relate_notable'] = False
         
-        #推文是否值得关注
+        # 推文是否值得关注
         if self.pushlist.hasSpy(tweetinfo['user_id']):
             tweetinfo['tweetNotable'] = True
         else:
@@ -964,9 +964,9 @@ class TweetEventDeal:
             self.tweetcache = tweetstatusdeal.tweetcache
         self.tweetstatusdeal = tweetstatusdeal
         self.pushlist = pushlist
-    #用户信息更新检测
+    # 用户信息更新检测
     def checkUserInfoUpdata(self,userinfo:dict) -> list:
-        #检测个人信息更新,返回更新事件集
+        # 检测个人信息更新,返回更新事件集
         tweetcache = self.tweetcache
         userinfolist = tweetcache.userinfolist
         """
@@ -1010,7 +1010,7 @@ class TweetEventDeal:
                 if key not in old_userinfo:
                     return None
                 if old_userinfo[key] != userinfo[key]:
-                    #禁止粉丝数逆增长
+                    # 禁止粉丝数逆增长
                     if key == 'followers_count' and old_userinfo[key] >= userinfo[key]:
                         return None
                     if key == 'friends_count' and old_userinfo[key] >= userinfo[key]:
@@ -1032,7 +1032,7 @@ class TweetEventDeal:
                         data['newimg'] = data['newkey']
                         data['oldkey'] = '[旧头像]'
                         data['newkey'] = '[新头像]'
-                    #粉丝数更新仅对千整数推送事件
+                    # 粉丝数更新仅对千整数推送事件
                     if key == 'followers_count' and old_userinfo[key] % 1000 != 0:
                         return None
                     if key not in ('friends_count','protected','verified','default_profile_image','default_profile','statuses_count'):
@@ -1046,7 +1046,7 @@ class TweetEventDeal:
                 'screen_name':('用户名','name'),
                 'profile_image_url_https':('头像','headimg'),
                 'followers_count':('粉丝数','followers'),
-                #以下仅更新，无事件
+                # 以下仅更新，无事件
                 'friends_count':('关注数','friends_count'),
                 'protected':('推文受保护','protected'),
                 'verified':('通过验证的账户','verified'),
@@ -1072,7 +1072,7 @@ class TweetEventDeal:
                     events.append(event)
             res['userevens'] = events
         return res
-    #打包事件(事件组，事件元，引起变化的用户ID，事件数据)
+    # 打包事件(事件组，事件元，引起变化的用户ID，事件数据)
     def bale_event(self,grouptype:str,unittype:str,spyid:str,data):
         """
             事件基本格式
@@ -1121,7 +1121,7 @@ class TweetEventDeal:
             'data':data
         }
         return eventunit
-    #事件分发
+    # 事件分发
     def deal_event(self,event:dict):
         """
             allow_type = {
@@ -1174,7 +1174,7 @@ class TweetEventDeal:
                         aivalue = int(pushlist.getUnitConfKey(pushunit,"ai_"+event['unittype']))
                         if aivalue == 1:
                             self.eventTrigger(event,pushunit)
-        elif event['grouptype'] == 'reverse':#被动推送
+        elif event['grouptype'] == 'reverse':# 被动推送
             units = pushlist.getLitsFromTweeUserID(event['spyid'])
             if units != []:
                 for pushunit in units:
@@ -1187,11 +1187,11 @@ class TweetEventDeal:
                 for pushunit in units:
                     value = int(pushlist.getUnitConfKey(pushunit,'change_'+event['unittype']))
                     if value > 0:
-                        #关注更新触发器
+                        # 关注更新触发器
                         if event['unittype'] == 'followers' and event['data']['newkey'] % (value*1000) != 0:
                             continue
                         self.eventTrigger(event,pushunit)
-    #事件到达(触发)
+    # 事件到达(触发)
     def eventTrigger(self,event:dict,pushunit:dict):
         if event['grouptype'] in ('listen','reverse'):
             tweetinfo = event['data']
@@ -1205,7 +1205,7 @@ class TweetEventDeal:
             self.send_msg_pushunit(pushunit,msg)
         else:
             msgStream.exp_send('推送不可达：{0}'.format(event['grouptype']),source='推送事件到达(触发)',flag="异常")
-    #事件转文本
+    # 事件转文本
     def eventToStr(self,event):
         msg = '触发事件{0}-{1}来自{2}：\n'.format(event['grouptype'],event['unittype'],event['spyid'])
         if event['grouptype'] in ('listen','reverse'):
@@ -1216,7 +1216,7 @@ class TweetEventDeal:
         else:
             msg = msg + '事件转换失败，{0} 未知事件组'.format(event['grouptype'])
         return msg
-    #推特标识转中文
+    # 推特标识转中文
     def tweetTypeToStr(self,tweettype:str = 'unknown'):
         types = {
             'relate':'依赖推文',
@@ -1231,7 +1231,7 @@ class TweetEventDeal:
             return types[tweettype]
         else:
             return '未知'
-    #用户信息转文本
+    # 用户信息转文本
     def userinfoToStr(self,userinfo:dict,simple = True) -> str:
         """
             userinfo标准字典
@@ -1275,7 +1275,7 @@ class TweetEventDeal:
                 msg.append("\n账户创建时间：{0}".format(timestr))
         return msg
 
-    #生成推文数据map
+    # 生成推文数据map
     def tweetinfoGetMap(self,tweetinfo:dict,nick = ''):
         """
             tweetinfo标准字典
@@ -1377,7 +1377,7 @@ class TweetEventDeal:
         if argmap['tempID'] == -1:
             argmap['tempID'] = '未生成'
         return argmap
-    #将推特数据应用到模版
+    # 将推特数据应用到模版
     def tweetToMsg(self,tweetinfo:dict,nick = None,template:str = None,simple = False,even = False) -> SendMessage:
         if not template:
             if not simple:
@@ -1390,9 +1390,9 @@ class TweetEventDeal:
                     template = "$nick,$typestr,$mintext"
                 else:
                     template = "$typestr,#$tempID,$minid,$mintext"
-        #特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
-        #特殊变量(仅识别一次) $ifrelate 依赖存在时 $else 不存在时 $end
-        #生成模版参数地图
+        # 特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
+        # 特殊变量(仅识别一次) $ifrelate 依赖存在时 $else 不存在时 $end
+        # 生成模版参数地图
         argmap = self.tweetinfoGetMap(tweetinfo,nick)
         #模版处理
         res = template.split('$relatestart',maxsplit = 1)
@@ -1415,10 +1415,10 @@ class TweetEventDeal:
                 if argmap['type'] == 'none':
                     template += res[0]
                 template += res[1]
-        #应用模版
+        # 应用模版
         st = tweetToStrTemplate(template)
         stres = st.safe_substitute(argmap)
-        #处理图片(仅处理一次)
+        # 处理图片(仅处理一次)
         """
             media_obj['id'] = media_unit['id']
             media_obj['id_str'] = media_unit['id_str']
@@ -1426,7 +1426,7 @@ class TweetEventDeal:
             media_obj['media_url'] = media_unit['media_url']
             media_obj['media_url_https'] = media_unit['media_url_https']
         """
-        #生成媒体
+        # 生成媒体
         msg:SendMessage = SendMessage()
         mediatype = ''
         for media_obj in tweetinfo['media']:
@@ -1445,7 +1445,7 @@ class TweetEventDeal:
                 imgs
             )
         
-        #生成依赖媒体
+        # 生成依赖媒体
         relateimgs = ''
         if argmap['hasrelate'] and tweetinfo['relate'] is not None:
             msg:SendMessage = SendMessage()
@@ -1505,7 +1505,7 @@ class TweetEventDeal:
         msg = SendMessage(stl)
         return msg
 
-    #图片保存(文件名,下载url,基目录-'img',是否覆盖-否),返回值->(是否成功，描述，文件路径，完整文件名)
+    # 图片保存(文件名,下载url,基目录-'img',是否覆盖-否),返回值->(是否成功，描述，文件路径，完整文件名)
     def seve_image(self, name, url, file_path='img',canCover=False) -> tuple:
         basepath = os.path.join(self.baseconfigpath,file_path)
         basepath = check_path(basepath)
@@ -1516,7 +1516,7 @@ class TweetEventDeal:
                 if not canCover:
                     return (False,'保存失败，文件已存在',filename,name + file_suffix)
                 os.remove(filename)
-            #下载图片，并保存到文件夹中
+            # 下载图片，并保存到文件夹中
             urllib.request.urlretrieve(url,filename=filename)
         except IOError:
             s = traceback.format_exc(limit=5)
@@ -1543,15 +1543,15 @@ tweetcache:TweetCache = TweetCache()
 tweetstatusdeal:TweetStatusDeal = TweetStatusDeal(pushlist,tweetcache)
 tweetevendeal:TweetEventDeal = TweetEventDeal(tweetstatusdeal,pushlist,tweetcache)
 
-#新事件缓存
+# 新事件缓存
 newevenscache = TempMemory('evencache',limit = 100)
 
 """
 运行线程信息，及更新合并请求提交
 *线程保证status处理顺序的提交
 """
-Submitqueque = queue.Queue(128) #更新提交待处理
-tweetEvenQueue = queue.Queue(64) #事件队列
+Submitqueque = queue.Queue(128) # 更新提交待处理
+tweetEvenQueue = queue.Queue(64) # 事件队列
 run_info = {
     'EventDealThread':None,
     'Eventqueque':tweetEvenQueue,
@@ -1608,11 +1608,11 @@ def on_resFromDealSourceData(notable,tweetinfo,userevens):
     #userevens = res['userevens'] #用户数据更新事件
     #run_info['queque'].put()
     try:
-        #仅处理值得关注的推文
+        # 仅处理值得关注的推文
         if notable:
             even = tweetevendeal.bale_event('listen',tweetinfo['type'],tweetinfo['user_id'],tweetinfo)
             on_even(even,'推文推送')
-            #被动推送
+            # 被动推送
             if tweetinfo['relate'] and \
                 'version' in tweetinfo['relate'] and \
                 tweetinfo['relate']['notable'] and \
@@ -1634,7 +1634,7 @@ def on_status(status,merge = False):
     res = tweetevendeal.dealSourceData(status)
     try:
         if merge:
-            #检查推文是否被处理过，处理过的推文直接忽略
+            # 检查推文是否被处理过，处理过的推文直接忽略
             if tweetcache.findTweetTempID(res['tweetinfo']['id']) > 0:
                 return
         tweetcache.addTweetToCache(res['tweetinfo'])
@@ -1645,20 +1645,20 @@ def on_status(status,merge = False):
         logger.error(res)
         logger.error(s)
 
-#事件处理队列(消耗事件)
+# 事件处理队列(消耗事件)
 def eventDeal():
     while True:
         even = run_info['Eventqueque'].get()
         try:
             run_info['tweetevendeal'].deal_event(even)
-            #控制台事件输出
+            # 控制台事件输出
             logger_Event.info(run_info['tweetevendeal'].eventToStr(even))
         except:
             s = traceback.format_exc(limit=5)
             logger.warning(s)
         run_info['Eventqueque'].task_done()
 
-#预处理提交(预处理,默认进行合并检查)
+# 预处理提交(预处理,默认进行合并检查)
 def submitStatus(status,merge:bool = True,source = '未知',timeout = 5,block=True):
     try:
         run_info['Submitqueque'].put((status,merge),timeout=timeout,block=True)
@@ -1667,7 +1667,7 @@ def submitStatus(status,merge:bool = True,source = '未知',timeout = 5,block=Tr
         notice = '推特预处理队列异常或溢出，请检查队列！'
         msgStream.exp_send(notice,source=source+'预处理提交',flag = '异常')
         logger.error(notice + '\n' + s)
-#预处理队列
+# 预处理队列
 def submitDeal():
     while True:
         onstatusunit = run_info['Submitqueque'].get()
@@ -1678,10 +1678,10 @@ def submitDeal():
             logger.warning(s)
         run_info['Submitqueque'].task_done()
 
-#运行推送线程
+# 运行推送线程
 def runTwitterPushThread():
     logger.info("TwitterEvenPush 已启动")
-    #预处理队列维护线程
+    # 预处理队列维护线程
     run_info['SubmitStatusThread'] = threading.Thread(
         group=None, 
         target=submitDeal, 
@@ -1689,7 +1689,7 @@ def runTwitterPushThread():
         daemon=True
     )
     run_info['SubmitStatusThread'].start()
-    #事件队列维护线程
+    # 事件队列维护线程
     run_info['EventDealThread'] = threading.Thread(
         group=None, 
         target=eventDeal, 

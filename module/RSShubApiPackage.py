@@ -22,27 +22,27 @@ proxies = {
         "http": proxy,
         "https": proxy
         }
-#RSS源访问及处理,支持更换根url
+# RSS源访问及处理,支持更换根url
 class RSSDealPackage:
     def __init__(self,url:str,path:str,rssLastBuild:int = 0,useUpdataCache = False,headers = headers,proxies = proxies,timelimit:int = 1):
-        #源URL,每次访问最短时限-单位秒-默认15
-        #useUpdataCache:使用更新缓存，开启后将使用缓存
-        #rssLastBuild:最后
+        # 源URL,每次访问最短时限-单位秒-默认15
+        # useUpdataCache:使用更新缓存，开启后将使用缓存
+        # rssLastBuild:最后
         self.url = url
         self.path = path
         self.timelimit = timelimit
         self.headers = headers
         self.proxies = proxies
-        #上次阅读时间
+        # 上次阅读时间
         self.lastReadTime = 0
-        #RSS数据的上次更新时间(用于查找更新)
+        # RSS数据的上次更新时间(用于查找更新)
         self.rssLastBuild = rssLastBuild
-        #启用缓存
+        # 启用缓存
         self.useUpdataCache = useUpdataCache
-        #最近一次阅读的完整数据缓存
+        # 最近一次阅读的完整数据缓存
         self.data = {}
         self.lasttest = False
-        #标题缓存
+        # 标题缓存
         self.title = ''
         self.description = ''
         self.link = ''
@@ -53,7 +53,7 @@ class RSSDealPackage:
         if timelimit:
             self.timelimit = timelimit
     def test(self) -> bool:
-        #测试rss源可用性
+        # 测试rss源可用性
         res = self.getData(updatacache=False)
         if not res[0]:
             self.lasttest = False
@@ -73,7 +73,7 @@ class RSSDealPackage:
             return 0
         return self.timelimit - interval
     def getData(self,updatacache = True) -> tuple:
-        #获取页面数据(是否更新缓存)
+        # 获取页面数据(是否更新缓存)
         try:
             r = requests.get(self.url+self.path,headers=self.headers,proxies=self.proxies,timeout = 15)
             if r.status_code != 200:
@@ -102,7 +102,7 @@ class RSSDealPackage:
                 <author>作者</author>
             </item>
         """
-        #将item数据打包到标准RSS数据包
+        # 将item数据打包到标准RSS数据包
         checkfunc = (lambda item,key:item[key] if key in item else '')
         
         return {
@@ -126,7 +126,7 @@ class RSSDealPackage:
             <lastBuildDate>最后更新的时间</lastBuildDate>
             <generator>生成器</generator>
         """
-        #将数据打包到标准RSS数据包
+        # 将数据打包到标准RSS数据包
         checkfunc = (lambda item,key:item[key] if key in item else '')
         channel = data['rss']['channel']
         res = {
@@ -156,9 +156,9 @@ class RSSDealPackage:
         self.link = res['link']
         return res
     def findUpdata(self,updatareadtime = True) -> tuple:
-        #查找更新(是否更新阅读时间-默认是)
-        #仅查找item更新(仅适用于标准数据集)
-        #首次启动将推送所有item
+        # 查找更新(是否更新阅读时间-默认是)
+        # 仅查找item更新(仅适用于标准数据集)
+        # 首次启动将推送所有item
         res = self.getData()
         if not res[0]:
             return res
@@ -170,7 +170,7 @@ class RSSDealPackage:
             if item['pubTimestamp'] > self.rssLastBuild:
                 updatalist.append(item)
         if updatalist:
-            #防止误判，仅查找到有效更新时更新
+            # 防止误判，仅查找到有效更新时更新
             if updatareadtime:
                 self.rssLastBuild = rsspkg['lastBuildTimestamp']
         self.lastReadTime = time.time()
@@ -184,12 +184,12 @@ class RSShubsPackage:
         self.urls = urls
         if len(self.urls) == 0:
             raise Exception('RSShub链接url未配置')
-        #处理包列表
+        # 处理包列表
         self.paths = {}
-        #urls循环计数
+        # urls循环计数
         self.nowcount = 0
     def getWaitTime(self):
-        #单位秒
+        # 单位秒
         t = 0
         lurls = len(self.urls)
         for pkg in self.paths.values():
@@ -214,15 +214,15 @@ class RSShubsPackage:
     def clear(self):
         self.paths.clear()
     def getPath_createnew(self,path:str) -> RSSDealPackage:
-        #获取rss包，不存在时创建新的包
+        # 获取rss包，不存在时创建新的包
         pkg = self.getPath(path)
         if not pkg:
             pkg = RSSDealPackage(self.urls[0],path)
-            pkg.findUpdata() #进行初始化，初始化将忽略更新
+            pkg.findUpdata() # 进行初始化，初始化将忽略更新
             self.paths[path] = pkg
         return pkg
     def getUpdata(self,path:str) -> tuple:
-        #获取指定路径的更新
+        # 获取指定路径的更新
         pkg:RSSDealPackage = self.getPath_createnew(path)
         if pkg.isNull():
             pkg.findUpdata()
@@ -234,7 +234,7 @@ class RSShubsPackage:
         """
             测试连接
         """
-        #获取指定路径的更新
+        # 获取指定路径的更新
         pkg = RSSDealPackage(self.urls[0],path)
         res = pkg.findUpdata(updatareadtime=False)
         del pkg
