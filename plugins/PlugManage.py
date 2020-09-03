@@ -13,16 +13,16 @@ logger = getlogger(__name__)
 @plugRegistered('插件管理','plugmanage')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于管理插件的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于管理插件的插件'# 插件描述  
         }
 
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #注册权限
+        # 注册权限
         plug.registerPerm('manage',des = '全局管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('selfmanage',des = '管理自己插件的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('infocheck',des = '信息查看权限',defaultperm=PlugMsgTypeEnum.none)
@@ -35,7 +35,7 @@ async def _(session:Session) -> PlugMsgReturn:
         return PlugMsgReturn.Allow
     return PlugMsgReturn.Refuse
 
-#自动参数过滤器的使用
+# 自动参数过滤器的使用
 argfilter = PlugArgFilter()
 argfilter.addArg(
     'plugnick',
@@ -51,7 +51,7 @@ argfilter.addArg(
     '帮助的页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='(help)|(帮助)',argfilter=argfilter,des='help或帮助 插件名 页码 - 获取帮助信息，插件名与页码可选，不显示被禁用插件',at_to_me=False)
 async def _(session:Session):
@@ -162,7 +162,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='插件列表',argfilter=argfilter,bindsendperm='infocheck',des='插件列表 页码 - 插件列表')
 async def _(session:Session):

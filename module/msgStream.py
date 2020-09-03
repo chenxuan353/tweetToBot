@@ -10,7 +10,7 @@ import re
 import json
 import config
 import random
-#日志输出
+# 日志输出
 from helper import getlogger,TempMemory,data_read,data_save,data_read_auto,check_path
 logger = getlogger(__name__)
 sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
@@ -24,10 +24,10 @@ sendlogger = getlogger(__name__+'_nocmd',printCMD=config.DEBUG)
 check_path(os.path.join('templist','msgStream'))
 
 send_count_path = 'msgStream.json'
-send_count = {} #发送统计
-send_log = {} #发送日志(每对象50条)
+send_count = {} # 发送统计
+send_log = {} # 发送日志(每对象50条)
 
-#异常统计
+# 异常统计
 exp_info_path = 'msgStream_expinfo'
 exp_info:TempMemory = TempMemory(exp_info_path,limit = 100,autosave=True,autoload=True)
 send_stream = {}
@@ -287,7 +287,7 @@ class SendMessage:
                                     data['content'] = "无描述"
                                 if 'image' not in data:
                                     data['image'] = ""
-                        #处理被标记为未知的数据段
+                        # 处理被标记为未知的数据段
                         if msgtype == 'unknown':
                             if 'bottype' not in data:
                                 data['bottype'] = 'unknown'
@@ -297,7 +297,7 @@ class SendMessage:
                             data['text'] = "[未知]"
                         objlist.append(data)
                         continue
-                res[i] = '[CX:'+res[i]+']' #还原无法解析的文本
+                res[i] = '[CX:'+res[i]+']' # 还原无法解析的文本
             msg = res[i]
             if msg:
                 msg = msg.replace('&amp;',"&")
@@ -491,11 +491,11 @@ class QueueStream:
 def getStream(bottype,botuuid) -> QueueStream:
     return dictGet(send_stream,bottype,botuuid)
 
-#start = QueueStream('allsendmsg',threadSendDeal)
-#start.run()
+# start = QueueStream('allsendmsg',threadSendDeal)
+# start.run()
 from helper import dictInit,dictHas,dictGet,dictSet
 
-#sendUnit:消息发送元
+# sendUnit:消息发送元
 def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage):
     if not sendObj:
         raise Exception('错误，来源OBJ不存在')
@@ -503,7 +503,7 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
     send_id = senduuid
     bindCQID = botuuid
     message = message.toStr('cqhttp')
-    #初始化
+    # 初始化
     bot = nonebot.get_bot()
     if message_type not in ('private','group'):
         raise Exception('错误，不支持的消息标识')
@@ -513,8 +513,8 @@ def SUCqhttpWs(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,me
         res =  bot.sync.send_msg(self_id=bindCQID,group_id=send_id,message=message)
         bot.sync.delete_msg
     return {
-            'stand':'message_id' in res, #标识返回值有无消息ID
-            'status':'message_id' in res,#标识消息有无发送成功(尽可能提供)
+            'stand':'message_id' in res, # 标识返回值有无消息ID
+            'status':'message_id' in res,# 标识消息有无发送成功(尽可能提供)
             'msg':('发送成功' if 'message_id' in res else '发送失败'),#消息状态的文本
             'message_id':(res['message_id'] if 'message_id' in res else 0),
             'res':res
@@ -539,19 +539,19 @@ def exp_push(eventype,evendes,send_unit):
     msg = ('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息流:{evendes}'.format(evendes = evendes,**send_unit))
     sendlogger.warning(msg)
     exp_send(msg,source='消息流警告触发器',flag = '警告')
-#警告触发器(发送单元,信息发送对象,单元错误计数)
+# 警告触发器(发送单元,信息发送对象,单元错误计数)
 def exp_check(send_unit,send_me,uniterrcount):
     if uniterrcount == -1:
         sendlogger.error('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息发送被拒绝:{message}'.format(**send_unit))
-        #每十次被拒绝触发一次事件
+        # 每十次被拒绝触发一次事件
         if send_me['total_refuse'] % 10 == 0:
             exp_push('warning','十次回绝警告',send_unit)
     elif send_me['last_deal'] != send_me['last_error']:
         sendlogger.error('{bottype}>{botuuid}>{botgroup}>{senduuid} 消息发送异常(edc):{message}'.format(**send_unit))
-        #三小时无错误归零，每15次错误一个警告
+        # 三小时无错误归零，每15次错误一个警告
         if send_me['error'] % 15 == 0:
             exp_push('warning','连续错误警告，已达到十五次阈值(间断不超过三小时)',send_unit)
-        #单元发送错误计数，每15次错误触发一次警告，达到五次时触发第一次警报
+        # 单元发送错误计数，每15次错误触发一次警告，达到五次时触发第一次警报
         if uniterrcount == 5:
             exp_push('warning','首次连续错误警告，已达到五次阈值(间断不超过三小时)',send_unit)
         if uniterrcount % 15 == 0:
@@ -573,38 +573,38 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
     dealstarttime = time.time()
     if not dictHas(send_count,bottype,botuuid):
         dictInit(send_count,bottype,botuuid,endobj = {
-            'total_send':0,#发送总计数
-            'total_error':0,#错误总计数
-            'total_refuse':0,#拒绝发送计数
-            'error':0,#短期错误计数(距离最后错误时间超过3小时将被清空)
-            'reset':0,#重置计数
-            'last_error':0,#上次错误时间戳
-            'rebirth':0,#轮回计数
-            'dealtimeavg':0,#处理时间平均值
-            'dealerrtimeavg':0,#异常处理时间平均值
-            'sendtimeavg':0,#从发送到发送完毕时间的平均值(不计算异常消耗时)
+            'total_send':0,# 发送总计数
+            'total_error':0,# 错误总计数
+            'total_refuse':0,# 拒绝发送计数
+            'error':0,# 短期错误计数(距离最后错误时间超过3小时将被清空)
+            'reset':0,# 重置计数
+            'last_error':0,# 上次错误时间戳
+            'rebirth':0,# 轮回计数
+            'dealtimeavg':0,# 处理时间平均值
+            'dealerrtimeavg':0,# 异常处理时间平均值
+            'sendtimeavg':0,# 从发送到发送完毕时间的平均值(不计算异常消耗时)
             'last_change':0,
             'last_deal':0,
         })
         dictInit(send_log,bottype,botuuid,endobj = TempMemory(os.path.join('msgStream',bottype+'_'+botuuid),limit = 250,autosave = True,autoload = True))
     dictInit(send_count,bottype,botuuid,botgroup)
 
-    #二阶段初始化
+    # 二阶段初始化
     send_me = dictGet(send_count,bottype,botuuid)
     send_me['total_send'] += 1
     send_me['last_change'] = time.time()
     if send_me['total_send'] > 255659:
         send_me = {
-            'total_send':0,#发送总计数
-            'total_error':0,#错误总计数
-            'total_refuse':0,#拒绝发送计数
-            'error':0,#短期错误计数(距离最后错误时间超过3小时将被清空)
-            'reset':0,#重置计数
-            'last_error':0,#上次错误时间戳
-            'rebirth':send_me['rebirth'] + 1,#轮回计数
-            'dealtimeavg':0,#处理时间平均值
-            'dealerrtimeavg':0,#异常处理时间平均值
-            'sendtimeavg':0,#从发送到发送完毕时间的平均值(不计算异常消耗时)
+            'total_send':0,# 发送总计数
+            'total_error':0,# 错误总计数
+            'total_refuse':0,# 拒绝发送计数
+            'error':0,# 短期错误计数(距离最后错误时间超过3小时将被清空)
+            'reset':0,# 重置计数
+            'last_error':0,# 上次错误时间戳
+            'rebirth':send_me['rebirth'] + 1,# 轮回计数
+            'dealtimeavg':0,# 处理时间平均值
+            'dealerrtimeavg':0,# 异常处理时间平均值
+            'sendtimeavg':0,# 从发送到发送完毕时间的平均值(不计算异常消耗时)
             'last_change':0,
             'last_deal':0
         }
@@ -615,7 +615,7 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
         
     send_unit = {
             'status':None,
-            'unittype':'msg',#用于标识错误从属类型(msg、warning)
+            'unittype':'msg',# 用于标识错误从属类型(msg、warning)
             'streamid':streamid,
             'bottype':bottype,
             'botuuid':botuuid,
@@ -627,12 +627,12 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
             'senddur':time.time()-sendstarttime,
             'dealsenddur':time.time()-dealstarttime
         }
-    #发送限制
+    # 发送限制
     if send_me[botgroup][senduuid] == -1:
         send_me['total_refuse'] += 1
         exp_check(send_unit,send_me,-1)
         return
-    #数据发送
+    # 数据发送
     try:
         res = SUConfig[bottype](bottype,botuuid,botgroup,senduuid,sendObj,message)
         id_appendlog(streamid,res)
@@ -660,9 +660,9 @@ def threadSendDeal(*,sendstarttime:int,streamid:int,bottype:str,botuuid:str,botg
         send_unit['status'] = True
         send_me[botgroup][senduuid] = 0
 
-    #数据存档
+    # 数据存档
     send_log[bottype][botuuid].join(send_unit)
-    #保存包含统计信息的数组
+    # 保存包含统计信息的数组
     data_save(send_count_path,send_count)
 
 def send_msg(bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage,block=True,timeout = 5) -> tuple:

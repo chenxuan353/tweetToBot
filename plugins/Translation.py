@@ -1,4 +1,4 @@
-#插件标准依赖
+# 插件标准依赖
 from pluginsinterface.PluginLoader import on_message,Session,on_preprocessor,on_plugloaded
 from pluginsinterface.PluginLoader import PlugMsgReturn,plugRegistered,PlugMsgTypeEnum,PluginsManage
 from pluginsinterface.PluginLoader import PlugArgFilter
@@ -8,14 +8,14 @@ import re
 import time
 import traceback
 from module.twitter import tweetcache
-from module.machine_translation import allow_st,engine_nick,engine_list
+from module.machineTranslation import allow_st,engine_nick,engine_list
 from helper import dictSet,dictGet
 from helper import getlogger,data_read_auto,data_save
 logger = getlogger(__name__)
 
 transstreamconfig = 'translationstream.json'
 streamlist = data_read_auto(transstreamconfig,default={})
-#线程池
+# 线程池
 from concurrent.futures import ThreadPoolExecutor
 pool = ThreadPoolExecutor(max_workers=2,thread_name_prefix="tls_Threads")
 
@@ -23,16 +23,16 @@ pool = ThreadPoolExecutor(max_workers=2,thread_name_prefix="tls_Threads")
 @plugRegistered('翻译翻译','translation')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于机翻的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于机翻的插件'# 插件描述  
         }
 
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #注册权限
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('streamtrans',des = '设置流式翻译的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('trans',des = '翻译权限',defaultperm=PlugMsgTypeEnum.allowall)
@@ -65,7 +65,7 @@ async def _(session:Session) -> PlugMsgReturn:
                 else:
                     source = 'jp'
             streamTrans(session.even,text,source,target,res,time.time())
-            #pool.submit(streamTrans,session.even,text,source,target,time.time())
+            # pool.submit(streamTrans,session.even,text,source,target,time.time())
     return PlugMsgReturn.Allow
 
 
@@ -76,7 +76,7 @@ argfilter.addArg(
     '机翻引擎',
     verif='str',
     canSkip=True,
-    vlimit=engine_nick#设置默认值
+    vlimit=engine_nick# 设置默认值
     )
 argfilter.addArg(
     'source',
@@ -84,7 +84,7 @@ argfilter.addArg(
     '语言',
     verif='str',
     canSkip=True,
-    vlimit=allow_st['Source']#设置默认值
+    vlimit=allow_st['Source']# 设置默认值
     )
 argfilter.addArg(
     'target',
@@ -92,7 +92,7 @@ argfilter.addArg(
     '语言',
     verif='str',
     canSkip=True,
-    vlimit=allow_st['Target']#设置默认值
+    vlimit=allow_st['Target']# 设置默认值
     )
 @on_message(msgfilter='([！!]翻译)|([！!]机翻)|(机翻)',argfilter=argfilter,des='翻译 引擎(可选) 源语言(可选) 目标语言(可选) 待翻译文本 - 机器翻译，别名机翻',bindsendperm='trans',at_to_me=False)
 async def _(session:Session):
@@ -102,7 +102,7 @@ async def _(session:Session):
     text:str = session.filterargs['tail'].strip()
     if text == '':
         return
-    if text.startswith('#'):
+    if text.startswith('# '):
         if text[1:].isdigit():
             n = int(text[1:])
             tweetid = tweetcache.getTweetSourceID(n)
@@ -139,7 +139,7 @@ argfilter.addArg(
     '机翻引擎',
     verif='str',
     canSkip=True,
-    vlimit=engine_nick#设置默认值
+    vlimit=engine_nick# 设置默认值
     )
 argfilter.addArg(
     'source',
@@ -147,7 +147,7 @@ argfilter.addArg(
     '语言',
     verif='str',
     canSkip=True,
-    vlimit=allow_st['Source']#设置默认值
+    vlimit=allow_st['Source']# 设置默认值
     )
 argfilter.addArg(
     'target',
@@ -155,7 +155,7 @@ argfilter.addArg(
     '语言',
     verif='str',
     canSkip=True,
-    vlimit=allow_st['Target']#设置默认值
+    vlimit=allow_st['Target']# 设置默认值
     )
 @on_message(msgfilter='([！!]启用流式翻译)',argfilter=argfilter,des='启用流式翻译 目标 引擎(可选) 源语言(可选) 目标语言(可选) - 启用流式翻译',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):
@@ -228,7 +228,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='([！!]流式翻译列表)',argfilter=argfilter,des='流式翻译列表 - 流式翻译列表',bindsendperm='streamtrans',at_to_me=False)
 async def _(session:Session):

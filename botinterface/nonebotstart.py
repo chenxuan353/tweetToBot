@@ -33,10 +33,10 @@ def Run():
         logger.error('nonebot异常！\n'+s)
 
 def __startLoop(runinfo):
-    #设置事件循环
+    # 设置事件循环
     asyncio.set_event_loop(runinfo['loop'])
     runinfo['loop'].run_forever()
-    #asyncio.run_coroutine_threadsafe(__evendeal(runinfo['queue']), runinfo['loop'])
+    # asyncio.run_coroutine_threadsafe(__evendeal(runinfo['queue']), runinfo['loop'])
 
 def RunInThread():
     runinfo['threading'] = threading.Thread(
@@ -52,7 +52,7 @@ def RunInThread():
         path.join(path.dirname(__file__), 'plugins','nonebot_plug'),
         'botinterface.plugins.nonebot_plug'
     )
-    #nonebot.run(host=nonebotconfig.NONEBOT_HOST, port = nonebotconfig.NONEBOT_PORT)
+    # nonebot.run(host=nonebotconfig.NONEBOT_HOST, port = nonebotconfig.NONEBOT_PORT)
     task = nonebot.get_bot().run_task(host=config.NONEBOT_HOST, port = config.NONEBOT_PORT)
     asyncio.run_coroutine_threadsafe(task, runinfo['loop'])
     runinfo['run'] = True

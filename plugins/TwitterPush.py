@@ -20,23 +20,23 @@ logger = getlogger(__name__)
 @plugRegistered('推特推送管理','twitterPush')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于管理推特推送的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于管理推特推送的插件'# 插件描述  
         }
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #if not config.twitterpush:
-        #    plug.switchPlug(False) #关闭插件
-        #注册权限
+        # if not config.twitterpush:
+        #     plug.switchPlug(False) # 关闭插件
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('manageuse',des = '使用的管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
         plug.registerPerm('manageself',des = '管理自己的权限',defaultperm=PlugMsgTypeEnum.allowall)
         plug.registerPerm('cacheinfo',des = '获取缓存信息的权限',defaultperm=PlugMsgTypeEnum.allowall)
-        #plug.registerPerm('apiuse',des = '使用API获取数据的权限',defaultperm=PlugMsgTypeEnum.allowall)
+        # plug.registerPerm('apiuse',des = '使用API获取数据的权限',defaultperm=PlugMsgTypeEnum.allowall)
 
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
@@ -94,7 +94,7 @@ async def _(session:Session):
 
 def getRealTweetUserID(arg:str,useapi = True):
     arg = arg.strip()
-    if arg == '#' or arg == '':
+    if arg == '# ' or arg == '':
         return None
     if arg.isdigit():
         userinfo = tweetcache.getUserInfo(userid=int(arg))
@@ -156,7 +156,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='全局转推列表',argfilter=argfilter,bindsendperm='manage',des='全局转推列表 - 全局转推列表')
 async def _(session:Session):
@@ -200,7 +200,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='辅助转推列表',argfilter=argfilter,bindsendperm='manage',des='辅助转推列表 页码 - 辅助转推列表')
 async def _(session:Session):
@@ -234,7 +234,7 @@ def getRealTweetID(arg:str):
         if not arg.isdigit():
             return None
         return int(arg)
-    if arg.startswith('#'):
+    if arg.startswith('# '):
         arg = arg.strip()[1:]
     if not arg.isdigit():
         return None
@@ -283,7 +283,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='推送优先级设置列表',argfilter=argfilter,bindsendperm='manage',des='推送优先级设置列表 - 轮询优先级列表')
 async def _(session:Session):
@@ -380,7 +380,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='推文列表',argfilter=argfilter,bindperm='use',bindsendperm='cacheinfo',des='推文列表 用户ID或用户名 页码 - 查询指定推特用户的推文列表',at_to_me=False)
 async def _(session:Session):
@@ -506,7 +506,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='(转推列表)|(pusllist)|(DD列表)|(单推列表)',argfilter=argfilter,des='转推列表 用户名 - 获取推送名单，别名pusllist、DD列表、单推列表',sourceAdmin=True,bindperm='use',bindsendperm='manageself',at_to_me=False)
 async def _(session:Session):
@@ -524,25 +524,25 @@ async def _(session:Session):
     session.send("推送已清空")
 
 
-#获取推送对象总属性设置
+# 获取推送对象总属性设置
 def getPushToSetting(config:dict,kind:str='basic') -> str:
     attrlist = {    
         'basic':{
-            'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+            'upimg':'图片',# 是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
             
-            #推特推送开关
-            'retweet':'转推',#转推(默认不开启)
-            'quoted':'转推并评论',#带评论转推(默认开启)
-            'reply_to_status':'回复',#回复(默认开启)
-            'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
-            'none':'发推',#发推(默认开启)
+            # 推特推送开关
+            'retweet':'转推',# 转推(默认不开启)
+            'quoted':'转推并评论',# 带评论转推(默认开启)
+            'reply_to_status':'回复',# 回复(默认开启)
+            'reply_to_user':'提及',# 提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+            'none':'发推',# 发推(默认开启)
         },
         'template':{
-            #推特推送模版
+            # 推特推送模版
             'template':'转推模版',
         },
         'ai':{
-            #智能
+            # 智能
             'ai_retweet':'部分转推',
             'ai_reply_to_status':'部分转发回复',
             'ai_passive_reply_to_status':'部分转发被回复',
@@ -550,11 +550,11 @@ def getPushToSetting(config:dict,kind:str='basic') -> str:
             'ai_passive_reply_to_user':'部分转发被提及',
         },
         'userinfo':{
-            #个人信息变化推送(非实时)
-            'change_ID':'ID修改', #ID修改(默认关闭)
-            'change_name':'昵称修改', #昵称修改(默认开启)
-            'change_description':'描述修改', #描述修改(默认关闭)
-            'change_headimgchange':'头像修改', #头像更改(默认开启)
+            # 个人信息变化推送(非实时)
+            'change_ID':'ID修改', # ID修改(默认关闭)
+            'change_name':'昵称修改', # 昵称修改(默认开启)
+            'change_description':'描述修改', # 描述修改(默认关闭)
+            'change_headimgchange':'头像修改', # 头像更改(默认开启)
             'change_followers':'粉丝数(每几K)'
         }
     }
@@ -604,29 +604,29 @@ argfilter.addArg(
     '属性名',
     '需要设置的属性名',
     vlimit={
-        #携带图片发送
+        # 携带图片发送
         'upimg':'upimg','图片':'upimg','img':'upimg',
-        #昵称设置
-        #'nick':'nick','昵称':'nick',
-        #消息模版
+        # 昵称设置
+        # 'nick':'nick','昵称':'nick',
+        # 消息模版
         'retweet_template':'retweet_template','转推模版':'retweet_template',
         'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
         'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
         'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
         'none_template':'none_template','发推模版':'none_template',
-        #推特转发各类型开关
+        # 推特转发各类型开关
         'retweet':'retweet','转推':'retweet',
         'quoted':'quoted','转推并评论':'quoted',
         'reply_to_status':'reply_to_status','回复':'reply_to_status',
         'reply_to_user':'reply_to_user','提及':'reply_to_user',
         'none':'none','发推':'none',
-        #智能推送开关
+        # 智能推送开关
         'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
         'ai_reply_to_status':'ai_reply_to_status','智能转发回复':'ai_reply_to_status',
         'ai_passive_reply_to_status':'ai_passive_reply_to_status','智能转发被回复':'ai_passive_reply_to_status',
         'ai_passive_quoted':'ai_passive_quoted','智能转发被转推并评论':'ai_passive_quoted',
         'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
-        #推特个人信息变动推送开关
+        # 推特个人信息变动推送开关
         'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
         'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name',
         'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
@@ -667,30 +667,30 @@ argfilter.addArg(
     '属性名',
     '需要设置的属性名',
     vlimit={
-        #参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
-        #携带图片发送
+        # 参数限制表(限制参数内容,空表则不限制),'*':''表示匹配任意字符串,值不为空时任意字符串将被转变为这个值
+        # 携带图片发送
         'upimg':'upimg','图片':'upimg','img':'upimg',
-        #昵称设置
-        #'nick':'nick','昵称':'nick',
-        #消息模版
+        # 昵称设置
+        # 'nick':'nick','昵称':'nick',
+        # 消息模版
         'retweet_template':'retweet_template','转推模版':'retweet_template',
         'quoted_template':'quoted_template','转推并评论模版':'quoted_template',
         'reply_to_status_template':'reply_to_status_template','回复模版':'reply_to_status_template',
         'reply_to_user_template':'reply_to_user_template','被提及模版':'reply_to_user_template',
         'none_template':'none_template','发推模版':'none_template',
-        #推特转发各类型开关
+        # 推特转发各类型开关
         'retweet':'retweet','转推':'retweet',
         'quoted':'quoted','转推并评论':'quoted',
         'reply_to_status':'reply_to_status','回复':'reply_to_status',
         'reply_to_user':'reply_to_user','提及':'reply_to_user',
         'none':'none','发推':'none',
-        #智能推送开关
+        # 智能推送开关
         'ai_retweet':'ai_retweet','智能转推':'ai_retweet',
         'ai_reply_to_status':'ai_reply_to_status','智能转发回复':'ai_reply_to_status',
         'ai_passive_reply_to_status':'ai_passive_reply_to_status','智能转发被回复':'ai_passive_reply_to_status',
         'ai_passive_quoted':'ai_passive_quoted','智能转发被转推并评论':'ai_passive_quoted',
         'ai_passive_reply_to_user':'ai_passive_reply_to_user','智能转发被提及':'ai_passive_reply_to_user',
-        #推特个人信息变动推送开关
+        # 推特个人信息变动推送开关
         'change_id':'change_ID','ID改变':'change_ID','ID修改':'change_ID',
         'change_name':'change_name','名称改变':'change_name','名称修改':'change_name','名字改变':'change_name','名字修改':'change_name','昵称修改':'change_name','昵称改变':'change_name',
         'change_description':'change_description','描述改变':'change_description','描述修改':'change_description',
@@ -702,7 +702,7 @@ argfilter.addArg(
     '要设置的值',
     '需要设置的值',
     vlimit={
-        '*':'*',#允许原始值
+        '*':'*',# 允许原始值
         'true':'1','开':'1','打开':'1','开启':'1',
         'false':'0','关':'0','关闭':'0'
     },
@@ -721,21 +721,21 @@ async def _(session:Session):
 
 
 
-#获取推送对象总属性设置
+# 获取推送对象总属性设置
 def getConfigSetting(config:dict,kind:str='basic') -> str:
     attrlist = {    
         'basic':{
-            'upimg':'图片',#是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
+            'upimg':'图片',# 是否连带图片显示(默认不带)-发推有效,转推及评论等事件则无效
             
-            #推特推送开关
-            'retweet':'转推',#转推(默认不开启)
-            'quoted':'转推并评论',#带评论转推(默认开启)
-            'reply_to_status':'回复',#回复(默认开启)
-            'reply_to_user':'提及',#提及某人-多数时候是被提及但是被提及不会接收(默认开启)
-            'none':'发推',#发推(默认开启)
+            # 推特推送开关
+            'retweet':'转推',# 转推(默认不开启)
+            'quoted':'转推并评论',# 带评论转推(默认开启)
+            'reply_to_status':'回复',# 回复(默认开启)
+            'reply_to_user':'提及',# 提及某人-多数时候是被提及但是被提及不会接收(默认开启)
+            'none':'发推',# 发推(默认开启)
         },
         'template':{
-            #推特推送模版
+            # 推特推送模版
             'retweet_template':'转推模版',
             'quoted_template':'转推并评论模版',
             'reply_to_status_template':'回复模版',
@@ -743,7 +743,7 @@ def getConfigSetting(config:dict,kind:str='basic') -> str:
             'none_template':'发推模版',
         },
         'ai':{
-            #智能
+            # 智能
             'ai_retweet':'部分转推',
             'ai_reply_to_status':'部分转发回复',
             'ai_passive_reply_to_status':'部分转发被回复',
@@ -751,11 +751,11 @@ def getConfigSetting(config:dict,kind:str='basic') -> str:
             'ai_passive_reply_to_user':'部分转发被提及',
         },
         'userinfo':{
-            #个人信息变化推送(非实时)
-            'change_ID':'ID修改', #ID修改(默认关闭)
-            'change_name':'昵称修改', #昵称修改(默认开启)
-            'change_description':'描述修改', #描述修改(默认关闭)
-            'change_headimgchange':'头像修改', #头像更改(默认开启)
+            # 个人信息变化推送(非实时)
+            'change_ID':'ID修改', # ID修改(默认关闭)
+            'change_name':'昵称修改', # 昵称修改(默认开启)
+            'change_description':'描述修改', # 描述修改(默认关闭)
+            'change_headimgchange':'头像修改', # 头像更改(默认开启)
         }
     }
     res = ''

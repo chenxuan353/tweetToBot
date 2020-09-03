@@ -19,7 +19,7 @@ import config
 from helper import dictGet,dictSet
 from helper import getlogger,data_read_auto,data_save,TempMemory
 logger = getlogger(__name__)
-#线程池
+# 线程池
 from concurrent.futures import ThreadPoolExecutor
 pool = ThreadPoolExecutor(max_workers=4,thread_name_prefix="trans_Threads")
 
@@ -27,10 +27,10 @@ trans_img_path = config.trans_img_path
 transtemplate_filename = 'transtemplate.json'
 transtemplate = data_read_auto(transtemplate_filename,default={})
 def pop_trigger(item):
-    #烤推历史溢出时删除旧文件
+    # 烤推历史溢出时删除旧文件
     if os.path.exists(item['filepath']):
         os.remove(item['filepath'])
-#烤推列表缓存
+# 烤推列表缓存
 trans_tmemory = TempMemory('trans_tmemory.json',limit=350,autoload=True,autosave=True,pop_trigger = pop_trigger)
 
 def setTranstemplate(bottype,botgroup,uuid,value):
@@ -39,22 +39,22 @@ def setTranstemplate(bottype,botgroup,uuid,value):
     data_save(transtemplate_filename,transtemplate)
 def getTranstemplate(bottype,botgroup,uuid):
     global transtemplate
-    return dictGet(transtemplate,bottype,botgroup,uuid,default='<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>')
+    return dictGet(transtemplate,bottype,botgroup,uuid,default='<p dir="auto" style="color:# 1DA1F2;font-size:0.7em;font-weight: 600;">翻译自日文</p>')
 
 
 @plugRegistered('烤推','TweetTrans')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于烤推的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于烤推的插件'# 插件描述  
         }
 
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #注册权限
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('manageuse',des = '管理授权的权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('use',des = '使用权限',defaultperm=PlugMsgTypeEnum.private)
@@ -62,11 +62,11 @@ def _(plug:PluginsManage):
 
 @on_preprocessor()
 async def _(session:Session) -> PlugMsgReturn:
-    #msg:str = session.sourcefiltermsg
-    #if msg.startswith(('!','！')):
-    #    session.sourcefiltermsg = msg[1:]
-    #    return PlugMsgReturn.Allow
-    #return PlugMsgReturn.Refuse
+    # msg:str = session.sourcefiltermsg
+    # if msg.startswith(('!','！')):
+    #     session.sourcefiltermsg = msg[1:]
+    #     return PlugMsgReturn.Allow
+    # return PlugMsgReturn.Refuse
     return PlugMsgReturn.Allow
 
 @on_message(msgfilter='[!！]烤推授权',bindsendperm='manage',des='烤推授权 - 烤推授权')
@@ -144,12 +144,12 @@ async def _(session:Session):
         ('<','&lt;'),
         ('>','&gt;'),
         ('"','&quot;'),
-        ('\'','&#x27;'),
-        ('/','&#x2F;')
+        ('\'','&# x27;'),
+        ('/','&# x2F;')
     ]
     for cu in code:
         message.replace(cu[0],cu[1])
-    template = '<p dir="auto" style="color:#1DA1F2;font-size:0.7em;font-weight: 600;">{0}</p>'.format(message)
+    template = '<p dir="auto" style="color:# 1DA1F2;font-size:0.7em;font-weight: 600;">{0}</p>'.format(message)
     setTranstemplate(session.bottype,session.botgroup,session.uuid,template)
     session.send('已设置模版为->'+message)
 
@@ -160,9 +160,9 @@ def deal_trans(arg,template) -> dict:
         'source':arg,
         'text':{}
     }
-    tests = arg.split('##')
+    tests = arg.split('# # ')
     if len(tests) == 1:
-        kvc = tests[0].partition("#!")
+        kvc = tests[0].partition("# !")
         trans['text']['main'] = []
         trans['text']['main'].append(kvc[0].strip())
         if kvc[2] != '':
@@ -174,13 +174,13 @@ def deal_trans(arg,template) -> dict:
                 continue
             kv = re.findall(r'^([0-9]{1,2}|main|m)\s{1}(.+)',test,re.S)
             if kv == []:
-                return None #格式不正确
+                return None # 格式不正确
             kv = list(kv[0])
             if kv[0].isnumeric():
                 kv[0] = str(int(kv[0]))
             elif kv[0] == 'm':
                 kv[0] = 'main'
-            kvc = kv[1].partition("#!")
+            kvc = kv[1].partition("# !")
             trans['text'][kv[0]] = []
             trans['text'][kv[0]].append(kvc[0].strip())
             if kvc[2] != '':
@@ -188,14 +188,14 @@ def deal_trans(arg,template) -> dict:
     return trans
 def getTransImg(even:StandEven,senduuid,sendname,tweetid,trans):
     try:
-        #使用64进制减少长度
+        # 使用64进制减少长度
         tasktype = encode_b64(int(time.time()),offset = 0) + '_' + str(random.randint(0,1000))
-        #检查推文缓存
+        # 检查推文缓存
         tweet_name = 's'
         tweet = tweetcache.getTweetFromCache(tweetid)
         if tweet is not None:
             logger.info('检测到缓存:' + tweet['id_str'] + '(' + tweet['userinfo']['name'] + ')')
-            #logger.info(tweet)
+            # logger.info(tweet)
             tweet_cache = tweet
             tweet_name = tweet_cache['userinfo']['screen_name']
         tt = TweetTrans()
@@ -241,7 +241,7 @@ def getRealTweetID(arg:str):
         if not arg.isdigit():
             return None
         return int(arg)
-    if arg.startswith('#'):
+    if arg.startswith('# '):
         arg = arg.strip()[1:]
     if not arg.isdigit():
         return None
@@ -262,7 +262,7 @@ argfilter.addArg(
     prefunc=getRealTweetID,
     verif='uint'
     )
-@on_message(msgfilter='([!！]烤推)|([!！]t)|(##)',argfilter=argfilter,bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
+@on_message(msgfilter='([!！]烤推)|([!！]t)|(# # )',argfilter=argfilter,bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
 async def _(session:Session):
     if not rate_limit_bucket.consume(1):
         await session.send("烤推繁忙，请稍后再试")
@@ -308,7 +308,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='([!！]烤推列表)|([!！]tl)',argfilter=argfilter,bindperm='use',des='烤推列表 页码 - 获取烤推列表,别名tl',at_to_me=False)
 async def _(session:Session):
@@ -366,10 +366,10 @@ async def _(session:Session):
         '!gt 推文ID -获取推文最后结果,别名 烤推结果' + "\n" + \
         '!tgt 任务标识 -获取指定烤推结果,别名 推文任务' + "\n" + \
         '多层回复翻译:' + "\n" + \
-        '##1 第一层翻译' + "\n" + \
-        '#! 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
-        '##2 第二层翻译' + "\n" + \
-        '##main 主翻译' + "\n" + \
+        '# # 1 第一层翻译' + "\n" + \
+        '# ! 第一层层内推文(转推并评论类型里的内嵌推文)' + "\n" + \
+        '# # 2 第二层翻译' + "\n" + \
+        '# # main 主翻译' + "\n" + \
         '烤推支持换行参数，支持更换模版(翻译自日文)' + "\n" + \
         '如果出现问题可以 !反馈 反馈内容 反馈信息'
     session.send(msg)

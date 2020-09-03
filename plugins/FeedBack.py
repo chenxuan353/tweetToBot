@@ -10,26 +10,26 @@ logger = getlogger(__name__)
 """
     反馈
 """
-#反馈存储
+# 反馈存储
 feedbacktmemory = TempMemory('feedback',200,autoload=True,autosave=True)
 rate_limit_bucket = TokenBucket(0.1,5)
 
 @plugRegistered('反馈','feedback')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于反馈的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于反馈的插件'# 插件描述  
         }
 
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #注册权限
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('feedback',des = '反馈权限',defaultperm=PlugMsgTypeEnum.allowall)
-        #plug.registerPerm('infocheck',des = '信息查看权限',defaultperm=PlugMsgTypeEnum.none)
+        # plug.registerPerm('infocheck',des = '信息查看权限',defaultperm=PlugMsgTypeEnum.none)
         pass
 
 @on_preprocessor()
@@ -72,12 +72,12 @@ async def _(session:Session):
             'senduuid':session.senduuid,
             'timestamp':time.time(),
             'id':count,
-            'deal':False, #是否处理过
-            'dealcomplate':False, #是否处理完成
+            'deal':False, # 是否处理过
+            'dealcomplate':False, # 是否处理完成
             'nick':nick,
             'text':feedbackmsg,
             'simpletext':feedbackmsg[:15].replace('\r',' ').replace('\n',' '),
-            'replay':[] #保存回复链
+            'replay':[] # 保存回复链
         }
         feedbacktmemory.join(feedbackunit)
     else:
@@ -178,7 +178,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='(反馈列表)|(feedbacklist)',argfilter=argfilter,bindsendperm='manage',des='反馈列表 页码 - 反馈列表,别名feedbacklist')
 async def _(session:Session):

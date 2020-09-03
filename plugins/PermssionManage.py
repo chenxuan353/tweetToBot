@@ -14,16 +14,16 @@ logger = getlogger(__name__)
 @plugRegistered('权限管理','permission')
 def _():
     return {
-        'plugmanagement':'1.0',#插件注册管理(原样)  
-        'version':'1.0',#插件版本  
-        'auther':'chenxuan',#插件作者  
-        'des':'用于管理权限的插件'#插件描述  
+        'plugmanagement':'1.0',# 插件注册管理(原样)  
+        'version':'1.0',# 插件版本  
+        'auther':'chenxuan',# 插件作者  
+        'des':'用于管理权限的插件'# 插件描述  
         }
 
 @on_plugloaded()
 def _(plug:PluginsManage):
     if plug:
-        #注册权限
+        # 注册权限
         plug.registerPerm('manage',des = '管理权限',defaultperm=PlugMsgTypeEnum.none)
         plug.registerPerm('infocheck',des = '信息查看权限',defaultperm=PlugMsgTypeEnum.none)
 
@@ -42,7 +42,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 
 @on_message(msgfilter='合法权限组列表',argfilter=argfilter,bindsendperm='infocheck',des='合法权限组列表 页码 - 合法权限组列表')
@@ -66,7 +66,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='合法权限列表',argfilter=argfilter,bindsendperm='infocheck',des='合法权限列表 页码 - 合法权限列表')
 async def _(session:Session):
@@ -170,7 +170,7 @@ argfilter.addArg(
     '页码',
     verif='uintnozero',
     canSkip=True,
-    vlimit={'':1}#设置默认值
+    vlimit={'':1}# 设置默认值
     )
 @on_message(msgfilter='查询授权',argfilter=argfilter,bindsendperm='infocheck',des='查询授权 消息来源标识 消息来源ID 页码 - 查询指定对象的权限')
 async def _(session:Session):

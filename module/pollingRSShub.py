@@ -14,13 +14,13 @@ logger = getlogger(__name__)
 用于支持RSS推送的模块
 ·支持标准RSS协议
 """
-#轮询间隔
+# 轮询间隔
 polling_interval = config.RSS_interval if config.RSS_interval and config.RSS_interval >= 0 else 1
 rssapps = RSShubsPackage()
 
 prioritylistconfig = 'RSShubprioritylist.json'
 prioritylist = data_read_auto(prioritylistconfig,default={})
-defaultpriority = 5 #默认优先级
+defaultpriority = 5 # 默认优先级
 nowpriority = {}
 if config.polling_level and config.polling_level >= 0 and config.polling_level <= 15:
     defaultpriority = int(config.polling_level)
@@ -63,7 +63,7 @@ def Priority_getlist(page:int = 1) -> tuple:
     return msg
 
 def Priority_canRun(path:str,defaultpriority:int = defaultpriority):
-    #检测是否可运行监测
+    # 检测是否可运行监测
     if path not in nowpriority:
         nowpriority[path] = prioritylist[path] if path in prioritylist else random.randint(1,defaultpriority)
         if path not in prioritylist:
@@ -94,10 +94,10 @@ def setStreamOpen(b:bool):
 
 def get_updata(trigger : bool = True):
     global rssapps
-    #获取更新(会进行优先级处理)
+    # 获取更新(会进行优先级处理)
     spylist = pushlist.getSpylist()
     for spy in spylist:
-        #优先级判定(不通过则不进行更新收集)
+        # 优先级判定(不通过则不进行更新收集)
         if not Priority_canRun(spy):
             continue
         res = rssapps.getUpdata(spy)
@@ -109,7 +109,7 @@ def get_updata(trigger : bool = True):
                 run_info['errorCount'] = 0
             run_info['errorCount'] += 1
             if run_info['errorCount'] > 1500:
-                #短时间错误次数过高
+                # 短时间错误次数过高
                 exp_send("错误，监测服务异常，请检测后手动启动")
                 run_info['keepRun'] = False
                 run_info['isRun'] = False
@@ -150,7 +150,7 @@ def Run():
         s = traceback.format_exc(limit=10)
         logger.error(s)
 
-#运行推送线程
+# 运行推送线程
 def runPollingRSShubThread():
     run_info['ListenThread'] = threading.Thread(
         group=None, 

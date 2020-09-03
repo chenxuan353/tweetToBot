@@ -20,10 +20,10 @@ from helper import data_read,data_save,check_path
 
 class PushList:
     def __init__(self,puth_type:str,configfilename:str,basepath:str = 'pushlist'):
-        self.push_list = {} #推送对象与推送单元的关联
-        self.spy_relate = {} #监测对象与推送单元的关联(用于创建推送触发器)
-        self.spylist = [] #直接监听列表(通过触发器更新)
-        self.puth_type = puth_type #推送标识(RSS、tweet等)
+        self.push_list = {} # 推送对象与推送单元的关联
+        self.spy_relate = {} # 监测对象与推送单元的关联(用于创建推送触发器)
+        self.spylist = [] # 直接监听列表(通过触发器更新)
+        self.puth_type = puth_type # 推送标识(RSS、tweet等)
         self.configfilename = configfilename
         self.basepath = basepath
         check_path(basepath)
@@ -34,17 +34,17 @@ class PushList:
         return (False,'未设置全局属性设置触发器')
     def setPushUnitAttr_trigger(self,pushtoconfig:dict,config:dict,setkey:str,setvalue) -> tuple:
         return (False,'未设置单元属性设置触发器')
-    #重置推送
+    # 重置推送
     def clear(self):
         self.push_list.clear()
         self.spy_relate.clear()
         self.spylist.clear()
-    #获取监测长度
+    # 获取监测长度
     def getSpyNum(self):
         return len(self.spylist)
     def getSpylist(self):
         return self.spylist
-    #获取所有推送单元
+    # 获取所有推送单元
     def getAllPushUnit(self) -> list:
         sourcedata = self.push_list.copy()
         PushUnits = []
@@ -52,7 +52,7 @@ class PushList:
             for botuuids in bottypes.values():
                 for botgroups in botuuids.values():
                     for pushTo in botgroups.values():
-                        #pushTo['config']
+                        # pushTo['config']
                         for spyuuid in pushTo['pushlist']:
                             PushUnits.append(pushTo['pushlist'][spyuuid])
         return PushUnits
@@ -68,7 +68,7 @@ class PushList:
     def hasSpy(self,spyuuid:str):
         spyuuid = str(spyuuid)
         return spyuuid in self.spylist
-    #保存与读取
+    # 保存与读取
     def load(self,filename:str = None,path:str = None) -> tuple:
         if not filename:
             filename = self.configfilename
@@ -88,7 +88,7 @@ class PushList:
             path = self.basepath
         return data_save(filename,self.push_list,path)
 
-    #打包成推送单元中()
+    # 打包成推送单元中()
     def baleToPushUnit(self,
                         bottype:str,
                         botuuid:str,
@@ -130,7 +130,7 @@ class PushList:
         pushunit['lastedit_timestamp'] = lastedit_timestamp
         return pushunit
 
-    #单元增删
+    # 单元增删
     def hasPushunit(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str) -> bool:
         return dictHas(self.push_list,bottype,botuuid,receivegroup,receiveuuid,'pushlist',spyuuid)
     def hasPushunit_kw(self,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,**kw) -> bool:
@@ -233,7 +233,7 @@ class PushList:
         self.save()
         return res
     
-    #资讯获取接口
+    # 资讯获取接口
     def getPushTo(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str):
         return dictGet(self.push_list,bottype,botuuid,receivegroup,receiveuuid)
     def getPushTo_kw(self,*,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,**kw):
@@ -241,7 +241,7 @@ class PushList:
     def getUnitPushToConfig(self,pushunit):
         return self.getPushTo_kw(**pushunit)
     def baleSendTarget(self,pushunit,message):
-        #bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage
+        # bottype:str,botuuid:str,botgroup:str,senduuid:str,sendObj:dict,message:SendMessage
         sendtarget = {}
         sendtarget['bottype'] = pushunit['bottype']
         sendtarget['botuuid'] = pushunit['botuuid']
@@ -319,7 +319,7 @@ class PushList:
             return res
         return (True,'移除成功！')
 
-    #设置指定推送对象的特定属性
+    # 设置指定推送对象的特定属性
     def PushTo_setAttr(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,setkey,setvalue) -> tuple:
         pushto = self.getPushTo(bottype,botuuid,receivegroup,receiveuuid)
         if not pushto:
@@ -327,7 +327,7 @@ class PushList:
         res = self.setPushToAttr_trigger(pushto['config'],setkey,setvalue)
         self.save()
         return res
-    #设置指定推送单元的特定属性
+    # 设置指定推送单元的特定属性
     def setPushunitAttr(self,bottype:str,botuuid:str,receivegroup:str,receiveuuid:str,spyuuid:str,setkey,setvalue):
         pushto = self.getPushTo(bottype,botuuid,receivegroup,receiveuuid)
         if not pushto:
