@@ -241,7 +241,7 @@ def getRealTweetID(arg:str):
         if not arg.isdigit():
             return None
         return int(arg)
-    if arg.startswith('# '):
+    if arg.startswith('#'):
         arg = arg.strip()[1:]
     if not arg.isdigit():
         return None
@@ -262,7 +262,7 @@ argfilter.addArg(
     prefunc=getRealTweetID,
     verif='uint'
     )
-@on_message(msgfilter='([!！]烤推)|([!！]t)|(# # )',argfilter=argfilter,bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
+@on_message(msgfilter='([!！]烤推)|([!！]t)|(##)',argfilter=argfilter,bindperm='use',bindsendperm='trans',des='烤推 烤推参数 - 烤制推文,别名t',at_to_me=False)
 async def _(session:Session):
     if not rate_limit_bucket.consume(1):
         await session.send("烤推繁忙，请稍后再试")

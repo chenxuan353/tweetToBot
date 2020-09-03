@@ -234,7 +234,7 @@ def getRealTweetID(arg:str):
         if not arg.isdigit():
             return None
         return int(arg)
-    if arg.startswith('# '):
+    if arg.startswith('#'):
         arg = arg.strip()[1:]
     if not arg.isdigit():
         return None
