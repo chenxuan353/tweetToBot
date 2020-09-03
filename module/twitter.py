@@ -384,7 +384,7 @@ class TweetCache:
         #缩写推特ID(缓存条)
         #单元：[缩写ID,推特ID]
         self.newTemptweetid = data_read_auto('newTemptweetid.json',default=0,path = baseconfigpath)
-        self.mintweetID = TempMemory('mintweetID',path = baseconfigpath,limit = 10000,autosave = True,autoload = True)
+        self.mintweetID = TempMemory('mintweetID',path = baseconfigpath,limit = 9999,autosave = True,autoload = True)
         #推特用户缓存(1000条)
         self.userinfolist = TempMemory('userinfolist',path = baseconfigpath,limit = 1000,autosave = False,autoload = False)
         self.tweetspath = os.path.join(baseconfigpath,'tweetscache')
