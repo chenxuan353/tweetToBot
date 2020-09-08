@@ -178,8 +178,8 @@ def get_updata(trigger : bool = True,start = False):
                 res = twitter.tweetevendeal.dealSourceData(statuss[i],checkuser=True)
                 twitter.tweetcache.addTweetToCache(res['tweetinfo'])
             # 推文不存在于缓存时推送
-            if cache:
-                if trigger or (trigger and start):
+            if cache or start:
+                if trigger:
                     on_status(statuss[i])
             elif trigger:
                 try:
