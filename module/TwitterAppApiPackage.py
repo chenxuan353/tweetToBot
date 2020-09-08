@@ -34,7 +34,9 @@ class TwitterAppApiPackage:
             else:
                 return (False,'参数错误')
         except tweepy.error.TweepError as e:
-            logger.warning(e.api_code)
+            s = traceback.format_exc(limit=10)
+            logger.warning(s)
+            logger.warning(f"api错误代码：{e.api_code}")
             return (False,'tweepy错误！')
         except:
             s = traceback.format_exc(limit=10)

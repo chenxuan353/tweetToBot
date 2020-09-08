@@ -4,7 +4,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 
 from pluginsinterface.PluginLoader import SendMessage,StandEven
 from module.msgStream import send_msg
-from module.twitter import tweetcache,encode_b64
+from module.twitter import tweetcache,encode_b64,decode_b64
 from module.tweettrans import TweetTrans,rate_limit_bucket
 import re
 import traceback
@@ -244,7 +244,9 @@ def getRealTweetID(arg:str):
     if arg.startswith('#'):
         arg = arg.strip()[1:]
     if not arg.isdigit():
-        return None
+        arg = decode_b64(arg)
+        if arg == -1:
+            return None
     arg = int(arg)
     if arg <= 0:
         return None
