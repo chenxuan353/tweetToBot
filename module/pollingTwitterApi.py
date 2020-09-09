@@ -158,7 +158,7 @@ def get_updata(trigger : bool = True,start = False):
                 run_info['lastErrTime'] = int(time.time())
                 run_info['errorCount'] = 0
             run_info['errorCount'] += 1
-            if run_info['errorCount'] > 5:
+            if run_info['errorCount'] > 9:
                 # 短时间错误次数过高
                 exp_send("错误，监测服务异常，请检测后手动启动")
                 run_info['keepRun'] = False
@@ -178,7 +178,7 @@ def get_updata(trigger : bool = True,start = False):
                 res = twitter.tweetevendeal.dealSourceData(statuss[i],checkuser=True)
                 twitter.tweetcache.addTweetToCache(res['tweetinfo'])
             # 推文不存在于缓存时推送
-            if cache or start:
+            if cache:
                 if trigger:
                     on_status(statuss[i])
             elif trigger:
