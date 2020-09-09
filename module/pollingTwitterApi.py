@@ -201,7 +201,7 @@ def Run():
     TIC_listUserClearSpylist(twitter.pushlist.getSpylist())
     logger.info("PollingTweetApi 启动清理完毕")
     # 使用PollingTweetApi接收更新
-    polling_silent_start = config.polling_silent_start
+    polling_silent_start = not config.polling_silent_start
     logger.info("PollingTweetApi 启动检测正在运行")
     get_updata(trigger = polling_silent_start,start = True)
     logger.info("PollingTweetApi 启动检测结束")
