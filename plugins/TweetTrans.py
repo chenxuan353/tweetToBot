@@ -272,6 +272,8 @@ async def _(session:Session):
     tweetid = session.filterargs['tweetid']
     sendname = session.even.senduuidinfo['nick']
     template = getTranstemplate(session.bottype,session.botgroup,session.uuid)
+    if not session.filterargs['tail']:
+        template = ""
     trans = deal_trans(session.filterargs['tail'],template)
     pool.submit(getTransImg,
         session.even,
