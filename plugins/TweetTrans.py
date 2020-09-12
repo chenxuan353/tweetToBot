@@ -326,11 +326,14 @@ async def _(session: Session):
         return
     tweetid = session.filterargs['tweetid']
     sendname = session.even.senduuidinfo['nick']
-    template = getTranstemplate(session.bottype, session.botgroup,
-                                session.uuid)
-    trans = deal_trans(session.filterargs['tail'], template)
-    pool.submit(getTransImg, session.even, session.senduuid, sendname, tweetid,
-                trans)
+    template = getTranstemplate(session.bottype,session.botgroup,session.uuid)
+    if not session.filterargs['tail']:
+        template = ""
+    trans = deal_trans(session.filterargs['tail'],template)
+    pool.submit(getTransImg,
+        session.even,
+        session.senduuid,sendname,tweetid,trans
+        )
     session.send("图片合成中...")
 
 
