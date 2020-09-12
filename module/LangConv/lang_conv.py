@@ -36,9 +36,13 @@ else:
 
 MAPS = {}
 
+
 class Node(object):
-    def __init__(self, from_word, to_word=None, is_tail=True,
-            have_child=False):
+    def __init__(self,
+                 from_word,
+                 to_word=None,
+                 is_tail=True,
+                 have_child=False):
         self.from_word = from_word
         if to_word is None:
             self.to_word = from_word
@@ -52,16 +56,17 @@ class Node(object):
         self.have_child = have_child
 
     def is_original_long_word(self):
-        return self.is_original and len(self.from_word)>1
+        return self.is_original and len(self.from_word) > 1
 
     def is_follow(self, chars):
         return chars != self.from_word[:-1]
 
     def __str__(self):
-        return '<Node, %s, %s, %s, %s>' % (repr(self.from_word),
-                repr(self.to_word), self.is_tail, self.have_child)
+        return '<Node, %s, %s, %s, %s>' % (repr(
+            self.from_word), repr(self.to_word), self.is_tail, self.have_child)
 
     __repr__ = __str__
+
 
 class ConvertMap(object):
     def __init__(self, name, mapping=None):
@@ -75,7 +80,7 @@ class ConvertMap(object):
         have_child = {}
         max_key_length = 0
         for key in sorted(mapping.keys()):
-            if len(key)>1:
+            if len(key) > 1:
                 for i in range(1, len(key)):
                     parent_key = key[:i]
                     have_child[parent_key] = True
@@ -83,13 +88,13 @@ class ConvertMap(object):
             max_key_length = max(max_key_length, len(key))
         for key in sorted(have_child.keys()):
             convert_map[key] = (key in mapping, have_child[key],
-                    mapping.get(key, UEMPTY))
+                                mapping.get(key, UEMPTY))
         self._map = convert_map
         self.max_key_length = max_key_length
 
     def __getitem__(self, k):
         try:
-            is_tail, have_child, to_word  = self._map[k]
+            is_tail, have_child, to_word = self._map[k]
             return Node(k, to_word, is_tail, have_child)
         except:
             return Node(k)
@@ -100,7 +105,10 @@ class ConvertMap(object):
     def __len__(self):
         return len(self._map)
 
-class StatesMachineException(Exception): pass
+
+class StatesMachineException(Exception):
+    pass
+
 
 class StatesMachine(object):
     def __init__(self):
@@ -116,7 +124,7 @@ class StatesMachine(object):
         return new
 
     def feed(self, char, map):
-        node = map[self.pool+char]
+        node = map[self.pool + char]
 
         if node.have_child:
             if node.is_tail:
@@ -167,7 +175,8 @@ class StatesMachine(object):
             new = self.feed(char, map)
         elif self.state == FAIL:
             raise StatesMachineException('Translate States Machine '
-                    'have error with input data %s' % node)
+                                         'have error with input data %s' %
+                                         node)
         return new
 
     def __len__(self):
@@ -175,8 +184,10 @@ class StatesMachine(object):
 
     def __str__(self):
         return '<StatesMachine %s, pool: "%s", state: %s, final: %s>' % (
-                id(self), self.pool, self.state, self.final)
+            id(self), self.pool, self.state, self.final)
+
     __repr__ = __str__
+
 
 class Converter(object):
     def __init__(self, to_encoding):
@@ -213,8 +224,10 @@ class Converter(object):
         self.final = UEMPTY
 
     def end(self):
-        self.machines = [fsm for fsm in self.machines
-                if fsm.state == FAIL or fsm.state == END]
+        self.machines = [
+            fsm for fsm in self.machines
+            if fsm.state == FAIL or fsm.state == END
+        ]
         self._clean()
 
     def convert(self, string):
@@ -232,6 +245,7 @@ def registery(name, mapping):
     global MAPS
     MAPS[name] = ConvertMap(name, mapping)
 
+
 registery('zh-hant', zh2Hant)
 registery('zh-hans', zh2Hans)
 del zh2Hant, zh2Hans
@@ -241,12 +255,12 @@ def run():
     import sys
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('-e', type='string', dest='encoding',
-            help='encoding')
-    parser.add_option('-f', type='string', dest='file_in',
-            help='input file (- for stdin)')
-    parser.add_option('-t', type='string', dest='file_out',
-            help='output file')
+    parser.add_option('-e', type='string', dest='encoding', help='encoding')
+    parser.add_option('-f',
+                      type='string',
+                      dest='file_in',
+                      help='input file (- for stdin)')
+    parser.add_option('-t', type='string', dest='file_out', help='output file')
     (options, args) = parser.parse_args()
     if not options.encoding:
         parser.error('encoding must be set')
@@ -268,10 +282,9 @@ def run():
     c = Converter(options.encoding)
     for line in file_in:
         # print >> file_out, c.convert(line.rstrip('\n').decode(
-        file_out.write(c.convert(line.rstrip('\n').decode(
-            'utf8')).encode('utf8'))
+        file_out.write(
+            c.convert(line.rstrip('\n').decode('utf8')).encode('utf8'))
 
 
 if __name__ == '__main__':
     run()
-

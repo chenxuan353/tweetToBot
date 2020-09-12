@@ -1,14 +1,14 @@
 # -*- coding: UTF-8 -*-
 #插件装载
-from pluginsinterface.TypeExtension import PlugMsgReturn,PlugMsgTypeEnum
+from pluginsinterface.TypeExtension import PlugMsgReturn, PlugMsgTypeEnum
 from pluginsinterface.PlugFilter import PlugArgFilter
 from pluginsinterface.EventHandling import StandEven
-from pluginsinterface.PlugSession import SessionManagement,Session
+from pluginsinterface.PlugSession import SessionManagement, Session
 from pluginsinterface.PlugFilter import SendMessage
 #插件相关类
-from pluginsinterface.Plugmanagement import PluginsManage,plugGetListStr,plugGetNameList
-from pluginsinterface.Plugmanagement import plugLoads,plugRegistered,on_message,on_preprocessor,on_plugloaded
-from pluginsinterface.Plugmanagement import plugGetNamePlug,plugGet,plugGetNamePlugDes
+from pluginsinterface.Plugmanagement import PluginsManage, plugGetListStr, plugGetNameList
+from pluginsinterface.Plugmanagement import plugLoads, plugRegistered, on_message, on_preprocessor, on_plugloaded
+from pluginsinterface.Plugmanagement import plugGetNamePlug, plugGet, plugGetNamePlugDes
 #启动
 from pluginsinterface.PlugAsyncio import RunLoop as plugRunLoop
 """
@@ -30,4 +30,3 @@ from pluginsinterface.PlugAsyncio import RunLoop as plugRunLoop
 消息类型：私聊(一对一)、群聊(一对多)、临时聊天(一对一)、临时群聊(一对多)
 来源是否匿名：True/False (例如QQ群匿名等)
 """
-

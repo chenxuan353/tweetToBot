@@ -8,7 +8,7 @@ SUPERUSERS = {
     #...,
 }
 # 命令起始标识
-COMMAND_START = {'!','！'}
+COMMAND_START = {'!', '！'}
 # nonebot的debug开关
 DEBUG = False
 

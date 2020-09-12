@@ -1,13 +1,14 @@
-# 跨平台BOT插件兼容框架·开发中
+# 跨平台 BOT 插件兼容框架·开发中
+
 [![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 ## 简介
 
-拥有可全平台兼容的BOT兼容层，可以快速接入多个不同平台或相同平台bot。(开发中)
+拥有可全平台兼容的 BOT 兼容层，可以快速接入多个不同平台或相同平台 bot。(开发中)
 
-BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发送、多接口插件兼容层-消息获取及响应
+BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发送、多接口插件兼容层-消息获取及响应
 
-已实现内置插件功能：机器翻译、多功能转推、烤推、RSS更新订阅等
+已实现内置插件功能：机器翻译、多功能转推、烤推、RSS 更新订阅等
 
 主要依赖于模块[tweepy](https://github.com/tweepy/tweepy)进行推特操作
 
@@ -15,7 +16,8 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 
 ## 使用文档
 
-[用户文档](https://chenxuan353.github.io/tweetTobot/)
+[文档](https://github.com/bothbot/OneTweBot-Docs)
+[用户文档](https://chenxuan353.github.io/tweetTobot/)(停止维护)
 
 ## 部署文档
 
@@ -27,21 +29,22 @@ BOT兼容层：多接口、多接口权限模块、多接口消息流-主动发�
 git clone https://github.com/chenxuan353/tweetToBot.git
 ```
 
-或到Release内下载稳定版本：
+或到 Release 内下载稳定版本：
 
 ```
 wget https://github.com/chenxuan353/tweetToBot/archive/Version3.5.zip
 ```
 
-本项目使用Python3进行编写，请确保使用Python3.7及以上版本启动本服务，以免遭遇兼容性错误。
+本项目使用 Python3 进行编写，请确保使用 Python3.7 及以上版本启动本服务，以免遭遇兼容性错误。
 
-##### 查看python版本
+##### 查看 python 版本
 
 ```shell
 python -V
 ```
 
-或使用多个版本的Python3
+或使用多个版本的 Python3
+
 - Linux/Unix/OS X
 
 ```shell
@@ -59,12 +62,16 @@ py -3 -V
 ```shell
 pip install -r requirements.txt
 ```
+
 或
 (Linux/Unix/OS X)
+
 ```shell
 pip3 install -r requirements.txt
 ```
+
 (Windows)
+
 ```shell
 py -3 -m pip install -r requirements.txt
 ```
@@ -77,7 +84,7 @@ cp config_example.py config.py
 
 打开项目根目录下的**config.py**文件，然后按照文件里的说明进行配置
 
-*记得将各功能按需求开启或关闭
+\*记得将各功能按需求开启或关闭
 
 ##### 启动项目
 
@@ -85,60 +92,60 @@ cp config_example.py config.py
 python3 ./start.py
 ```
 
-### bot连接到后端
+### bot 连接到后端
 
 #### Tencent QQ
 
-部署到QQ需要使用支持CQHTTP协议的BOT端
+部署到 QQ 需要使用支持 CQHTTP 协议的 BOT 端
 
-原CoolQBot的通信依赖于CQHTTP，由于平台问题已迁移至[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
+原 CoolQBot 的通信依赖于 CQHTTP，由于平台问题已迁移至[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
 
-特别鸣谢[richardchien](https://github.com/richardchien)对nonebot封装项目的贡献。
+特别鸣谢[richardchien](https://github.com/richardchien)对 nonebot 封装项目的贡献。
 
-CQHTTP协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-mirai)、[mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
+CQHTTP 协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp-mirai)、[mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 
 连接配置：
 
-在**ws_reverse_servers(反向ws配置)**的配置项内**输入服务器的IP与端口号**即可连上此后端
+在**ws_reverse_servers(反向 ws 配置)**的配置项内**输入服务器的 IP 与端口号**即可连上此后端
 
 示例：
 
 ```json
     "ws_reverse_servers": [
         {
-            "enabled": true, 
-            "reverse_url": "", 
-            "reverse_api_url": "ws://127.0.0.1:8100/ws/api/", 
-            "reverse_event_url": "ws://127.0.0.1:8100/ws/event/", 
+            "enabled": true,
+            "reverse_url": "",
+            "reverse_api_url": "ws://127.0.0.1:8100/ws/api/",
+            "reverse_event_url": "ws://127.0.0.1:8100/ws/event/",
             "reverse_reconnect_interval": 3000
         }
-    ], 
+    ],
 ```
 
 ### 使用烤推功能
 
-使用烤推功能需要**安装chrome**及调用chrome的驱动**chromedriver**
+使用烤推功能需要**安装 chrome**及调用 chrome 的驱动**chromedriver**
 
-#### **安装chrome**并标记为不更新
+#### **安装 chrome**并标记为不更新
 
 ```shell
 apt install chromium-browser
 apt-mark hold chromium-browser
 ```
 
-第二行命令用于标记不更新，防止apt-get upgrade等命令后把chrome更新了导致烤推驱动无法使用。
+第二行命令用于标记不更新，防止 apt-get upgrade 等命令后把 chrome 更新了导致烤推驱动无法使用。
 
-#### 查询chrome版本(记录一下，之后要用)
+#### 查询 chrome 版本(记录一下，之后要用)
 
 ```
 chromium-browser --version
 ```
 
-#### 安装**chromedriver**(需要先查询chrome版本)
+#### 安装**chromedriver**(需要先查询 chrome 版本)
 
 查找指定版本的[chromedrive](https://chromedriver.storage.googleapis.com/index.html)下载 大版本需要相同，不然无法使用
 
-> chrome版本 Chromium 84.0.4147.105 则ChromeDriver对应版本可以是 ChromeDriver 84.0.4147.30
+> chrome 版本 Chromium 84.0.4147.105 则 ChromeDriver 对应版本可以是 ChromeDriver 84.0.4147.30
 
 以下为**添加到全局命令的方法**：
 
@@ -153,7 +160,7 @@ mv chromedriver /usr/local/bin
 
 > 不添加全局命令的可以对配置文件**config.py**内的**ChromedriverPath**属性进行配置
 
-##### **※chromedriver需要拥有执行权限**
+##### **※chromedriver 需要拥有执行权限**
 
 ##### 安装字体
 

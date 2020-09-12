@@ -3,10 +3,13 @@ from enum import Enum
 """
 插件相关类
 """
+
+
 class NoInstance(type):
     #通过__call___方法控制访问
-    def __call__(self,*args,**kwargs):
+    def __call__(self, *args, **kwargs):
         raise TypeError('禁止实例化')
+
 
 #消息类型 private、group、tempprivate、tempgroup  私聊(一对一)、群聊(一对多)、临时聊天(一对一)、临时群聊(一对多)
 class PlugMsgTypeEnum(metaclass=NoInstance):
@@ -27,22 +30,29 @@ class PlugMsgTypeEnum(metaclass=NoInstance):
     group = 2
     tempprivate = 4
     tempgroup = 8
-    plugadmin = 16 #插件管理者
+    plugadmin = 16  #插件管理者
     allowall = 1 | 2 | 4 | 8 | 16
+
     @staticmethod
     def getAllowlist(code) -> list:
         l = []
-        for key,value in PlugMsgTypeEnum.__dict__.items():
-            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall','none','plugadmin'):
+        for key, value in PlugMsgTypeEnum.__dict__.items():
+            if not key.startswith('__') and key not in ('getAllowlist',
+                                                        'getMsgtype',
+                                                        'allowall', 'none',
+                                                        'plugadmin'):
                 if code & value:
                     l.append(key)
         return l
+
     @staticmethod
     def getMsgtype(code) -> str:
-        for key,value in PlugMsgTypeEnum.__dict__.items():
-            if not key.startswith('__') and key not in ('getAllowlist','getMsgtype','allowall','plugadmin'):
+        for key, value in PlugMsgTypeEnum.__dict__.items():
+            if not key.startswith('__') and key not in (
+                    'getAllowlist', 'getMsgtype', 'allowall', 'plugadmin'):
                 if code & value:
                     return key
+
 
 class PlugMsgReturn(Enum):
     """
@@ -51,8 +61,7 @@ class PlugMsgReturn(Enum):
         Ignore 消息忽略
         Intercept 消息拦截
     """
-    Ignore = 1 
+    Ignore = 1
     Intercept = 2
     Allow = 1
     Refuse = 2
-

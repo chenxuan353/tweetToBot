@@ -9,10 +9,10 @@ import traceback
 # 日志输出
 from helper import getlogger
 logger = getlogger(__name__)
-
 """
 RSShub 推送识别码为path
 """
+
 
 class MyHTMLParser(HTMLParser):
     def __init__(self):
@@ -20,13 +20,14 @@ class MyHTMLParser(HTMLParser):
         self.text = ""
         self.media = [].copy()
         self.links = [].copy()
+
     def handle_starttag(self, tag, attrs):
         if tag == 'img':
             # base64://
             # data:image/gif;base64,
-            src:str = dict(attrs)['src']
+            src: str = dict(attrs)['src']
             if src.startswith('data:image/'):
-                src = 'base64://' + src[src.index('base64,')+len('base64,'):]
+                src = 'base64://' + src[src.index('base64,') + len('base64,'):]
             self.media.append(src)
         elif tag == 'a':
             self.links.append(dict(attrs)['href'])
@@ -39,16 +40,16 @@ class MyHTMLParser(HTMLParser):
         # logger.info("Encountered some data  :")
         # logger.info(data)
         self.text = self.text + data
+
+
 class RssPushList(PushList):
-    def __init__(self,configfilename = 'RSShubPushlist.json'):
-        super().__init__('RSShub',configfilename=configfilename)
+    def __init__(self, configfilename='RSShubPushlist.json'):
+        super().__init__('RSShub', configfilename=configfilename)
         self.load()
-    def baleForConfig(self,nick,unitdes,options:dict):
-        return {
-            'nick':nick,
-            'unitdes':unitdes,
-            'options':options
-        }
+
+    def baleForConfig(self, nick, unitdes, options: dict):
+        return {'nick': nick, 'unitdes': unitdes, 'options': options}
+
     @staticmethod
     def getSourceWeb(path):
         res = path.split('/')
@@ -56,14 +57,15 @@ class RssPushList(PushList):
             if s.strip():
                 return s
         return ''
+
     @staticmethod
-    def dealOption(path:str,option:str) -> tuple:
+    def dealOption(path: str, option: str) -> tuple:
         options = {}
         if path.startswith('/bilibili/user/dynamic/'):
             options = {
-                're':False,
-                'onlyjp':False,
-                'notupload':False,
+                're': False,
+                'onlyjp': False,
+                'notupload': False,
             }
             if option:
                 res = option.split('+')
@@ -77,21 +79,22 @@ class RssPushList(PushList):
                     elif s.strip() == '看投稿':
                         options['notupload'] = False
                     else:
-                        return (False,'选项错误,选项 {0} 不存在,可用选项 看转发、仅日语、看投稿'.format(s))
+                        return (False,
+                                '选项错误,选项 {0} 不存在,可用选项 看转发、仅日语、看投稿'.format(s))
         else:
             if option:
-                return (False,'当前路径无选项')
-        return (True,options)
+                return (False, '当前路径无选项')
+        return (True, options)
+
 
 class RSShubEvenDeal:
-    def __init__(self,pushlist):
+    def __init__(self, pushlist):
         self.pushlist = pushlist
-    def bale_event(self,spypath:str,data):
-        return {
-            'path':spypath,
-            'data':data
-        }
-    def eventSourceAllow(self,event,pushunit) -> bool:
+
+    def bale_event(self, spypath: str, data):
+        return {'path': spypath, 'data': data}
+
+    def eventSourceAllow(self, event, pushunit) -> bool:
         """
             判断来源是否允许转发
         """
@@ -108,42 +111,51 @@ class RSShubEvenDeal:
                     return False
             else:
                 # 仅日语
-                if pushunit['pushconfig']['options']['onlyjp'] and not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',data['description']):
+                if pushunit['pushconfig']['options'][
+                        'onlyjp'] and not re.search(
+                            r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]',
+                            data['description']):
                     return False
                 # 不看投稿
-                if data['description'].find('/bfs/archive/') != -1 and not pushunit['pushconfig']['options']['notupload']:
+                if data['description'].find(
+                        '/bfs/archive/'
+                ) != -1 and not pushunit['pushconfig']['options']['notupload']:
                     return False
         return True
+
     # 事件分发
-    def deal_event(self,event):
+    def deal_event(self, event):
         pushlist = self.pushlist
         units = pushlist.getLitsFromSpyID(event['path'])
         if units != []:
             for pushunit in units:
-                if self.eventSourceAllow(event,pushunit):
-                    self.eventTrigger(event,pushunit)
+                if self.eventSourceAllow(event, pushunit):
+                    self.eventTrigger(event, pushunit)
+
     # 事件到达(触发)
-    def eventTrigger(self,event,pushunit):
+    def eventTrigger(self, event, pushunit):
         try:
-            msg = self.evenToStr(event['path'],event['data'],pushunit)
-            self.send_msg_pushunit(pushunit,msg)
+            msg = self.evenToStr(event['path'], event['data'], pushunit)
+            self.send_msg_pushunit(pushunit, msg)
         except:
             s = traceback.format_exc(limit=10)
             logger.error(s)
             logger.error('事件转换错误！')
+
     # 标准RSS事件转文本
-    def dealText(self,text):
+    def dealText(self, text):
         """
             处理HTML标签
         """
-        text = text.replace("<br>","\n")
+        text = text.replace("<br>", "\n")
         parser = MyHTMLParser()
-        parser.feed("<body>"+text+"</body>")
+        parser.feed("<body>" + text + "</body>")
         resText = parser.text
         medias = parser.media
         links = parser.links
-        return (resText,medias,links)
-    def evenToStr(self,path:str,rssdata,pushunit) -> str:
+        return (resText, medias, links)
+
+    def evenToStr(self, path: str, rssdata, pushunit) -> str:
         """
             <item>
                 <title>标题</title>
@@ -160,10 +172,11 @@ class RSShubEvenDeal:
         else:
             source = sourceWeb
         nick = rssdata['author']
-        unitdes = source # 订阅描述
+        unitdes = source  # 订阅描述
         if 'nick' in pushunit['pushconfig']:
             nick = pushunit['pushconfig']['nick']
-        if 'unitdes' in pushunit['pushconfig'] and pushunit['pushconfig']['unitdes']:
+        if 'unitdes' in pushunit['pushconfig'] and pushunit['pushconfig'][
+                'unitdes']:
             unitdes = pushunit['pushconfig']['unitdes']
         if nick == '':
             nick = '(未命名)'
@@ -172,43 +185,38 @@ class RSShubEvenDeal:
         links = rdes[2]
         if path.startswith('/bilibili/user/dynamic/'):
             msg = "来自 {0} 的更新\n{1}\n{2}".format(
-                    unitdes,
-                    ('   --' + nick if nick != '(未命名)' else ''),
-                    rdes[0]
-                )
+                unitdes, ('   --' + nick if nick != '(未命名)' else ''), rdes[0])
         elif path.startswith('/bilibili/live/room/'):
             msg = "{0} 更新了\n{2}{1}\n{3}".format(
-                    unitdes,
-                    ('   --' + nick if nick != '(未命名)' else ''),
-                    rssdata['title'],
-                    rdes[0][:15].strip() + ('...' if len(rdes[0])>15 else '')
-                )
+                unitdes, ('   --' + nick if nick != '(未命名)' else ''),
+                rssdata['title'],
+                rdes[0][:15].strip() + ('...' if len(rdes[0]) > 15 else ''))
         elif path.startswith('/mail/imap/'):
             medias = []
             msg = "{0} 更新了\n{1}".format(
-                    unitdes,
-                    rssdata['title'],
-                    # rssdata['auther']
-                )
+                unitdes,
+                rssdata['title'],
+                # rssdata['auther']
+            )
         else:
             msg = "来自 {0} 的更新\n{1}{2}\n{3}".format(
-                    unitdes,
-                    rssdata['title'],
-                    ('   --' + nick if nick != '(未命名)' else ''),
-                    rdes[0]
-                )
+                unitdes, rssdata['title'],
+                ('   --' + nick if nick != '(未命名)' else ''), rdes[0])
         msg = SendMessage(msg)
         if medias:
             msg.append('\n媒体：\n')
         for src in medias:
             msg.append(msg.baleImgObj(src))
         msg.append("{0}{1}".format(
-                    (('\n'+rssdata['link']) if rssdata['link'] else ''),
-                    ('\n'+time.strftime("%Y{0}%m{1}%d{2} %H:%M:%S",time.localtime(int(rssdata['pubTimestamp']))).format('年','月','日') if rssdata['pubTimestamp'] else '')
-                ))
+            (('\n' + rssdata['link']) if rssdata['link'] else ''),
+            ('\n' + time.strftime("%Y{0}%m{1}%d{2} %H:%M:%S",
+                                  time.localtime(int(rssdata['pubTimestamp'])))
+             .format('年', '月', '日') if rssdata['pubTimestamp'] else '')))
         return msg
-    def send_msg_pushunit(self,pushunit,message:SendMessage):
-        return msgStream.send_msg_kw(**pushlist.baleSendTarget(pushunit,message))
+
+    def send_msg_pushunit(self, pushunit, message: SendMessage):
+        return msgStream.send_msg_kw(
+            **pushlist.baleSendTarget(pushunit, message))
 
 
 pushlist = RssPushList()

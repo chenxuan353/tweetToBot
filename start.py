@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-from pluginsinterface.PluginLoader import plugLoads,plugRunLoop
+from pluginsinterface.PluginLoader import plugLoads, plugRunLoop
 from module.twitter import runTwitterPushThread
 from module.pollingTwitterApi import runPollingTwitterApiThread
 from module.twitterApi import runTwitterApiThread
@@ -37,5 +37,3 @@ if __name__ == "__main__":
         # nonebotstart.RunInThread()
         nonebotstart.Run()
     loop.run_forever()
-
-
