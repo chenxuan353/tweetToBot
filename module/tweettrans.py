@@ -53,7 +53,7 @@ class TweetTrans:
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--lang=zh_CN')
         chrome_options.add_argument('lang=zh_CN.UTF-8')
-        #chrome_options.add_argument('--disk-cache-dir='+os.path.join('.','cache','chromecache'))
+        # chrome_options.add_argument('--disk-cache-dir='+os.path.join('.','cache','chromecache'))
         chrome_options.add_argument("user-agent=" + randUserAgent())
         if drive_executable_path:
             self.driver = webdriver.Chrome(executable_path=executable_path,
@@ -708,7 +708,7 @@ class TweetTrans:
             return tres
         self.waitForImg(tasktype)
         try:
-            #scroll_width = driver.execute_script('return document.body.parentNode.scrollWidth')
+            # scroll_width = driver.execute_script('return document.body.parentNode.scrollWidth')
             elem = driver.find_element_by_css_selector(
                 'section[aria-labelledby].css-1dbjc4n')
             driver.set_window_size(scroll_width, elem.size['height'] + 300)
@@ -766,3 +766,22 @@ class TweetTrans:
                 self.savePngToFile(tweet['relem'].screenshot_as_png,
                                    str(cout_id),
                                    path=path)
+        driver.execute_script('window.scrollTo(0,0)')
+        return 'success!'
+
+    # 保存浏览器全页面到图片
+    def web_screenshot(self, tasktype: str):
+        driver = self.driver
+        path = os.path.join('transtweet', 'web_screenshot')
+        check_path(path)
+        save_filename = os.path.join('cache', path, tasktype + '.png')
+        driver.get_screenshot_as_file(save_filename)
+
+    # 缩放
+    def doczoom(self, zoom):
+        driver = self.driver
+        # document.body.style.zoom= '
+        # document.body.style.transform= '
+        # var page = this;page.zoomFactor = '
+        driver.execute_script("document.body.style.transform= '" + str(zoom) +
+                              "'")
