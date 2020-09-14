@@ -19,7 +19,7 @@ Session_timeout = 300
 PLUGADMIN = {
     #腾讯QQ
     'cqhttp': [
-        12345,
+        "12345",
     ],
     #钉钉
     'dingding': []
