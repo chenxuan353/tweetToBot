@@ -120,7 +120,7 @@ async def _(session: Session):
     text: str = session.filterargs['tail'].strip()
     if text == '':
         return
-    if text.startswith('# '):
+    if text.startswith('#'):
         if text[1:].isdigit():
             n = int(text[1:])
             tweetid = tweetcache.getTweetSourceID(n)
