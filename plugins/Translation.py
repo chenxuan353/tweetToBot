@@ -131,6 +131,9 @@ async def _(session: Session):
             else:
                 session.send("未查找到推文")
                 return
+        else:
+            session.send("数值识别错误")
+            return
     elif source == 'auto' and target == 'zh':
         if not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]', text):
             target = 'jp'
