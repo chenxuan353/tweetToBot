@@ -128,6 +128,9 @@ async def _(session: Session):
                 tweets = tweetcache.getTweetFromCache(tweetid=tweetid)
                 if tweets is not None:
                     text = tweets['text']
+            else:
+                session.send("未查找到推文")
+                return
     elif source == 'auto' and target == 'zh':
         if not re.search(r'[\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7A3]', text):
             target = 'jp'
