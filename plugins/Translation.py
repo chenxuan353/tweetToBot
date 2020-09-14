@@ -128,6 +128,9 @@ async def _(session: Session):
                 tweets = tweetcache.getTweetFromCache(tweetid=tweetid)
                 if tweets is not None:
                     text = tweets['text']
+                else:
+                    session.send(f"未查找到推文=>{tweetid}，可能是缓存未加载。请等待几分钟后再次尝试")
+                    return
             else:
                 session.send("未查找到推文")
                 return
