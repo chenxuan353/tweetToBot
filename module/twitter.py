@@ -132,7 +132,6 @@ def decode_b64(str, offset: int = 0) -> int:
 推送列表
 """
 
-
 class TweePushList(PushList):
     defaulttemplate = "$ifrelate $nick $typestr了 $relate_user_name 的推文$else $nick的推特更新了$end：\n$text $imgs $relatestart\n---------------\n$relate_text $relate_imgs$relateend\n跟推延时：$senddur\n链接：$link\n临时推文ID：#$tempID"
     pushunit_base_config = {
@@ -149,14 +148,14 @@ class TweePushList(PushList):
             # 推特推送开关
             'retweet': 0,  # 转推(默认不开启)
             'quoted': 1,  # 带评论转推(默认开启)
-            'reply_to_status': 1,  # 回复(默认开启)
+            'reply_to_status': 0,  # 回复(默认开启)
             'reply_to_user': 1,  # 提及某人-多数时候是被提及但是被提及不会接收(默认开启)
             'none': 1,  # 发推(默认开启)
 
             # 智能推送(仅限推送单元设置，无法全局设置)
             'ai_retweet': 0,  # 智能推送本人转推(默认不开启)-转发值得关注的人的推特时推送
-            'ai_reply_to_status': 0,  # 智能推送本人回复(默认不开启)-回复值得关注的人时推送
-            'ai_passive_reply_to_status': 0,  # 智能推送 被 回复(默认不开启)-被值得关注的人回复时推送
+            'ai_reply_to_status': 1,  # 智能推送本人回复(默认不开启)-回复值得关注的人时推送
+            'ai_passive_reply_to_status': 1,  # 智能推送 被 回复(默认不开启)-被值得关注的人回复时推送
             'ai_passive_quoted': 0,  # 智能推送 被 带评论转推(默认不开启)-被值得关注的人带评论转推时推送
             'ai_passive_reply_to_user': 0,  # 智能推送 被 提及(默认不开启)-被值得关注的人提及时推送
 
@@ -266,7 +265,7 @@ class TweePushList(PushList):
                                       lasteditobj)
 
     def addPushunit(self, pushunit: dict):
-        return super().addPushunit(pushunit, self.pushunit_default_config)
+        return super().addPushunit(pushunit, self.pushunit_default_config.copy())
 
     # 添加与删除模版及模版管理
     def pushTemplateAddCover(self, name, config: dict):
@@ -347,26 +346,20 @@ class TweePushList(PushList):
             'push': {}
         }
         mergeConf.update(self.pushunit_default_config)
+        mergeConf['push'] = mergeConf['push'].copy()
         if not key:
-            mergeConf['upimg'] = pushtoconfig[
-                'upimg'] if 'upimg' in pushtoconfig else mergeConf['upimg']
-            mergeConf['unit'].update(pushtoconfig['unit'] if 'unit' in
-                                     pushtoconfig else {})
+            mergeConf['upimg'] = pushtoconfig['upimg'] if 'upimg' in pushtoconfig else mergeConf['upimg']
+            mergeConf['unit'].update(pushtoconfig['unit'] if 'unit' in pushtoconfig else {})
             mergeConf['template'] = pushtoconfig[
                 'template'] if 'template' in pushtoconfig else mergeConf[
                     'template']
             mergeConf['push'].update(pushtoconfig['push'] if 'push' in
                                      pushtoconfig else {})
             if config:
-                mergeConf['upimg'] = config[
-                    'upimg'] if 'upimg' in config else mergeConf['upimg']
-                mergeConf['unit'].update(config['unit'] if 'unit' in
-                                         config else {})
-                mergeConf['template'] = config[
-                    'template'] if 'template' in config else mergeConf[
-                        'template']
-                mergeConf['push'].update(config['push'] if 'push' in
-                                         config else {})
+                mergeConf['upimg'] = config['upimg'] if 'upimg' in config else mergeConf['upimg']
+                mergeConf['unit'].update(config['unit'] if 'unit' in config else {})
+                mergeConf['template'] = config['template'] if 'template' in config else mergeConf['template']
+                mergeConf['push'].update(config['push'] if 'push' in config else {})
             return mergeConf
         elif key == 'upimg':
             mergeConf['upimg'] = pushtoconfig[
@@ -1068,8 +1061,7 @@ class TweetStatusDeal:
             tweetinfo['relate_userinfo'] = tweetinfo['relate']['userinfo']
             tweetinfo['relate_notable'] = (tweetinfo['notable']
                                            and tweetinfo['relate']['notable'])
-        elif tweetinfo['type'] != 'none' and tweetinfo[
-                'type'] != 'reply_to_user':
+        elif tweetinfo['type'] != 'none' and tweetinfo['type'] != 'reply_to_user':
             tweetinfo['hasrelate'] = True
             tweetinfo['relate'] = None
             tweetinfo['relate_id'] = status.in_reply_to_status_id
@@ -1078,7 +1070,7 @@ class TweetStatusDeal:
             tweetinfo['relate_user_id_str'] = status.in_reply_to_user_id_str
             tweetinfo['relate_user_sname'] = status.in_reply_to_screen_name
             tweetinfo['relate_userinfo'] = None
-            tweetinfo['relate_notable'] = False
+            tweetinfo['relate_notable'] = self.pushlist.hasSpy(tweetinfo['relate_id_str'])
             res = self.tweetcache.getTweetFromCache(
                 tweetinfo['relate_id'], tweetinfo['relate_user_sname'])
             if res is not None:
@@ -1087,27 +1079,35 @@ class TweetStatusDeal:
                 tweetinfo['relate_userinfo'] = tweetinfo['relate']['userinfo']
             else:
                 res = self.tweetcache.getUserInfo(
-                    userid=tweetinfo['relate_id'])
+                    userid=tweetinfo['relate_user_id'])
                 if res is not None:
                     tweetinfo['relate_userinfo'] = res
             if tweetinfo['relate_userinfo'] is not None:
-                tweetinfo['relate_notable'] = tweetinfo['relate_userinfo'][
-                    'notable']
+                tweetinfo['relate_notable'] = tweetinfo['relate_userinfo']['notable']
             if tweetinfo['relate'] is not None:
-                tweetinfo['relate_notable'] = tweetinfo['relate'][
-                    'notable'] and tweetinfo['relate_notable']
-            tweetinfo['relate_notable'] = tweetinfo['notable'] and tweetinfo[
-                'relate_notable']
+                tweetinfo['relate_notable'] = tweetinfo['relate']['notable'] and tweetinfo['relate_notable']
+            tweetinfo['relate_notable'] = tweetinfo['notable'] and tweetinfo['relate_notable']
         else:
             tweetinfo['hasrelate'] = False
             tweetinfo['relate'] = None
             tweetinfo['relate_id'] = -1
             tweetinfo['relate_id_str'] = '-1'
-            tweetinfo['relate_user_id'] = -1
-            tweetinfo['relate_user_id_str'] = '-1'
-            tweetinfo['relate_user_sname'] = ''
             tweetinfo['relate_userinfo'] = None
             tweetinfo['relate_notable'] = False
+            if tweetinfo['type'] == 'reply_to_user':
+                tweetinfo['relate_user_id'] = status.in_reply_to_user_id
+                tweetinfo['relate_user_id_str'] = status.in_reply_to_user_id_str
+                tweetinfo['relate_user_sname'] = status.in_reply_to_screen_name
+                tweetinfo['relate_notable'] = self.pushlist.hasSpy(tweetinfo['relate_id_str'])
+                res = self.tweetcache.getUserInfo(
+                    userid=tweetinfo['relate_user_id'])
+                if res is not None:
+                    tweetinfo['relate_userinfo'] = res
+            else:
+                tweetinfo['relate_user_id'] = -1
+                tweetinfo['relate_user_id_str'] = '-1'
+                tweetinfo['relate_user_sname'] = ''
+
 
         # 推文是否值得关注
         if self.pushlist.hasSpy(tweetinfo['user_id']):
@@ -1594,6 +1594,8 @@ class TweetEventDeal:
             else:
                 argmap['relate_user_name'] = tweetinfo['relate_userinfo'][
                     'name']
+            if tweetinfo['hasrelate'] and tweetinfo['relate'] is None:
+                tweetinfo['relate'] = self.tweetcache.getTweetFromCache(tweetinfo['relate_id'],tweetinfo['relate_user_id'])
             if tweetinfo['relate'] is None:
                 argmap['hasrelate'] = False
                 argmap['relate_timestamp'] = argmap['timestamp']
