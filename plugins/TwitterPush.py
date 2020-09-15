@@ -331,7 +331,7 @@ async def _(session: Session):
     tweetid = session.filterargs['tweetid']
     tweet = tweetcache.getTweetFromCache(tweetid)
     if tweet is None:
-        if ptwitterapps.hasApp():
+        if ptwitterapps.hasApp() and session.senduuidinfo['sourceAdmin']:
             app = ptwitterapps.getAllow('statuses_lookup')
             if app == None:
                 session.send("速率限制，请稍后再试！")
