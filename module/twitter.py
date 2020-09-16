@@ -600,11 +600,11 @@ class TweetCache:
             tcache = self.getTweetsFromCache(userid)
             if not tcache:
                 return None
-            res = tweetscache[userid].find(
+            res = tcache.find(
                 (lambda item, val: item['id'] == val), tweetid)
             return res
         for userid in tweetscache:
-            res = tweetscache[userid].find(
+            res = tcache.find(
                 (lambda item, val: item['id'] == val), tweetid)
             if res:
                 return res
