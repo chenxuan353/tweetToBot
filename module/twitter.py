@@ -1648,7 +1648,7 @@ class TweetEventDeal:
                 template += "$relateend\n链接：$link\n临时推文ID：#$tempID"
             else:
                 if even:
-                    template = "$nick,$typestr,$mintext"
+                    template = "$nick,$id_str,$typestr,$mintext"
                 else:
                     template = "$typestr,#$tempID,$minid,$mintext"
         # 特殊变量(仅识别一次) $relatestart、$relateend:用于分隔依赖推文与主推文
@@ -1893,12 +1893,10 @@ def on_resFromDealSourceData(notable, tweetinfo, userevens):
                                             tweetinfo['user_id'], tweetinfo)
             on_even(even, '推文推送')
             # 被动推送
-            if tweetinfo['relate'] and \
-                'version' in tweetinfo['relate'] and \
-                tweetinfo['relate']['notable'] and \
+            if tweetinfo['relate_notable'] and \
                 tweetinfo['type'] in ('quoted','reply_to_status','reply_to_user'):#被动推送标识检查
                 even = tweetevendeal.bale_event('reverse', tweetinfo['type'],
-                                                tweetinfo['relate']['user_id'],
+                                                tweetinfo['relate_user_id'],
                                                 tweetinfo)
                 on_even(even, '被动推送')
         for usereven in userevens:
