@@ -1,6 +1,6 @@
 # 跨平台 BOT 插件兼容框架·开发中
 
-[![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
+[![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)&nbsp;![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 ## 简介
 
@@ -17,6 +17,7 @@ BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发
 ## 使用文档
 
 [文档](https://github.com/bothbot/OneTweBot-Docs)
+
 [用户文档](https://chenxuan353.github.io/tweetTobot/)(停止维护)
 
 ## 部署文档
@@ -29,7 +30,7 @@ BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发
 git clone https://github.com/chenxuan353/tweetToBot.git
 ```
 
-**由于完整仓库较大，因此推荐仅Clone当前v3分支：**
+**由于完整仓库较大，因此推荐仅 Clone 当前 v3 分支：**
 
 ```shell
 git clone -b v3 https://github.com/chenxuan353/tweetToBot.git --depth=1
@@ -37,7 +38,7 @@ git clone -b v3 https://github.com/chenxuan353/tweetToBot.git --depth=1
 
 或到 Release 内下载稳定版本：
 
-```
+```shell
 wget https://github.com/chenxuan353/tweetToBot/archive/Version3.5.zip
 ```
 
@@ -84,7 +85,7 @@ py -3 -m pip install -r requirements.txt
 
 ##### 配置项目
 
-```
+```shell
 cp config_example.py config.py
 ```
 
