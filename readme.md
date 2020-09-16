@@ -29,6 +29,12 @@ BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发
 git clone https://github.com/chenxuan353/tweetToBot.git
 ```
 
+**由于完整仓库较大，因此推荐仅Clone当前v3分支：**
+
+```shell
+git clone -b v3 https://github.com/chenxuan353/tweetToBot.git --depth=1
+```
+
 或到 Release 内下载稳定版本：
 
 ```
