@@ -604,7 +604,7 @@ class TweetCache:
                 (lambda item, val: item['id'] == val), tweetid)
             return res
         for userid in tweetscache:
-            res = tcache.find(
+            res = tweetscache[userid].find(
                 (lambda item, val: item['id'] == val), tweetid)
             if res:
                 return res

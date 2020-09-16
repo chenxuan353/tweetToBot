@@ -466,8 +466,6 @@ argfilter.addArg(
     canSkip=True,
     vlimit={'': 1}  # 设置默认值
 )
-
-
 @on_message(msgfilter='推文列表',
             argfilter=argfilter,
             bindperm='use',
