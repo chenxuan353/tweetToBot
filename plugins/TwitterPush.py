@@ -391,7 +391,7 @@ argfilter.addArg('value',
 async def _(session: Session):
     value = session.filterargs['value']
     userinfo = session.filterargs['userinfo']
-    res = Priority_set(userinfo['id_str'], value)
+    res = Priority_set(value, userinfo['id_str'])
     session.send(res[1])
 
 

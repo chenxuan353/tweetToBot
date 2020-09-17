@@ -123,7 +123,6 @@ async def _(session: Session):
         session.send(res[1])
     session.send('取消授权成功')
 
-
 def getImage(url, maxsize=50, timeout=15):
     """
         获取图片base64编码，参数为最大文件大小(Kb)，下载超时时间
@@ -155,7 +154,6 @@ def getImage(url, maxsize=50, timeout=15):
         return (False, '文件下载异常')
     else:
         return (True, '文件下载成功', base64code)
-
 
 @on_message(msgfilter='([!！]设置烤推模[版板])',
             sourceAdmin=True,
@@ -189,7 +187,6 @@ async def _(session: Session):
     setTranstemplate(session.bottype, session.botgroup, session.uuid, template)
     session.send('已设置模版为->' + message)
 
-
 def deal_trans(arg, template) -> dict:
     trans = {'type_html': template, 'source': arg, 'text': {}}
     tests = arg.split('##')
@@ -218,7 +215,6 @@ def deal_trans(arg, template) -> dict:
             if kvc[2] != '':
                 trans['text'][kv[0]].append(kvc[2].strip())
     return trans
-
 
 def getTransImg(even: StandEven, senduuid, sendname, tweetid, trans):
     try:
@@ -279,7 +275,6 @@ def getTransImg(even: StandEven, senduuid, sendname, tweetid, trans):
         logger.error(s)
         even.send("错误，烤推服务异常!")
 
-
 def getRealTweetID(arg: str):
     arg = arg.strip()
     if arg.startswith('https://twitter.com/') or arg.startswith(
@@ -305,14 +300,12 @@ def getRealTweetID(arg: str):
         return tweetid
     return arg
 
-
 argfilter = PlugArgFilter()
 argfilter.addArg('tweetid',
                  '推特ID',
                  '推特临时ID、推文链接、推文链接末尾的数字ID',
                  prefunc=getRealTweetID,
                  verif='uint')
-
 
 @on_message(msgfilter='([!！]烤推)|([!！]t)|(##)',
             argfilter=argfilter,
