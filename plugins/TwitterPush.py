@@ -267,7 +267,7 @@ async def _(session: Session):
     session.send('已响应')
 
 
-@on_message(msgfilter='关闭主监听', bindsendperm='manage', des='启动主监听 - 关闭推送的主要监听')
+@on_message(msgfilter='关闭主监听', bindsendperm='manage', des='关闭主监听 - 关闭推送的主要监听')
 async def _(session: Session):
     pollingsetStreamOpen(False)
     session.send('已响应')
@@ -615,9 +615,9 @@ argfilter.addArg(
 )
 
 
-@on_message(msgfilter='(转推列表)|(pusllist)|(DD列表)|(单推列表)',
+@on_message(msgfilter='(转推列表)|(pushlist)|(DD列表)|(单推列表)',
             argfilter=argfilter,
-            des='转推列表 用户名 - 获取推送名单，别名pusllist、DD列表、单推列表',
+            des='转推列表 用户名 - 获取推送名单，别名pushlist、DD列表、单推列表',
             sourceAdmin=True,
             bindperm='use',
             bindsendperm='manageself',
@@ -1069,7 +1069,7 @@ argfilter = PlugArgFilter()
 argfilter.addArg('text', '编码文本', '64进制编码的文本', verif='str')
 
 
-@on_message(msgfilter='(64进制编码)|(2t64编码)|(压缩推文ID)',
+@on_message(msgfilter='(64进制解码)|(2t64解码)|(解压推文ID)',
             des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
 async def _(session: Session):
     text = session.filterargs['text']
