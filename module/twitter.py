@@ -1894,6 +1894,7 @@ def on_resFromDealSourceData(notable, tweetinfo, userevens):
             on_even(even, '推文推送')
             # 被动推送
             if tweetinfo['relate_notable'] and \
+                tweetinfo['relate_user_id'] != tweetinfo['user_id'] and \
                 tweetinfo['type'] in ('quoted','reply_to_status','reply_to_user'):#被动推送标识检查
                 even = tweetevendeal.bale_event('reverse', tweetinfo['type'],
                                                 tweetinfo['relate_user_id'],
