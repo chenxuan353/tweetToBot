@@ -1070,7 +1070,7 @@ argfilter.addArg('text', '编码文本', '64进制编码的文本', verif='str')
 
 
 @on_message(msgfilter='(64进制解码)|(2t64解码)|(解压推文ID)',
-            des='2t64编码 参数 - 2t64编码,别名64进制编码、压缩推文ID')
+            des='2t64解码 参数 - 2t64解码,别名64进制解码、解压推文ID')
 async def _(session: Session):
     text = session.filterargs['text']
     msg = str(decode_b64(text, offset=0))
