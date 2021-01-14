@@ -4,7 +4,7 @@ from pluginsinterface.PluginLoader import PlugMsgReturn, plugRegistered, plugGet
 from pluginsinterface.PluginLoader import SendMessage, plugGetListStr, PlugMsgTypeEnum
 from pluginsinterface.PluginLoader import PlugArgFilter, plugGetNameList, plugGetNamePlugDes
 import asyncio
-import config
+from load_config import config
 from helper import getlogger
 logger = getlogger(__name__)
 """

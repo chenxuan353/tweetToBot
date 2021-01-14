@@ -9,7 +9,7 @@ from module.pollingTwitterApi import ptwitterapps, setStreamOpen as pollingsetSt
 
 from module.pollingTwitterApi import Priority_getlist, Priority_set
 import time
-import config
+from load_config import config
 import functools
 from helper import getlogger
 logger = getlogger(__name__)
@@ -31,7 +31,7 @@ def _():
 @on_plugloaded()
 def _(plug: PluginsManage):
     if plug:
-        # if not config.twitterpush:
+        # if not config['twitterpush']:
         #     plug.switchPlug(False) # 关闭插件
         # 注册权限
         plug.registerPerm('manage',

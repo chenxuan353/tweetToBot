@@ -6,7 +6,7 @@ from module.twitterApi import runTwitterApiThread
 from module.pollingRSShub import runPollingRSShubThread
 import asyncio
 # 配置
-import config
+from load_config import config
 # 日志输出
 from helper import getlogger
 logger = getlogger('START')
@@ -24,15 +24,15 @@ if __name__ == "__main__":
     plugRunLoop()
     loop = asyncio.get_event_loop()
     # 启动推送监听
-    if config.twitterpush:
+    if config['twitterpush']:
         runTwitterPushThread()
         runPollingTwitterApiThread()
-        if config.twitterStream:
+        if config['twitterStream']:
             runTwitterApiThread()
-    if config.RSS_open:
+    if config['RSS_open']:
         runPollingRSShubThread()
     # 加载nonebot
-    if config.nonebot:
+    if config['nonebot']:
         import botinterface.nonebotstart as nonebotstart
         # nonebotstart.RunInThread()
         nonebotstart.Run()

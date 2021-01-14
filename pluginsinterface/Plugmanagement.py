@@ -17,7 +17,7 @@ from pluginsinterface.PermissionGroup import legalPermHas, authRegisterDefaultPe
 from pluginsinterface.PermissionGroup import permDefaultInit
 
 from helper import getlogger
-import config
+from load_config import config
 logger = getlogger(__name__)
 """
 插件兼容层
@@ -35,8 +35,8 @@ for _ in range(10):
 #启动回调列表
 plugstartfuncs = []
 
-PLUGADMIN = config.PLUGADMIN
-DEBUG = config.DEBUG
+PLUGADMIN = config['PLUGADMIN']
+DEBUG = config['DEBUG']
 """
 插件相关类
 """

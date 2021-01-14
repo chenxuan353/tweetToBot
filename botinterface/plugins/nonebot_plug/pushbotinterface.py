@@ -5,7 +5,7 @@ from module.msgStream import SendMessage
 from pluginsinterface.EventHandling import StandEven
 from pluginsinterface.Plugmanagement import PlugMsgTypeEnum
 from pluginsinterface.PlugAsyncio import even_put,runinfo
-import config
+from load_config import config
 from helper import getlogger,data_save
 logger = getlogger(__name__)
 """
@@ -113,7 +113,7 @@ async def _(session: NLPSession):
                 CQm += ',' + key + '=' + value
             CQm += ']'
             message.append(message.baleUnknownObj('cqhttp',CQm,data.type,data.data))
-    if senduuid in config.PLUGADMIN['cqhttp']:
+    if senduuid in config['PLUGADMIN']['cqhttp']:
         msgtype = msgtype | PlugMsgTypeEnum.plugadmin
     plugObj = {'type':'cqhttp','even':session.event,'bot':session.bot}
     #生成事件

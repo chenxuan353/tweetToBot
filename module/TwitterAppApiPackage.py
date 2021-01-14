@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from helper import getlogger, TokenBucket, TempMemory
 import tweepy
-import config
+from load_config import config
 import threading
 import time
 import traceback
@@ -21,7 +21,7 @@ class TwitterAppApiPackage:
             'statuses_lookup': TokenBucket(0.3, 2, 0.1),  # 多推文检索
         }
         self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-        self.api = tweepy.API(self.auth, proxy=config.api_proxy)
+        self.api = tweepy.API(self.auth, proxy=config['api_proxy'])
 
     def users_timeline(self,
                        autoid=None,

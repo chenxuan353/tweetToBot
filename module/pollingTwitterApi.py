@@ -5,7 +5,7 @@ import threading
 import module.msgStream as msgStream
 import module.twitter as twitter
 from module.TwitterAppApiPackage import TwitterAppApiPackage, PollingTwitterApps
-import config
+from load_config import config
 from helper import getlogger, data_read_auto, data_save, TempMemory
 logger = getlogger(__name__)
 """
@@ -13,15 +13,15 @@ logger = getlogger(__name__)
 仅使用应用程序验证
 """
 # 轮询间隔
-polling_interval = config.polling_interval if config.polling_interval and config.polling_interval >= 0 else 1
-ptwitterapps = PollingTwitterApps(config.polling_consumers)
+polling_interval = config['polling_interval'] if config['polling_interval'] and config['polling_interval'] >= 0 else 1
+ptwitterapps = PollingTwitterApps(config['polling_consumers'])
 
 prioritylistconfig = 'twitterprioritylist.json'
 prioritylist = data_read_auto(prioritylistconfig, default={})
 defaultpriority = 5  # 默认优先级
 nowpriority = {}
-if config.polling_level and config.polling_level >= 0 and config.polling_level <= 15:
-    defaultpriority = int(config.polling_level)
+if config['polling_level'] and config['polling_level'] >= 0 and config['polling_level'] <= 15:
+    defaultpriority = int(config['polling_level'])
 
 
 def Priority_set(setvalue: int, userid: int) -> tuple:
@@ -234,7 +234,7 @@ def Run():
     TIC_listUserClearSpylist(twitter.pushlist.getSpylist())
     logger.info("PollingTweetApi 启动清理完毕")
     # 使用PollingTweetApi接收更新
-    polling_silent_start = not config.polling_silent_start
+    polling_silent_start = not config['polling_silent_start']
     logger.info("PollingTweetApi 启动检测正在运行")
     get_updata(trigger=polling_silent_start, start=True)
     logger.info("PollingTweetApi 启动检测结束")

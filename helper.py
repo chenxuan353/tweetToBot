@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-import config
+from load_config import config
 import json
 import logging
 import os

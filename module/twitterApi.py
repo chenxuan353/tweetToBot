@@ -6,7 +6,7 @@ import threading
 import module.twitter as twitter
 import module.msgStream as msgStream
 # 引入配置
-import config
+from load_config import config
 from helper import getlogger, data_read_auto, data_save, TokenBucket
 logger = getlogger(__name__)
 # 引入推送列表、推送处理模版
@@ -53,10 +53,10 @@ class MyStreamListener(tweepy.StreamListener):
 
 
 # 推特认证
-auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
-auth.set_access_token(config.access_token, config.access_token_secret)
+auth = tweepy.OAuthHandler(config['consumer_key'], config['consumer_secret'])
+auth.set_access_token(config['access_token'], config['access_token_secret'])
 # 获取API授权
-api = tweepy.API(auth, proxy=config.api_proxy)
+api = tweepy.API(auth, proxy=config['api_proxy'])
 
 # 安装测试列表
 # test_install_push_list()

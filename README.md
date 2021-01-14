@@ -24,79 +24,44 @@ BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发
 
 ### 项目使用及配置
 
-直接克隆本项目以获取最新版本：
-
-```shell
-git clone https://github.com/chenxuan353/tweetToBot.git
-```
-
-**由于完整仓库较大，因此推荐仅 Clone 当前 v3 分支：**
-
-```shell
-git clone -b v3 https://github.com/chenxuan353/tweetToBot.git --depth=1
-```
-
-或到 Release 内下载稳定版本：
-
-```shell
-wget https://github.com/chenxuan353/tweetToBot/archive/Version3.5.zip
-```
-
-本项目使用 Python3 进行编写，请确保使用 Python3.7 及以上版本启动本服务，以免遭遇兼容性错误。
-
-##### 查看 python 版本
-
-```shell
-python -V
-```
-
-或使用多个版本的 Python3
-
-- Linux/Unix/OS X
-
-```shell
-python3 -V
-```
-
-- Windows
-
-```shell
-py -3 -V
-```
-
-##### 依赖安装
-
-```shell
-pip install -r requirements.txt
-```
-
-或
-(Linux/Unix/OS X)
-
-```shell
-pip3 install -r requirements.txt
-```
-
-(Windows)
-
-```shell
-py -3 -m pip install -r requirements.txt
-```
+本分支使用支持Docker部署，可自行根据Dockerfile构建，也可以使用Hub上已经构建好的镜像
 
 ##### 配置项目
 
+首先服务器需安装好Docker环境以及docker-compose
+
+接着新建一个文件夹用于存放配置文件
+
 ```shell
-cp config_example.py config.py
+mkdir tweetToBot
+mkdir tweetToBot/conf
+cd tweetToBot
+touch docker-compose.yml
+wget -O conf/config.hjson https://raw.githubusercontent.com/chenxuan353/tweetToBot/v3/conf/config_example.hjson
 ```
 
-打开项目根目录下的**config.py**文件，然后按照文件里的说明进行配置
+打开项目根目录下的`docker-compose.yml`文件，写入以下内容：
 
-\*记得将各功能按需求开启或关闭
+```yml
+version: "3.9"
+services:
+  bot_1:
+    container_name: bot_1
+    hostname: bot_1
+    volumes:
+      - ./conf:/conf
+    image: lonelyion/tweetToBot:latest
+    ports:
+      - 80:80       # 烤推图片
+      - 8091:8091   # NoneBot
+```
+
+接下来打开`conf/config.hjson`，然后按照文件里的说明进行配置，记得将各功能按需求开启或关闭
 
 ##### 启动项目
 
 ```shell
-python3 ./start.py
+docker-compose up -d
 ```
 
 ### bot 连接到后端

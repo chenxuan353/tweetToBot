@@ -5,7 +5,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 import time
 from module.pollingRSShub import Priority_getlist, Priority_set, setStreamOpen
 
-import config
+from load_config import config
 from module.RSS import pushlist
 from module.pollingRSShub import rssapps
 from helper import getlogger
@@ -28,7 +28,7 @@ def _():
 @on_plugloaded()
 def _(plug: PluginsManage):
     if plug:
-        # if not config.RSS_open:
+        # if not config['RSS_open']:
         #     plug.switchPlug(False) # 关闭插件
         # 注册权限
         plug.registerPerm('manage',

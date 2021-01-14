@@ -8,7 +8,7 @@ import string
 import urllib
 import traceback
 # 引入配置
-import config
+from load_config import config
 
 from datetime import datetime, timedelta, timezone
 from module.msgStream import SendMessage
@@ -31,7 +31,7 @@ except:
 推送唯一性检验及推送流
 '''
 baseconfigpath = 'tweitter'
-DEBUG = config.DEBUG
+DEBUG = config['DEBUG']
 
 
 # 10进制与64进制互相转换(由于增速过快，缩写ID不设偏移)
@@ -209,7 +209,7 @@ class TweePushList(PushList):
         self.baseconfigpath = baseconfigpath
         self.PushTemplate = {}
         self.pushunit_default_config = self.pushunit_base_config.copy()
-        self.pushunit_default_config.update(config.pushunit_default_config)
+        self.pushunit_default_config.update(config['pushunit_default_config'])
         if 'diy' in self.pushunit_default_config:
             del self.pushunit_default_config['diy']
         if self.pushunit_default_config['template'].strip() == '':

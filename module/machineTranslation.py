@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 from helper import getlogger, TokenBucket, arglimitdeal
-import config
+from load_config import config
 import requests
 import random
 import json
@@ -10,7 +10,7 @@ logger = getlogger(__name__)
 机翻类，用于支持多引擎机翻
 """
 
-MachineTransApi = config.MachineTransApi
+MachineTransApi = config['MachineTransApi']
 
 
 def randUserAgent():
@@ -172,6 +172,6 @@ engine_list = {
     },
 }
 
-default_engine = engine_list[engine_nick[config.MachineTrans_default]]['func']
+default_engine = engine_list[engine_nick[config['MachineTrans_default']]]['func']
 default_engine_option = engine_list[engine_nick[
-    config.MachineTrans_default]]['option']
+    config['MachineTrans_default']]]['option']

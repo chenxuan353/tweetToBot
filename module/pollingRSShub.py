@@ -4,7 +4,7 @@ import traceback
 import threading
 import random
 import module.msgStream as msgStream
-import config
+from load_config import config
 from module.RSShubApiPackage import RSShubsPackage
 from module.RSS import pushlist, rsshubevendeal
 
@@ -15,15 +15,15 @@ logger = getlogger(__name__)
 ·支持标准RSS协议
 """
 # 轮询间隔
-polling_interval = config.RSS_interval if config.RSS_interval and config.RSS_interval >= 0 else 1
+polling_interval = config['RSS_interval'] if config['RSS_interval'] and config['RSS_interval'] >= 0 else 1
 rssapps = RSShubsPackage()
 
 prioritylistconfig = 'RSShubprioritylist.json'
 prioritylist = data_read_auto(prioritylistconfig, default={})
 defaultpriority = 5  # 默认优先级
 nowpriority = {}
-if config.polling_level and config.polling_level >= 0 and config.polling_level <= 15:
-    defaultpriority = int(config.polling_level)
+if config['polling_level'] and config['polling_level'] >= 0 and config['polling_level'] <= 15:
+    defaultpriority = int(config['polling_level'])
 
 
 def Priority_set(setvalue: int, userid: str) -> tuple:
@@ -136,7 +136,7 @@ def get_updata(trigger: bool = True):
 
 def Run():
     global polling_interval, rssapps
-    defaultUrls = config.RSShub_urls if config.RSShub_urls else []
+    defaultUrls = config['RSShub_urls'] if config['RSShub_urls'] else []
     if len(defaultUrls) == 0:
         logger.warning("RSShub链接未配置，轮询更新启动失败")
         return
