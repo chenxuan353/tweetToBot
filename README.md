@@ -80,63 +80,19 @@ CQHTTP 协议支持的端：[go-cqhttp](https://github.com/yyuueexxiinngg/cqhttp
 
 在**ws_reverse_servers(反向 ws 配置)**的配置项内**输入服务器的 IP 与端口号**即可连上此后端
 
-示例：
+go-cqhttp的示例：
 
 ```json
     "ws_reverse_servers": [
         {
             "enabled": true,
-            "reverse_url": "",
-            "reverse_api_url": "ws://127.0.0.1:8100/ws/api/",
-            "reverse_event_url": "ws://127.0.0.1:8100/ws/event/",
+            "reverse_url": "ws://127.0.0.1:8091/ws/",
+            "reverse_api_url": "ws://127.0.0.1:8091/ws/api/",
+            "reverse_event_url": "ws://127.0.0.1:8091/ws/event/",
             "reverse_reconnect_interval": 3000
         }
     ],
 ```
-
-### 使用烤推功能
-
-使用烤推功能需要**安装 chrome**及调用 chrome 的驱动**chromedriver**
-
-#### **安装 chrome**并标记为不更新
-
-```shell
-apt install chromium-browser
-apt-mark hold chromium-browser
-```
-
-第二行命令用于标记不更新，防止 apt-get upgrade 等命令后把 chrome 更新了导致烤推驱动无法使用。
-
-#### 查询 chrome 版本(记录一下，之后要用)
-
-```
-chromium-browser --version
-```
-
-#### 安装**chromedriver**(需要先查询 chrome 版本)
-
-查找指定版本的[chromedrive](https://chromedriver.storage.googleapis.com/index.html)下载 大版本需要相同，不然无法使用
-
-> chrome 版本 Chromium 84.0.4147.105 则 ChromeDriver 对应版本可以是 ChromeDriver 84.0.4147.30
-
-以下为**添加到全局命令的方法**：
-
-```shell
-wget chromedriver的下载地址
-unzip chromedriver_linux64.zip
-chmod +x chromedriver
-mv chromedriver /usr/local/bin
-```
-
-**添加到全局命令后可以使用 chromedriver -v 查看驱动版本**
-
-> 不添加全局命令的可以对配置文件**config.py**内的**ChromedriverPath**属性进行配置
-
-##### **※chromedriver 需要拥有执行权限**
-
-##### 安装字体
-
-烤推使用字体 Source Han Sans CN
 
 ##### 设置时区
 

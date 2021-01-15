@@ -1,10 +1,5 @@
 FROM nginx:alpine
-
 LABEL maintainer="lonelyion@outlook.com"
-
-ADD ./ /app/
-VOLUME /app/conf
-
 WORKDIR /app
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
     \
@@ -18,7 +13,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
     pip3 install --upgrade pip setuptools wheel && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
     \
-    echo "**** installing chromium ****" &&\
+    echo "**** installing applications ****" &&\
     apk add unzip supervisor chromium chromium-chromedriver && \
     \
     echo "**** installing fonts ****" && \
@@ -26,6 +21,15 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
     unzip noto-sans.zip -d /usr/share/fonts/ && \
     chmod 644 /usr/share/fonts/noto-sans && \
     fc-cache -fv && \
+    echo "**** post installation ****" && \
+    rm noto-sans.zip && \
+    apk del unzip && \
+    echo "Done"
+
+ADD ./ /app/
+
+RUN echo "**** installing dependencies ****" && \
+    pip3 install -r requirements.txt && \
     \
     echo "**** setting up nginx ****" && \
     rm /usr/share/nginx/html -rf && \
@@ -35,17 +39,9 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
     cp /app/conf/nginx.conf /etc/nginx/nginx.conf && \
     cp /app/conf/nginx_default.conf /etc/nginx/conf.d/default.conf && \
     \
-    echo "**** installing dependencies ****" && \
-    pip3 install -r requirements.txt && \
-    \
     echo "**** setting up supervisord ****" && \
     mkdir -p /etc/supervisor/conf.d/ && \
-    cp /app/supervisord.conf /etc/supervisor/conf.d/supervisord.conf && \
-    \
-    echo "**** post installation ****" && \
-    rm noto-sans.zip && \
-    apk del unzip && \
-    echo "Done"
+    cp /app/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 8091 80
 
