@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/github/license/richardchien/nonebot.svg)](LICENSE)&nbsp;![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
+本分支为实验性特性，使用HJSON作为配置文件，同时支持Docker部署
+
 ## 简介
 
 拥有可全平台兼容的 BOT 兼容层，可以快速接入多个不同平台或相同平台 bot。(开发中)
@@ -12,19 +14,15 @@ BOT 兼容层：多接口、多接口权限模块、多接口消息流-主动发
 
 主要依赖于模块[tweepy](https://github.com/tweepy/tweepy)进行推特操作
 
-**项目目前支持 Python 3.7 +**
-
 ## 使用文档
 
-[文档](https://github.com/bothbot/OneTweBot-Docs)
-
-[用户文档](https://chenxuan353.github.io/tweetTobot/)(停止维护)
+[文档](https://bothbot-documentation.readthedocs.io/)
 
 ## 部署文档
 
 ### 项目使用及配置
 
-本分支使用支持Docker部署，可自行根据Dockerfile构建，也可以使用Hub上已经构建好的镜像
+本分支使用支持Docker部署，可自行根据Dockerfile构建，也可以使用[Docker Hub](https://hub.docker.com/r/lonelyion/tweet-to-bot)上已经构建好的镜像
 
 ##### 配置项目
 
@@ -45,15 +43,18 @@ wget -O conf/config.hjson https://raw.githubusercontent.com/chenxuan353/tweetToB
 ```yml
 version: "3.9"
 services:
-  bot_1:
+  tweet_to_bot:
     container_name: bot_1
     hostname: bot_1
     volumes:
-      - ./conf:/conf
-    image: lonelyion/tweetToBot:latest
+      - ./conf:/app/conf
+    image: lonelyion/tweet-to-bot:latest
     ports:
       - 80:80       # 烤推图片
       - 8091:8091   # NoneBot
+    environment:
+      - LANG=zh_CN.UTF-8
+      - TZ=Asia/Shanghai
 ```
 
 接下来打开`conf/config.hjson`，然后按照文件里的说明进行配置，记得将各功能按需求开启或关闭
@@ -63,6 +64,8 @@ services:
 ```shell
 docker-compose up -d
 ```
+
+//TODO: 多docker实例配置的最佳实践
 
 ### bot 连接到后端
 
@@ -92,16 +95,4 @@ go-cqhttp的示例：
             "reverse_reconnect_interval": 3000
         }
     ],
-```
-
-##### 设置时区
-
-```
-timedatectl set-timezone Asia/Shanghai
-```
-
-##### 设置语言
-
-```
-export LANG="zh_CN.UTF-8"
 ```

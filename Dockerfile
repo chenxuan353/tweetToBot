@@ -1,5 +1,5 @@
 FROM nginx:alpine
-LABEL maintainer="lonelyion@outlook.com"
+LABEL maintainer="me@lonelyion.com"
 WORKDIR /app
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
     \
