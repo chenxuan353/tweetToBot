@@ -1,9 +1,7 @@
 FROM nginx:alpine
 LABEL maintainer="me@lonelyion.com"
 WORKDIR /app
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
-    \
-    echo "**** installing Python ****" && \
+RUN echo "**** installing Python ****" && \
     apk add python3 && \
     if [ ! -e /usr/bin/python ]; then ln -sf python3 /usr/bin/python ; fi && \
     \
@@ -17,7 +15,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
     apk add unzip supervisor chromium chromium-chromedriver && \
     \
     echo "**** installing fonts ****" && \
-    wget https://github.91chifun.workers.dev//https://github.com/lonelyion/TweetToBot-Docker/releases/download/font/noto-sans.zip && \
+    wget https://github.com/lonelyion/TweetToBot-Docker/releases/download/font/noto-sans.zip && \
     unzip noto-sans.zip -d /usr/share/fonts/ && \
     chmod 644 /usr/share/fonts/noto-sans && \
     fc-cache -fv && \
