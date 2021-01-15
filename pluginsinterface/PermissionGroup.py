@@ -3,12 +3,12 @@ import os
 import traceback
 import re
 import time
-import config
+from load_config import config
 from pluginsinterface.TypeExtension import PlugMsgTypeEnum
 from helper import data_save, data_read_auto, getlogger
 logger = getlogger(__name__)
 
-DEBUG = config.DEBUG
+DEBUG = config['DEBUG']
 config_filename = 'permission.json'
 """
 权限授权与验证模块

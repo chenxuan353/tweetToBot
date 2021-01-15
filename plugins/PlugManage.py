@@ -4,7 +4,7 @@ from pluginsinterface.PluginLoader import PlugMsgReturn, plugRegistered, plugGet
 from pluginsinterface.PluginLoader import SendMessage, plugGetListStr, PlugMsgTypeEnum
 from pluginsinterface.PluginLoader import PlugArgFilter, plugGetNameList, plugGetNamePlugDes
 import asyncio
-import config
+from load_config import config
 from helper import getlogger
 logger = getlogger(__name__)
 """
@@ -70,9 +70,9 @@ argfilter.addArg(
             des='help或帮助 插件名 页码 - 获取帮助信息，插件名与页码可选，不显示被禁用插件',
             at_to_me=False)
 async def _(session: Session):
-    mastername = config.mastername
-    project_des = config.project_des
-    project_addr = config.project_addr
+    mastername = config['mastername']
+    project_des = config['project_des']
+    project_addr = config['project_addr']
     if not mastername:
         mastername = '未知'
     if not project_des:

@@ -6,6 +6,7 @@ v3_test.py
 chromedriver.exe
 *.DS_Store
 img/
+conf/config.hjson
 
 
 # Byte-compiled / optimized / DLL files

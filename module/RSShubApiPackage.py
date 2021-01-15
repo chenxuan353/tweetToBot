@@ -5,7 +5,7 @@ import xmltodict
 import traceback
 from datetime import datetime, timedelta, timezone
 
-import config
+from load_config import config
 from helper import getlogger, TokenBucket
 logger = getlogger(__name__)
 """
@@ -13,7 +13,7 @@ logger = getlogger(__name__)
 解析RSS及打包RSS数据
 支持RSShub及指定RSS源
 """
-proxy = config.RSS_proxy
+proxy = config['RSS_proxy']
 headers = {'User-Agent': 'RSSReadBot V1.0'}
 proxies = {"http": proxy, "https": proxy}
 
@@ -221,7 +221,7 @@ class RSSDealPackage:
         return self.title == ''
 
 
-defaultUrls = config.RSShub_urls if config.RSShub_urls else []
+defaultUrls = config['RSShub_urls'] if config['RSShub_urls'] else []
 
 
 class RSShubsPackage:

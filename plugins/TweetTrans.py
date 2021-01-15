@@ -15,7 +15,7 @@ import time
 import base64
 from io import BytesIO
 import asyncio
-import config
+from load_config import config
 from helper import dictGet, dictSet
 from helper import getlogger, data_read_auto, data_save, TempMemory
 logger = getlogger(__name__)
@@ -23,7 +23,7 @@ logger = getlogger(__name__)
 from concurrent.futures import ThreadPoolExecutor
 pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="trans_Threads")
 
-trans_img_path = config.trans_img_path
+trans_img_path = config['trans_img_path']
 transtemplate_filename = 'transtemplate.json'
 transtemplate = data_read_auto(transtemplate_filename, default={})
 
@@ -144,7 +144,7 @@ def getImage(url, maxsize=50, timeout=15):
             if size > maxsize:
                 raise ValueError('response too large')
         base64code = str(base64.b64encode(filedata), 'utf8')
-        if config.DEBUG:
+        if config['DEBUG']:
             logger.info(base64code)
     except ValueError:
         return (False, '文件大小超出限制或下载超时')

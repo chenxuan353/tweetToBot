@@ -5,14 +5,14 @@ from pluginsinterface.PermissionGroup import authBaleObjectRecognition
 from pluginsinterface.PermissionGroup import authCheck, authAllow, authRemoval, authDeny, authDenyRemoval, authCheckDeny
 import time
 from inspect import isfunction
-import config
+from load_config import config
 from module.msgStream import SendMessage
 from helper import getlogger
 from helper import dictInit, dictHas, dictGet, dictSet
 logger = getlogger(__name__)
 
-Session_timeout = config.Session_timeout
-PLUGADMIN = config.PLUGADMIN
+Session_timeout = config['Session_timeout']
+PLUGADMIN = config['PLUGADMIN']
 
 
 class Session:
@@ -215,7 +215,7 @@ class Session:
         """
             检查组Session对应发送对象的指定私聊权限，判断全局管理员权限
         """
-        PLUGADMIN = config.PLUGADMIN
+        PLUGADMIN = config['PLUGADMIN']
         Admin = dictGet(PLUGADMIN, self.bottype, default=[])
         if self.senduuid in Admin:
             return True

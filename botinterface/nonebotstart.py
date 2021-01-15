@@ -4,7 +4,7 @@ import threading
 import traceback
 import asyncio
 import botinterface.nonebotconfig as nonebotconfig
-import config
+from load_config import config
 from os import path
 from helper import getlogger
 logger = getlogger(__name__)
@@ -24,7 +24,7 @@ def Run():
         nonebot.load_plugins(
             path.join(path.dirname(__file__), 'plugins', 'nonebot_plug'),
             'botinterface.plugins.nonebot_plug')
-        nonebot.run(host=config.NONEBOT_HOST, port=config.NONEBOT_PORT)
+        nonebot.run(host=config['NONEBOT_HOST'], port=config['NONEBOT_PORT'])
     except:
         s = traceback.format_exc(limit=5)
         logger.error('nonebot异常！\n' + s)
@@ -48,8 +48,8 @@ def RunInThread():
     nonebot.load_plugins(
         path.join(path.dirname(__file__), 'plugins', 'nonebot_plug'),
         'botinterface.plugins.nonebot_plug')
-    # nonebot.run(host=nonebotconfig.NONEBOT_HOST, port = nonebotconfig.NONEBOT_PORT)
-    task = nonebot.get_bot().run_task(host=config.NONEBOT_HOST,
-                                      port=config.NONEBOT_PORT)
+    # nonebot.run(host=nonebotconfig['NONEBOT_HOST'], port = nonebotconfig['NONEBOT_PORT'])
+    task = nonebot.get_bot().run_task(host=config['NONEBOT_HOST'],
+                                      port=config['NONEBOT_PORT'])
     asyncio.run_coroutine_threadsafe(task, runinfo['loop'])
     runinfo['run'] = True

@@ -6,7 +6,7 @@ from pluginsinterface.PluginLoader import PlugArgFilter
 #扩展函数
 from pluginsinterface.PluginLoader import plugGetListStr, plugGetNameList, plugGetNamePlugDes, SendMessage
 import asyncio
-import config
+from load_config import config
 import random
 from nonebot import NoneBot
 from helper import getlogger

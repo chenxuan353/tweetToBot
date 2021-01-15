@@ -7,7 +7,7 @@ import datetime
 import random
 from enum import Enum
 
-import config
+from load_config import config
 from helper import check_path, TokenBucket
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import Options
@@ -37,7 +37,7 @@ def randUserAgent():
     return UAs[random.randint(0, len(UAs) - 1)]
 
 
-drive_executable_path = config.ChromedriverPath
+drive_executable_path = config['ChromedriverPath']
 
 
 class TweetTrans:
@@ -598,7 +598,7 @@ class TweetTrans:
                 }
                 //翻译用的class transclass = elems[0].querySelector('div[lang][dir="auto"]>span').className
                 let transclass = 'tweetadd css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0'
-                let frontf = "font-family:\"Source Han Sans CN\", system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Ubuntu, \"Helvetica Neue\", sans-serif;"
+                let frontf = "font-family: \"Noto Sans\", \"Noto Sans SC\", sans-serif;"
                 //翻译标识
                 let node_type = document.createElement('span')
                 node_type.className = transclass

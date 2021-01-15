@@ -8,12 +8,12 @@ import asyncio
 import os
 import re
 import json
-import config
+from load_config import config
 import random
 # 日志输出
 from helper import getlogger, TempMemory, data_read, data_save, data_read_auto, check_path
 logger = getlogger(__name__)
-sendlogger = getlogger(__name__ + '_nocmd', printCMD=config.DEBUG)
+sendlogger = getlogger(__name__ + '_nocmd', printCMD=config['DEBUG'])
 """
 消息流处理及推送模块
 
