@@ -582,14 +582,14 @@ class TweetTrans:
                         tweets.push(trans)
                         //检测推文是否结束
                         //转推喜欢
-                        let rtlk = elart.querySelector('div.r-9qu9m4')
+                        let rtlk = elart.querySelector('div.r-13awgt0')
                         if(rtlk){
                             //跳出
                             rtlk.remove()
                             break;
                         }
                         //时间
-                        let t = elart.querySelector('div.r-vpgt9t')
+                        let t = elart.querySelector('div.r-1r5su4o')
                         if(t){
                             //跳出
                             break;
