@@ -103,7 +103,7 @@ class TweetTrans:
                         let articles =getArticles()
                         let elems = null
                         for(let i=0;i<articles.length;i++){
-                            elems = articles[i].querySelectorAll("div[role=button].r-1vsu8ta.r-1vsu8ta")
+                            elems = articles[i].querySelectorAll("div[role=button].r-1e081e0")
                             for(let j=0;j<elems.length;j++){
                                 if(elems[j].textContent == "查看"){
                                     elems[j].click()
